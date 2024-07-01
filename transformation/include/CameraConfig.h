@@ -5,8 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "EigenUtils.h"
-
 struct CameraConfig {
 	Eigen::Matrix<double, 3, 4> const projection_matrix;
 	Eigen::Matrix<double, 3, 3> const KR;

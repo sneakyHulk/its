@@ -2,6 +2,7 @@
 
 #include <Eigen/Eigen>
 
+#include "EigenUtils.h"
 #include "common_literals.h"
 
 DetectionTransformation::DetectionTransformation(Config const& config) : config(config) {}

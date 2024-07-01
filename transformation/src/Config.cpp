@@ -1,6 +1,8 @@
 #include "Config.h"
 
-Config make_config(const std::filesystem::path config_directory, const double map_origin_x, const double map_origin_y, const double map_origin_z) {
+#include "EigenUtils.h"
+
+Config make_config(std::filesystem::path const& config_directory, double const map_origin_x, double const map_origin_y, double const map_origin_z) {
 	Eigen::Matrix<double, 4, 4> affine_transformation_map_origin_to_utm = make_matrix<4, 4>(1., 0., 0., map_origin_x, 0., 1., 0., map_origin_y, 0., 0., 1., map_origin_z, 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> affine_transformation_utm_to_map_origin = affine_transformation_map_origin_to_utm.inverse();
 
@@ -27,7 +29,7 @@ Config make_config(const std::filesystem::path config_directory, const double ma
 	std::map<std::string, LensConfig> lens_configs;
 
 	std::regex const lens_config_regex("intrinsic_camera_parameters_([0-9]+)_mm_lens.txt");
-	for (const auto& e : std::filesystem::directory_iterator(config_directory / std::filesystem::path("distortion"))) {
+	for (auto const& e : std::filesystem::directory_iterator(config_directory / std::filesystem::path("distortion"))) {
 		std::string const filename = e.path().filename().generic_string();  // no temporary string allowed for regex_match
 
 		if (std::smatch lens_name_match; std::regex_match(filename, lens_name_match, lens_config_regex)) {
@@ -41,7 +43,7 @@ Config make_config(const std::filesystem::path config_directory, const double ma
 	std::map<std::string, std::tuple<std::string, int, int>> lens_mappings;
 
 	std::regex const camera_config_regex("projection_([a-zA-Z0-9_]+?([0-9]+))\\.json");
-	for (const auto& e : std::filesystem::directory_iterator(config_directory)) {
+	for (auto const& e : std::filesystem::directory_iterator(config_directory)) {
 		std::string const filename = e.path().filename().generic_string();  // no temporary string allowed for regex_match
 
 		if (std::smatch camera_name_match; std::regex_match(filename, camera_name_match, camera_config_regex)) {

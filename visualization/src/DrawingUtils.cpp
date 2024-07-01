@@ -1,30 +1,24 @@
-#pragma once
+#include "DrawingUtils.h"
 
 #include <OpenDriveMap.h>
 #include <common_output.h>
 
-#include <Eigen/Eigen>
 #include <algorithm>
 #include <autodiff/reverse/var.hpp>
 #include <autodiff/reverse/var/eigen.hpp>
-#include <opencv2/opencv.hpp>
 #include <random>
 #include <ranges>
 #include <vector>
 
-#include "Config.h"
+#include "EigenUtils.h"
 
 #if !__cpp_lib_ranges_zip
-#include <range/v3/view/zip.hpp>
-#include <range/v3/view/take.hpp>
 #include <range/v3/view/drop.hpp>
+#include <range/v3/view/take.hpp>
+#include <range/v3/view/zip.hpp>
 #endif
 
-std::random_device rd;
-std::mt19937 gen(rd());
-std::uniform_int_distribution<> dis(0, 255);
-
-void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& camera_name, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center) {
+void draw_camera_fov(cv::Mat& view, const Config& config, const std::string& camera_name, const Eigen::Matrix<double, 4, 4>& affine_transformation_base_to_image_center) {
 	std::seed_seq seq(camera_name.begin(), camera_name.end());
 	std::mt19937 rng(seq);
 	std::uniform_int_distribution<> dis(0, 255);
@@ -41,14 +35,14 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 		autodiff::var y = 0;
 		autodiff::Vector4var left_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<autodiff::var>(camera_name, 0., y, 0.);
 
-		std::vector<double> derivates;
+		std::vector<double> derivatives;
 		for (auto padding = 0; padding < config.camera_config(camera_name).image_height(); ++padding) {
 			y.update(padding);
 			left_top(1).update();
 			auto [dy] = autodiff::derivatives(left_top(1), autodiff::wrt(y));
-			derivates.push_back(dy);
+			derivatives.push_back(dy);
 		}
-		left_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double a, double b) { return std::fabs(a) < std::fabs(b); })));
+		left_padding = static_cast<int>(std::distance(derivatives.begin(), std::max_element(derivatives.begin(), derivatives.end(), [](double a, double b) { return std::fabs(a) < std::fabs(b); })));
 		left_padding *= 2;  // more distance to the singularity
 	}
 
@@ -57,14 +51,14 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 		autodiff::var y = 0;
 		autodiff::Vector4var right_top = affine_transformation_base_to_image_center * config.map_image_to_world_coordinate<autodiff::var>(camera_name, config.camera_config(camera_name).image_width(), y, 0.);
 
-		std::vector<double> derivates;
+		std::vector<double> derivatives;
 		for (auto padding = 0; padding < config.camera_config(camera_name).image_height(); ++padding) {
 			y.update(padding);
 			right_top(1).update();
 			auto [dy] = autodiff::derivatives(right_top(1), autodiff::wrt(y));
-			derivates.push_back(dy);
+			derivatives.push_back(dy);
 		}
-		right_padding = static_cast<int>(std::distance(derivates.begin(), std::max_element(derivates.begin(), derivates.end(), [](double const a, double const b) { return std::fabs(a) < std::fabs(b); })));
+		right_padding = static_cast<int>(std::distance(derivatives.begin(), std::max_element(derivatives.begin(), derivatives.end(), [](double const a, double const b) { return std::fabs(a) < std::fabs(b); })));
 		right_padding *= 2;  // more distance to the singularity
 	}
 
@@ -89,8 +83,7 @@ void draw_camera_fov(cv::Mat& view, Config const& config, std::string const& cam
 	auto alpha = 0.2;
 	cv::addWeighted(view, alpha, overlay, 1 - alpha, 0, view);
 }
-
-auto draw_map(std::filesystem::path odr_map, Config const& config, std::string const base_name = "s110_base", int display_width = 1920, int display_height = 1200, double scaling = 4.) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
+auto draw_map(std::filesystem::path const& odr_map, Config const& config, std::string const& base_name, int const display_width, int const display_height, double const scaling) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
 	Eigen::Matrix<double, 4, 4> const affine_transformation_rotate_90 = make_matrix<4, 4>(0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_reflect = make_matrix<4, 4>(-1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_base_to_image_center =

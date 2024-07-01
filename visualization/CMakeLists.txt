@@ -1,8 +1,24 @@
+project(visualization)
+
+add_library(${PROJECT_NAME} STATIC src/DrawingUtils.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE transformation) # is actually C++23 lib <- needs to be private to work within
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenDrive)
+target_link_libraries(${PROJECT_NAME} PRIVATE autodiff::autodiff) # needs C++17
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+set_property(TARGET visualization PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+
 project(visualization_nodes)
 
 add_library(${PROJECT_NAME} SHARED src/visualization_node.cpp src/tracking_visualization_node.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
@@ -10,8 +26,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} PUBLIC node)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
-target_link_libraries(${PROJECT_NAME} PUBLIC autodiff::autodiff)
-target_link_libraries(${PROJECT_NAME} PRIVATE OpenDrive)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PRIVATE visualization)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

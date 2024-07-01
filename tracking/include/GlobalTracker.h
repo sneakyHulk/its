@@ -28,5 +28,7 @@ class GlobalTracker : private KalmanFilter<4, 4, 2, {0, 1}, {2, 3}> {
 		P_(1, 1) *= 0.01;  // give low uncertainty to the initial position values (because newest yolo ist pretty accurate)
 		P_(2, 2) *= 10.;   // give high uncertainty to the unobservable initial velocities
 		P_(3, 3) *= 10.;   // give high uncertainty to the unobservable initial velocities
+
+		throw;
 	}
 };

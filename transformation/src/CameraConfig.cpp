@@ -1,5 +1,7 @@
 #include "CameraConfig.h"
 
+#include "EigenUtils.h"
+
 CameraConfig make_camera_config(nlohmann::json const& config, std::string lens_name) {
 	std::string base_name = config["projections"][0]["extrinsic_transform"]["src"].template get<std::string>();
 

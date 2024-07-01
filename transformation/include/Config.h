@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "CameraConfig.h"
-#include "EigenUtils.h"
 #include "LensConfig.h"
 
 struct Config {
@@ -76,5 +75,5 @@ struct Config {
 	}
 };
 
-Config make_config(std::filesystem::path const config_directory = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("thirdparty/projection_library/config"), double const map_origin_x = 695942.4856864865,
-    double const map_origin_y = 5346521.128436302, double const map_origin_z = 485.0095881917835);
+Config make_config(const std::filesystem::path& config_directory = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("thirdparty/projection_library/config"), double map_origin_x = 695942.4856864865,
+    double map_origin_y = 5346521.128436302, double map_origin_z = 485.0095881917835);
