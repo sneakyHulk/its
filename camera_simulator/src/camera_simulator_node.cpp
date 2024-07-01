@@ -37,7 +37,8 @@ ImageData CameraSimulator::input_function() {
 
 	std::this_thread::sleep_until(current_time + (next - images_time));
 
-	data.timestamp = std::chrono::milliseconds(std::stoll(current_file.path().stem())).count();  // std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+	data.timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(std::stoll(current_file.path().stem())))
+	                     .count();  // std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
 	return data;
 }

@@ -26,11 +26,11 @@ class SortTracking final : public InputOutputNode<Detections2D, ImageTrackerResu
 
 class GlobalImageTracking final : public InputOutputNode<Detections2D, GlobalTrackerResults> {
 	Config const& config;
-	std::map<std::string, std::vector<KalmanBoxTracker>> image_trackers;
+	std::map<std::string, std::vector<KalmanBoxTracker<3>>> image_trackers;
 	std::uint64_t old_timestamp = 0;
 	double association_threshold = 0.1;
 	double (*association_function)(BoundingBoxXYXY const& bbox1, BoundingBoxXYXY const& bbox2) = iou;
-	int max_age = 4;
+	double max_age = 1.;
 
    public:
 	explicit GlobalImageTracking(Config const& config);

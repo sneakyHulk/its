@@ -14,24 +14,25 @@
 #include <range/v3/view/enumerate.hpp>
 #endif
 
-template <std::size_t max_age = 4, std::size_t min_consecutive_hits = 3, double association_threshold = 0.1, auto association_function = iou>
+template <double max_age = 0.5, std::size_t min_consecutive_hits = 3, double association_threshold = 0.1, auto association_function = iou>
 class Sort {
 	static_assert(association_threshold < 1. && association_threshold > 0.);
-	std::vector<KalmanBoxTracker> trackers{};
+	std::vector<KalmanBoxTracker<min_consecutive_hits>> trackers{};
 	std::map<unsigned int, std::uint8_t> _cls;
 	std::uint64_t old_timestamp = 0;
 
    public:
 	Sort() = default;
-	std::vector<ImageTrackerResult> update(std::uint64_t timestamp, std::vector<Detection2D> const& detections) {
+	std::vector<ImageTrackerResult> update(std::uint64_t const timestamp, std::vector<Detection2D> const& detections) {
 		if (timestamp < old_timestamp) {
 			trackers.clear();
 			_cls.clear();
-			KalmanBoxTracker::reset_id();
+			KalmanBoxTracker<min_consecutive_hits>::reset_id();
 		}
 
 		double dt = std::chrono::duration<double>(std::chrono::nanoseconds(timestamp) - std::chrono::nanoseconds(old_timestamp)).count();
 		old_timestamp = timestamp;
+		common::print(dt);
 
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate
@@ -66,18 +67,17 @@ class Sort {
 		}
 
 		std::vector<ImageTrackerResult> matched;
-		for (auto tracker = trackers.rbegin(); tracker != trackers.rend(); ++tracker) {
-			if (tracker->consecutive_fails() < max_age) {
-				if (tracker->consecutive_hits() >= min_consecutive_hits) {
-					matched.emplace_back(tracker->state(), tracker->position(), tracker->velocity(), tracker->id(), _cls.at(tracker->id()), true);
-					tracker->displayed() = true;
-				} else if (tracker->displayed()) {
-					matched.emplace_back(tracker->state(), tracker->position(), tracker->velocity(), tracker->id(), _cls.at(tracker->id()), false);
-				}
+		for (auto tracker = trackers.begin(); tracker != trackers.end();) {
+			if (tracker->fail_age() > max_age) {
+				tracker = trackers.erase(tracker);
+				continue;
 			}
-			if (tracker->consecutive_fails() > max_age) {
-				trackers.erase(std::next(tracker).base());
+
+			if (tracker->established()) {
+				matched.emplace_back(tracker->state(), tracker->position(), tracker->velocity(), tracker->id(), _cls.at(tracker->id()), tracker->matched());
 			}
+
+			++tracker;
 		}
 
 		return matched;

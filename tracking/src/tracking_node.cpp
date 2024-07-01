@@ -29,8 +29,10 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 	old_timestamp = data.timestamp;
 
 	for (auto& [source, image_tracker] : image_trackers) {
-		for (auto& track : image_tracker) {
-			track.predict(dt);
+		if (source == data.source)
+			for (auto& track : image_tracker) track.predict(dt);
+		else {
+			for (auto& track : image_tracker) track.predict_between(dt);
 		}
 	}
 
@@ -55,7 +57,7 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 			image_tracker[tracker_index].update(data.objects[detection_index].bbox);
 		}
 
-		std::erase_if(image_tracker, [this](KalmanBoxTracker const& track) { return track.consecutive_fails() > max_age; });
+		std::erase_if(image_tracker, [this](KalmanBoxTracker<3> const& track) { return track.fail_age() > max_age; });
 	}
 
 	GlobalTrackerResults res;

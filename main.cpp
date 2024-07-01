@@ -1,12 +1,12 @@
 #include <thread>
 
+#include "Config.h"
 #include "camera_simulator_node.h"
 #include "common_output.h"
 #include "tracking_node.h"
-#include "Config.h"
+#include "tracking_visualization_node.h"
 #include "transformation_node.h"
 #include "undistort_node.h"
-#include "tracking_visualization_node.h"
 #include "visualization_node.h"
 #include "yolo_node.h"
 
@@ -23,7 +23,7 @@ int main() {
 	ImageTrackingTransformation trans(config);
 	Visualization2D vis(config);
 	ImageTrackingVisualizationHelper track_vis_helper;
-	ImageTrackingVisualization track_vis(track_vis_helper, "s110_s_cam_8");
+	ImageTrackingVisualization track_vis(track_vis_helper, "s110_w_cam_8");
 
 	GlobalImageTracking glob_track(config);
 	GlobalTrackingTransformation glob_trans(config);
@@ -32,22 +32,23 @@ int main() {
 	cam_o += yolo;
 	cam_s += yolo;
 	cam_w += yolo;
+	cam_w += track_vis_helper;
 
-	yolo += undistort;
+	//yolo += undistort;
 
-	undistort += glob_track;
-	glob_track += glob_trans;
-	glob_trans += vis;
+	// undistort += glob_track;
+	// glob_track += glob_trans;
+	// glob_trans += vis;
 
 	// undistort += track;
+	yolo += track;
 
-	// yolo += track;
-	// cam_s += track_vis_helper;
-	// track += track_vis;
 
-	// track += trans;
 
-	// trans += vis;
+	track += track_vis;
+	track += trans;
+
+	trans += vis;
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
@@ -58,11 +59,9 @@ int main() {
 	std::thread glob_track_thread(&GlobalImageTracking::operator(), &glob_track);
 	std::thread glob_trans_thread(&GlobalTrackingTransformation::operator(), &glob_trans);
 
-
-
-	//std::thread track_thread(&SortTracking::operator(), &track);
-	//std::thread trans_thread(&ImageTrackingTransformation::operator(), &trans);
-	//std::thread track_vis_helper_thread(&ImageTrackingVisualizationHelper::operator(), &track_vis_helper);
-	//std::thread track_vis_thread(&ImageTrackingVisualization::operator(), &track_vis);
+	std::thread track_thread(&SortTracking::operator(), &track);
+	std::thread trans_thread(&ImageTrackingTransformation::operator(), &trans);
+	std::thread track_vis_helper_thread(&ImageTrackingVisualizationHelper::operator(), &track_vis_helper);
+	std::thread track_vis_thread(&ImageTrackingVisualization::operator(), &track_vis);
 	vis();
 }

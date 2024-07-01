@@ -8,13 +8,14 @@
 #include "Detection2D.h"
 #include "KalmanFilter.h"
 
+template <std::size_t min_consecutive_hits = 3>
 class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	static thread_local unsigned int _id_max;
 
 	unsigned int _id = ++_id_max;
 	int _consecutive_hits = 0;
-	int _consecutive_fails = 0;
-	bool _displayed = false;
+	double _fail_age = 0.;
+	bool _established = false;
 	std::uint8_t _object_class = 0;
 
 	// per frame history
@@ -49,18 +50,27 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		return {x_(0) - w / 2., x_(1) - h * (3. / 4.), x_(0) + w / 2., x_(1) + h * (1. / 4.)};
 	}
 
+	void predict_between(double const dt) {
+		if (dt * x(6) + x(2) <= 0) x(2) *= 0.;  // area must be >= 0;
+		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::predict(dt);
+
+		_fail_age += dt;
+	}
+
 	BoundingBoxXYXY const& predict(double const dt) {
 		if (dt * x(6) + x(2) <= 0) x(2) *= 0.;  // area must be >= 0;
 		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::predict(dt);
-		if (_consecutive_fails > 0) _consecutive_hits = 0;
-		_consecutive_fails += 1;
+
+		if (_fail_age > 0.) _consecutive_hits = 0;
+		_fail_age += dt;
 
 		return _history.emplace_back(convert_x_to_bbox(x));
 	}
 
 	void update(BoundingBoxXYXY const& bbox) {
-		_consecutive_fails = 0;
 		_consecutive_hits += 1;
+		_fail_age = 0.;
+		if (_consecutive_hits >= min_consecutive_hits) _established = true;
 
 		KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}>::update(convert_bbox_to_z(bbox));
 
@@ -72,10 +82,10 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	[[nodiscard]] std::array<double, 2> velocity() const { return {x(4), x(5)}; }
 	[[nodiscard]] auto id() const { return _id; }
 	[[nodiscard]] auto consecutive_hits() const { return _consecutive_hits; }
-	[[nodiscard]] auto consecutive_fails() const { return _consecutive_fails; }
-	[[nodiscard]] auto& displayed() { return _displayed; }
-	[[nodiscard]] auto matched() const { return _consecutive_hits > 0; }
-	[[nodiscard]] auto object_class()const { return _object_class; }
+	[[nodiscard]] auto fail_age() const { return _fail_age; }
+	[[nodiscard]] auto established() const { return _established; }
+	[[nodiscard]] auto matched() const { return _fail_age == 0.; }
+	[[nodiscard]] auto object_class() const { return _object_class; }
 
    private:
 	static KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> make_constant_box_velocity_model_kalman_filter(BoundingBoxXYXY const& bbox) {
@@ -111,3 +121,6 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 		return {std::forward<decltype(x)>(x_), std::forward<decltype(F)>(F_), std::forward<decltype(H)>(H_), std::forward<decltype(P)>(P_), std::forward<decltype(R)>(R_), std::forward<decltype(Q)>(Q_)};
 	}
 };
+
+template <std::size_t min_consecutive_hits>
+unsigned int thread_local KalmanBoxTracker<min_consecutive_hits>::_id_max = 0U;
