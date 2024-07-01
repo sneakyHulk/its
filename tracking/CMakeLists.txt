@@ -1,0 +1,12 @@
+project(tracking_nodes)
+
+add_library(${PROJECT_NAME} SHARED src/tracking_node.cpp src/KalmanFilter.cpp src/KalmanBoxTracker.cpp src/GlobalTracker.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC node)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
+target_link_libraries(${PROJECT_NAME} PUBLIC range-v3)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
