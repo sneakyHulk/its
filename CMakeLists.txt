@@ -17,6 +17,18 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch NO_DEFAULT_PATH)
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
+### RTP
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CCRTP REQUIRED libccrtp)
+
+### Gstreamer
+find_package(PkgConfig REQUIRED)
+pkg_search_module(gstreamer REQUIRED IMPORTED_TARGET gstreamer-1.0>=1.4)
+pkg_search_module(gstreamer-sdp REQUIRED IMPORTED_TARGET gstreamer-sdp-1.0>=1.4)
+pkg_search_module(gstreamer-app REQUIRED IMPORTED_TARGET gstreamer-app-1.0>=1.4)
+pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=1.4)
+pkg_search_module(gstreamer-rtsp-server REQUIRED IMPORTED_TARGET gstreamer-rtsp-server-1.0>=1.4)
+
 
 ########## add submodules #########################################################################################
 ### autodiff
@@ -51,6 +63,7 @@ add_subdirectory(transformation)
 add_subdirectory(camera_simulator)
 add_subdirectory(visualization)
 add_subdirectory(tracking)
+add_subdirectory(communication)
 
 
 ########## add main executable #########################################################################################
