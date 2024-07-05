@@ -14,32 +14,128 @@
 
 using namespace std::chrono_literals;
 
-class RTPTransmitter : public OutputPtrNode<ImageData> {
-   public:
-	RTPTransmitter() {}
+struct StreamContext {
+	GstClockTime timestamp;
+	std::shared_ptr<ImageData const> *image;
+};
+
+class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
+	std::shared_ptr<ImageData const> _image_data;
+
+	GstRTSPServer *_server;
+	GstRTSPMountPoints *_mounts;
+	GstRTSPMediaFactory *_factory;
 
    private:
-	void output_function(std::shared_ptr<ImageData const> const &data) final {
-		if (!_need_data) std::this_thread::yield();
+	static void need_data(GstElement *appsrc, guint unused, StreamContext *context) {
+		std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		std::string wall_time = std::ctime(&time);
 
-		int bufferSize = data->image.cols * data->image.rows * 3;
-		GstBuffer *buffer = gst_buffer_new_and_alloc(bufferSize);
+		guint size = 1920 * 1200 * 3;
+		GstBuffer *buffer = gst_buffer_new_allocate(NULL, size, NULL);
+		std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
+
 		GstMapInfo m;
 		gst_buffer_map(buffer, &m, GST_MAP_WRITE);
-		memcpy(m.data, data->image.data, bufferSize);
+		std::memcpy(m.data, img->image.data, size);
+
+		// use buffer from memcpy
+		cv::Mat image(1200, 1920, CV_8UC3, m.data);
+		cv::putText(image, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+
 		gst_buffer_unmap(buffer, &m);
+
+		GST_BUFFER_PTS(buffer) = context->timestamp;
+		GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
+		context->timestamp += GST_BUFFER_DURATION(buffer);
 
 		GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(appsrc), buffer);
 	}
-};
 
-std::atomic_bool RTPTransmitter::_need_data{false};
-GstElement *RTPTransmitter::appsrc = nullptr;
+	static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, ImageStreamRTSP *user_data) {
+		GstElement *element, *appsrc;
+
+		/* get the element used for providing the streams of the media */
+		element = gst_rtsp_media_get_element(media);
+
+		/* get our appsrc, we named it 'mysrc' with the name property */
+		appsrc = gst_bin_get_by_name_recurse_up(GST_BIN(element), "mysrc");
+
+		/* this instructs appsrc that we will be dealing with timed buffer */
+		gst_util_set_object_arg(G_OBJECT(appsrc), "format", "time");
+		/* configure the caps of the video */
+		g_object_set(G_OBJECT(appsrc), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, 1920, "height", G_TYPE_INT, 1200, NULL), NULL);  // "framerate", GST_TYPE_FRACTION, 0, 1,
+
+		StreamContext *context = g_new0(StreamContext, 1);
+		context->timestamp = 0;
+		context->image = &user_data->_image_data;
+
+		g_object_set_data_full(G_OBJECT(media), "my-extra-data", context, (GDestroyNotify)g_free);
+
+		/* install the callback that will be called when a buffer is needed */
+		g_signal_connect(appsrc, "need-data", (GCallback)ImageStreamRTSP::need_data, context);
+
+		gst_element_set_state(element, GST_STATE_PLAYING);
+
+		gst_object_unref(appsrc);
+		gst_object_unref(element);
+	}
+
+   public:
+	ImageStreamRTSP(std::string const &stream_name = "/test") {
+		/* create a server instance */
+		_server = gst_rtsp_server_new();
+
+		/* get the mount points for this server, every server has a default object
+		 * that be used to map uri mount points to media factories */
+		_mounts = gst_rtsp_server_get_mount_points(_server);
+
+		/* make a media factory for a test stream. The default media factory can use
+		 * gst-launch syntax to create pipelines.
+		 * any launch line works as long as it contains elements named pay%d. Each
+		 * element with pay%d names will be a stream */
+		_factory = gst_rtsp_media_factory_new();
+		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+
+		/* notify when our media is ready, This is called whenever someone asks for
+		 * the media and a new pipeline with our appsrc is created */
+		g_signal_connect(_factory, "media-configure", G_CALLBACK(media_configure), this);
+
+		/* attach the test factory to the /test url */
+		gst_rtsp_mount_points_add_factory(_mounts, stream_name.c_str(), _factory);
+
+		/* don't need the ref to the mounts anymore */
+		g_object_unref(_mounts);
+
+		/* attach the server to the default maincontext */
+		gst_rtsp_server_attach(_server, g_main_context_new());
+
+		g_thread_new(NULL, event_loop_thread, NULL);
+		g_print("stream ready at rtsp://127.0.0.1:%s/%s\n", "8554", stream_name.c_str());
+	}
+
+	static gpointer event_loop_thread(gpointer arg) {
+		GMainContext *context = (GMainContext *)arg;
+		GMainContext * c = g_main_context_new();
+
+		GMainLoop *loop = g_main_loop_new(c, FALSE);
+		GSource * s = g_timeout_source_new(100);
+		g_source_attach(s, c);
+		g_source_unref(s);
+
+		g_main_context_push_thread_default(context);
+
+		g_main_loop_run(loop);
+		g_main_loop_unref(loop);
+		return NULL;
+	}
+
+   private:
+	void output_function(std::shared_ptr<ImageData const> const &data) final { std::atomic_store(&_image_data, data); }
+};
 
 int main(int argc, char **argv) {
 	gst_init(&argc, &argv);
-
-	GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 
 	// ost::RTPSession session(ost::InetHostAddress ("127.0.0.1"), RECEIVER_BASE);
 	// common::println("Hello, ", ost::defaultApplication().getSDESItem(ost::SDESItemTypeCNAME), "...");
@@ -51,13 +147,17 @@ int main(int argc, char **argv) {
 
 	// return 0;
 	CameraSimulator cam_n("s110_n_cam_8");
-	RTPTransmitter transmitter;
+	CameraSimulator cam_o("s110_o_cam_8");
+	ImageStreamRTSP transmitter("/test");
+	ImageStreamRTSP transmitter2("/test2");
 
 	cam_n += transmitter;
+	cam_o += transmitter2;
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
-	std::thread transmitter_thread(&RTPTransmitter::operator(), &transmitter);
+	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
+	std::thread transmitter_thread(&ImageStreamRTSP::operator(), &transmitter);
+	std::thread transmitter2_thread(&ImageStreamRTSP::operator(), &transmitter2);
 
-	g_print("stream ready at rtsp://127.0.0.1:%s/test\n", "8554");
-	g_main_loop_run(loop);
+	cam_n_thread.join();
 }

@@ -29,7 +29,6 @@
 using namespace std::chrono_literals;
 
 struct MyContext {
-	gboolean white;
 	GstClockTime timestamp;
 	std::atomic_bool need{false};
 	GstElement *appsrc = nullptr;
@@ -37,10 +36,9 @@ struct MyContext {
 
 static void push_data(MyContext *ctx) {
 	while (true) {
-		if (!ctx->need) {
-			std::this_thread::yield();
+		if (!ctx->need.load()) {
 			std::cout << "wait!" << std::endl;
-			std::this_thread::sleep_for(10ms);
+			std::this_thread::yield();
 			continue;
 		}
 
@@ -53,9 +51,7 @@ static void push_data(MyContext *ctx) {
 		cv::putText(test_img, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
 		GstBuffer *buffer;
-		guint size;
-
-		size = 1920 * 1200 * 3;
+		guint size = 1920 * 1200 * 3;
 		buffer = gst_buffer_new_allocate(NULL, size, NULL);
 		GstMapInfo m;
 		gst_buffer_map(buffer, &m, GST_MAP_WRITE);
@@ -66,57 +62,37 @@ static void push_data(MyContext *ctx) {
 		GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
 		ctx->timestamp += GST_BUFFER_DURATION(buffer);
 
-		GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
-
-		/* this makes the image black/white */
-
-		// if (d(gen))
-		//	gst_buffer_memset(buffer, 0, 0xff, size);
-		// else
-		//	gst_buffer_memset(buffer, 0, 0x0, size);
-
-		// g_signal_emit_by_name(ctx->appsrc, "push-buffer", buffer, &ret);
-		// gst_buffer_unref(buffer);
-	}
-}
-
-static void dont_need_data(GstElement *source, MyContext *ctx) {
-	if (ctx->need) {
-		// std::cout << "dont need!" << std::endl;
-		ctx->need.store(false);
+		if (ctx->need.load()) {
+			GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
+		}
 	}
 }
 
 /* called when we need to give data to appsrc */
 static void need_data(GstElement *appsrc, guint unused, MyContext *ctx) {
-	if (!ctx->need) {
-		// std::cout << "need!" << std::endl;
-		ctx->need.store(true);
-	}
+	 std::cout << "new image" << std::endl;
 
-	std::cout << "new image" << std::endl;
+	 std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	 std::string wall_time = std::ctime(&time);
 
-	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	std::string wall_time = std::ctime(&time);
+	 cv::Mat test_img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / "data/camera_simulator/s110_o_cam_8/s110_o_cam_8_images_distorted/1690366190050.jpg");
+	 cv::putText(test_img, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
-	cv::Mat test_img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / "data/camera_simulator/s110_o_cam_8/s110_o_cam_8_images_distorted/1690366190050.jpg");
-	cv::putText(test_img, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	 GstBuffer *buffer;
+	 guint size;
 
-	GstBuffer *buffer;
-	guint size;
+	 size = 1920 * 1200 * 3;
+	 buffer = gst_buffer_new_allocate(NULL, size, NULL);
+	 GstMapInfo m;
+	 gst_buffer_map(buffer, &m, GST_MAP_WRITE);
+	 memcpy(m.data, test_img.data, size);
+	 gst_buffer_unmap(buffer, &m);
 
-	size = 1920 * 1200 * 3;
-	buffer = gst_buffer_new_allocate(NULL, size, NULL);
-	GstMapInfo m;
-	gst_buffer_map(buffer, &m, GST_MAP_WRITE);
-	memcpy(m.data, test_img.data, size);
-	gst_buffer_unmap(buffer, &m);
+	 GST_BUFFER_PTS(buffer) = ctx->timestamp;
+	 GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
+	 ctx->timestamp += GST_BUFFER_DURATION(buffer);
 
-	GST_BUFFER_PTS(buffer) = ctx->timestamp;
-	GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
-	ctx->timestamp += GST_BUFFER_DURATION(buffer);
-
-	GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
+	 GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
 }
 
 /* called when a new media pipeline is constructed. We can query the
@@ -137,7 +113,6 @@ static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, g
 	g_object_set(G_OBJECT(appsrc), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, 1920, "height", G_TYPE_INT, 1200, NULL), NULL);  // "framerate", GST_TYPE_FRACTION, 0, 1,
 
 	ctx = g_new0(MyContext, 1);
-	ctx->white = FALSE;
 	ctx->timestamp = 0;
 	ctx->appsrc = appsrc;
 	/* make sure ther datais freed when the media is gone */
@@ -145,14 +120,11 @@ static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, g
 
 	/* install the callback that will be called when a buffer is needed */
 	g_signal_connect(appsrc, "need-data", (GCallback)need_data, ctx);
-	g_signal_connect(appsrc, "enough-data", (GCallback)dont_need_data, ctx);
 
 	gst_element_set_state(element, GST_STATE_PLAYING);
 
 	gst_object_unref(appsrc);
 	gst_object_unref(element);
-
-	//std::thread(&push_data, ctx).detach();
 }
 
 int main(int argc, char *argv[]) {
