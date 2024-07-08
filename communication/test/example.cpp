@@ -29,10 +29,13 @@
 using namespace std::chrono_literals;
 
 struct MyContext {
+	static int i;
+	int j;
 	GstClockTime timestamp;
 	std::atomic_bool need{false};
 	GstElement *appsrc = nullptr;
 };
+int MyContext::i = 0;
 
 static void push_data(MyContext *ctx) {
 	while (true) {
@@ -41,8 +44,6 @@ static void push_data(MyContext *ctx) {
 			std::this_thread::yield();
 			continue;
 		}
-
-		std::cout << "new image" << std::endl;
 
 		std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 		std::string wall_time = std::ctime(&time);
@@ -70,29 +71,30 @@ static void push_data(MyContext *ctx) {
 
 /* called when we need to give data to appsrc */
 static void need_data(GstElement *appsrc, guint unused, MyContext *ctx) {
-	 std::cout << "new image" << std::endl;
+	std::cout << "new image" << std::endl;
 
-	 std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	 std::string wall_time = std::ctime(&time);
+	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	std::string wall_time = std::ctime(&time);
 
-	 cv::Mat test_img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / "data/camera_simulator/s110_o_cam_8/s110_o_cam_8_images_distorted/1690366190050.jpg");
-	 cv::putText(test_img, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	cv::Mat test_img = cv::imread(std::filesystem::path(CMAKE_SOURCE_DIR) / "data/camera_simulator/s110_o_cam_8/s110_o_cam_8_images_distorted/1690366190050.jpg");
+	cv::putText(test_img, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	cv::putText(test_img, std::to_string(ctx->j), cv::Point2d(500, 600), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
-	 GstBuffer *buffer;
-	 guint size;
+	GstBuffer *buffer;
+	guint size;
 
-	 size = 1920 * 1200 * 3;
-	 buffer = gst_buffer_new_allocate(NULL, size, NULL);
-	 GstMapInfo m;
-	 gst_buffer_map(buffer, &m, GST_MAP_WRITE);
-	 memcpy(m.data, test_img.data, size);
-	 gst_buffer_unmap(buffer, &m);
+	size = 1920 * 1200 * 3;
+	buffer = gst_buffer_new_allocate(NULL, size, NULL);
+	GstMapInfo m;
+	gst_buffer_map(buffer, &m, GST_MAP_WRITE);
+	memcpy(m.data, test_img.data, size);
+	gst_buffer_unmap(buffer, &m);
 
-	 GST_BUFFER_PTS(buffer) = ctx->timestamp;
-	 GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
-	 ctx->timestamp += GST_BUFFER_DURATION(buffer);
+	GST_BUFFER_PTS(buffer) = ctx->timestamp;
+	GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
+	ctx->timestamp += GST_BUFFER_DURATION(buffer);
 
-	 GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
+	GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
 }
 
 /* called when a new media pipeline is constructed. We can query the
@@ -115,6 +117,7 @@ static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, g
 	ctx = g_new0(MyContext, 1);
 	ctx->timestamp = 0;
 	ctx->appsrc = appsrc;
+	ctx->j = ++MyContext::i;
 	/* make sure ther datais freed when the media is gone */
 	g_object_set_data_full(G_OBJECT(media), "my-extra-data", ctx, (GDestroyNotify)g_free);
 
@@ -157,6 +160,7 @@ int main(int argc, char *argv[]) {
 
 	/* attach the test factory to the /test url */
 	gst_rtsp_mount_points_add_factory(mounts, "/test", factory);
+	gst_rtsp_mount_points_add_factory(mounts, "/test2", factory);
 
 	/* don't need the ref to the mounts anymore */
 	g_object_unref(mounts);
