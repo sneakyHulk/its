@@ -18,8 +18,8 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 find_package(Eigen3 REQUIRED)
 
 ### RTP
-# find_package(PkgConfig REQUIRED)
-# pkg_check_modules(CCRTP REQUIRED libccrtp)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CCRTP REQUIRED libccrtp)
 
 ### Gstreamer
 find_package(PkgConfig REQUIRED)
