@@ -101,7 +101,7 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 		/* attach the server to the default maincontext */
 		gst_rtsp_server_attach(_server, NULL);
 
-		g_print("stream ready at rtsp://127.0.0.1:%s%s\n", "8554", stream_name.c_str());
+		g_print("ffplay rtsp://localhost:%s%s\n", "8554", stream_name.c_str());
 	}
 
    private:
