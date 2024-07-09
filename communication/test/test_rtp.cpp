@@ -88,7 +88,7 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 		 * any launch line works as long as it contains elements named pay%d. Each
 		 * element with pay%d names will be a stream */
 		_factory = gst_rtsp_media_factory_new();
-		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
 		//gst_rtsp_media_factory_set_profiles(_factory, GST_RTSP_PROFILE_AVPF);
 
 		/* notify when our media is ready, This is called whenever someone asks for
