@@ -12,14 +12,14 @@ find_package(TBB REQUIRED)
 
 ### libtorch
 set(TORCH_CUDA_ARCH_LIST "8.0 8.6 8.9 9.0") # new CUDA arch is 9.0a, therefore the CAFFE2 regex failed, uff
-find_package(Torch REQUIRED PATHS ~/src/libtorch NO_DEFAULT_PATH)
+find_package(Torch REQUIRED PATHS ~/src/libtorch)
 
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
 ### RTP
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(CCRTP REQUIRED libccrtp)
+# find_package(PkgConfig REQUIRED)
+# pkg_check_modules(CCRTP REQUIRED libccrtp)
 
 ### Gstreamer
 find_package(PkgConfig REQUIRED)
@@ -67,7 +67,7 @@ add_subdirectory(communication)
 
 
 ########## add main executable #########################################################################################
-add_executable(its main.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC yolo_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC camera_simulator_nodes)

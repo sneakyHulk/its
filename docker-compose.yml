@@ -1,0 +1,72 @@
+services:
+  ##### build images (cpu, cuda, rocm) #################################################################################
+  cpu-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cpu
+    image: its-cpu-build
+    profiles: [ "cpu", "its-cpu" ]
+  cuda-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cuda
+    image: its-cuda-build
+    profiles: [ "cuda", "its-cuda" ]
+  rocm-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: rocm
+    image: its-rocm-build
+    profiles: [ "rocm", "its-rocm" ]
+  ##### run ############################################################################################################
+  its-cpu:
+    image: its-cpu-build:latest
+    depends_on:
+      - cpu-build
+    container_name: its-cpu
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes -j 8 && communication/test_communication_nodes"
+    stop_signal: SIGTERM
+    ports:
+      - "8554:8554"
+    profiles: [ "its-cpu" ]
+  its-cuda:
+    image: its-cuda-build:latest
+    depends_on:
+      - cuda-build
+    container_name: its-cuda
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target its -j 8 && ./its"
+    stop_signal: SIGTERM
+    profiles: [ "its-cuda" ]
+  its-rocm:
+    image: its-rocm-build:latest
+    depends_on:
+      - rocm-build
+    container_name: its-rocm
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    security_opt:
+      - seccomp:unconfined
+    group_add:
+      - video
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
+    stop_signal: SIGTERM
+    profiles: [ "its-rocm" ]

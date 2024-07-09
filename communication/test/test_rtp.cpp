@@ -89,7 +89,7 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 		 * element with pay%d names will be a stream */
 		_factory = gst_rtsp_media_factory_new();
 		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! x264enc tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
-		gst_rtsp_media_factory_set_profiles(_factory, GST_RTSP_PROFILE_AVPF);
+		//gst_rtsp_media_factory_set_profiles(_factory, GST_RTSP_PROFILE_AVPF);
 
 		/* notify when our media is ready, This is called whenever someone asks for
 		 * the media and a new pipeline with our appsrc is created */
