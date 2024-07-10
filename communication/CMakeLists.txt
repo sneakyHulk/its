@@ -30,8 +30,10 @@ target_compile_features(test_${PROJECT_NAME}_udp PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_udp PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 add_executable(test_${PROJECT_NAME}_mqtt test/test_mqtt.cpp)
+#target_include_directories(test_${PROJECT_NAME}_mqtt PUBLIC ${MOSQUITTO_INCLUDE_DIR})
 target_link_libraries(test_${PROJECT_NAME}_mqtt PUBLIC ${PROJECT_NAME})
 target_link_libraries(test_${PROJECT_NAME}_mqtt PUBLIC camera_simulator_nodes)
+target_link_libraries(test_${PROJECT_NAME}_mqtt PUBLIC PkgConfig::Mosquitto)
 target_compile_features(test_${PROJECT_NAME}_mqtt PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_mqtt PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 

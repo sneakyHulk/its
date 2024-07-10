@@ -70,3 +70,15 @@ services:
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
+  ##### MQTT ###########################################################################################################
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: mqtt
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - 1883:1883
+      - 9001:9001
+    network_mode: host
+    profiles: [ "mqtt" ]

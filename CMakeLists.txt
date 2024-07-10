@@ -29,6 +29,10 @@ pkg_search_module(gstreamer-app REQUIRED IMPORTED_TARGET gstreamer-app-1.0>=1.4)
 pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=1.4)
 pkg_search_module(gstreamer-rtsp-server REQUIRED IMPORTED_TARGET gstreamer-rtsp-server-1.0>=1.4)
 
+### mosquitto
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(Mosquitto IMPORTED_TARGET libmosquitto REQUIRED)
+
 
 ########## add submodules #########################################################################################
 ### autodiff
@@ -48,7 +52,7 @@ add_subdirectory(thirdparty/range-v3)
 ### Json
 add_subdirectory(thirdparty/json)
 
-### boost
+### Boost 1.85.0
 add_subdirectory(thirdparty/boost)
 
 ### common
