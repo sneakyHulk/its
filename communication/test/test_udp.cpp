@@ -1,6 +1,4 @@
-#include <gst/app/gstappsrc.h>
-#include <gst/gst.h>
-#include <gst/rtsp-server/rtsp-server.h>
+#include <ccrtp/rtp.h>
 
 #include <chrono>
 #include <cstdint>
@@ -17,12 +15,11 @@ using namespace std::chrono_literals;
 class [[maybe_unused]] ImageStreamUDP : public OutputPtrNode<ImageData> {
 	std::shared_ptr<ImageData const> _image_data;
 	std::string const cam_name;
+	ost::RTPSession *socket;
+	ost::InetHostAddress local_ip = "127.0.0.1";
 
    public:
-	ImageStreamUDP(std::string const &cam_name) : cam_name(cam_name) {
-
-	}
-
+	ImageStreamUDP(std::string const &cam_name) : cam_name(cam_name) {}
 
    private:
 	void output_function(std::shared_ptr<ImageData const> const &data) final { std::atomic_store(&_image_data, data); }
