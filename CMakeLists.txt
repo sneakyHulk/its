@@ -48,6 +48,9 @@ add_subdirectory(thirdparty/range-v3)
 ### Json
 add_subdirectory(thirdparty/json)
 
+### boost
+add_subdirectory(thirdparty/boost)
+
 ### common
 add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)

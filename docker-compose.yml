@@ -36,7 +36,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes -j 8 && communication/test_communication_nodes"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
     stop_signal: SIGTERM
     ports:
       - "8554:8554"

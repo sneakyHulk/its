@@ -29,6 +29,12 @@ target_link_libraries(test_${PROJECT_NAME}_udp PUBLIC camera_simulator_nodes)
 target_compile_features(test_${PROJECT_NAME}_udp PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_udp PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+add_executable(test_${PROJECT_NAME}_mqtt test/test_mqtt.cpp)
+target_link_libraries(test_${PROJECT_NAME}_mqtt PUBLIC ${PROJECT_NAME})
+target_link_libraries(test_${PROJECT_NAME}_mqtt PUBLIC camera_simulator_nodes)
+target_compile_features(test_${PROJECT_NAME}_mqtt PRIVATE cxx_std_23)
+target_compile_definitions(test_${PROJECT_NAME}_mqtt PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 add_executable(example_cv_sink test/example_cv_sink.cpp)
 target_link_libraries(example_cv_sink PUBLIC ${PROJECT_NAME})
 target_link_libraries(example_cv_sink PUBLIC camera_simulator_nodes)
