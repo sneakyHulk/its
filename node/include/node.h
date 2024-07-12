@@ -72,6 +72,25 @@ class InputNode {
 	void operator+=(OutputNode<Output>& node) { _output_connections.push_back(std::bind(&OutputNode<Output>::input, &node, std::placeholders::_1)); }
 };
 
+template <typename Output>
+class ExternInputNode {
+   protected:
+	std::vector<std::function<void(std::shared_ptr<Output const>)>> _output_connections;
+
+   public:
+	virtual ~ExternInputNode() = default;
+
+   protected:
+	virtual void operator()() final {
+		std::shared_ptr<Output const> output = std::make_shared<Output>(input_function());
+		for (auto const& connection : _output_connections) connection(output);
+	}
+
+   public:
+	virtual Output input_function() = 0;
+	void operator+=(OutputNode<Output>& node) { _output_connections.push_back(std::bind(&OutputNode<Output>::input, &node, std::placeholders::_1)); }
+};
+
 template <typename Input, typename Output>
 class InputOutputNode : public InputNode<Output>, public OutputNode<Input> {
 	Output input_function() final { throw std::logic_error("unreachable code"); };

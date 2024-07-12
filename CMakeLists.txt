@@ -61,6 +61,12 @@ target_include_directories(common INTERFACE thirdparty/common/include)
 target_link_libraries(common INTERFACE)
 target_compile_features(common INTERFACE cxx_std_23)
 
+### mqtt
+set(PAHO_WITH_MQTT_C ON)
+set(PAHO_WITH_SSL OFF)
+set(PAHO_HIGH_PERFORMANCE ON)
+add_subdirectory(thirdparty/mqtt)
+
 
 ########## add local stuff #############################################################################################
 add_subdirectory(msg)

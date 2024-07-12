@@ -1,4 +1,5 @@
 #include <mosquitto.h>
+#include <mqtt_protocol.h>
 
 #include <chrono>
 #include <cstdint>
@@ -11,71 +12,97 @@
 #include "ImageData.h"
 #include "camera_simulator_node.h"
 #include "common_exception.h"
+#include "mqtt/client.h"
+#include "visualization_node.h"
 
 using namespace std::chrono_literals;
 
-class [[maybe_unused]] ImageStreamMQTT : public OutputPtrNode<ImageData> {
-	std::shared_ptr<ImageData const> _image_data;
+class [[maybe_unused]] ImageStreamMQTT : public OutputNode<ImageData> {
 	std::string const cam_name;
-	struct mosquitto *mosq;
-
-	static int mosquitto_lib_init_code;
+	mqtt::client cli;
 
    public:
-	explicit ImageStreamMQTT(std::string const &cam_name) : cam_name(cam_name) {
-		if (mosquitto_lib_init_code != MOSQ_ERR_SUCCESS) throw common::Exception("[ImageStreamMQTT]: mosquitto_lib cannot be initialized!");
+	explicit ImageStreamMQTT(std::string const &cam_name) : cam_name(cam_name), cli(mqtt::client("localhost", cam_name + "_pub", mqtt::create_options(MQTTVERSION_5))) {
+		auto connOpts = mqtt::connect_options_builder()
+		                    .mqtt_version(MQTTVERSION_5)
+		                    .automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
+		                    .clean_start(false)
+		                    .properties({{mqtt::property::SESSION_EXPIRY_INTERVAL, std::numeric_limits<uint32_t>::max()}})
+		                    .finalize();
 
-		mosq = mosquitto_new(cam_name.c_str(), true, NULL);
-		if (!mosq) throw common::Exception("[ImageStreamMQTT]: ", errno == EINVAL ? "invalid input parameter!" : "out of memory!");
-
-		mosquitto_int_option(mosq, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V5);
-
-		// mosquitto_connect_callback_set(mosq, ImageStreamMQTT::on_connect);
-		mosquitto_publish_callback_set(mosq, ImageStreamMQTT::on_publish);
-
-		int rc = mosquitto_connect(mosq, "localhost", 1883, 60);
-		if (rc != MOSQ_ERR_SUCCESS) throw common::Exception("[ImageStreamMQTT]: ", "could not connect to Broker with return code ", rc, "!");
-
-		mosquitto_loop_start(mosq);
+		common::print("Connecting to the MQTT server...");
+		mqtt::connect_response rsp = cli.connect(connOpts);
+		common::println("OK");
 	}
 
-	static void on_connect(struct mosquitto *mosq, void *obj, int rc) {
-		if (rc == 0) {
-			std::cout << "Connected to broker!" << std::endl;
-			const char *message = "Hello, MQTT!";
+	void output_function(ImageData const &data) final {
+		std::uint64_t now = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+		std::vector<std::uint8_t> jpeg_data;
+		cv::imencode(".jpeg", data.image, jpeg_data);
 
-		} else {
-			std::cout << "Failed to connect, return code " << rc << std::endl;
-		}
-	}
+		mqtt::property mime(mqtt::property::CONTENT_TYPE, "image/jpeg");
+		mqtt::property timestamp(mqtt::property::USER_PROPERTY, "timestamp", std::to_string(now));
+		mqtt::properties proplist;
+		proplist.add(mime);
+		proplist.add(timestamp);
 
-	static void on_publish(struct mosquitto *mosq, void *obj, int mid) { std::cout << "Message with mid " << mid << " has been published." << std::endl; }
-
-   private:
-	void output_function(std::shared_ptr<ImageData const> const &data) final {
-		mosquitto_property *proplist = nullptr;
-		mosquitto_property_add_binary(&proplist, 0, &data->timestamp, sizeof(data->timestamp));
-		mosquitto_property_add_string(&proplist, MQTT_PROP_CONTENT_TYPE, &data->timestamp, sizeof(data->timestamp));
-
-		mosquitto_publish_v5(mosq, NULL, "test/topic", , , 0, false);
+		cli.publish(mqtt::message(data.source + "/image", jpeg_data.data(), jpeg_data.size(), 0, false, proplist));
 	}
 };
 
-int ImageStreamMQTT::mosquitto_lib_init_code = mosquitto_lib_init();
+class ImageInputMQTT : public InputNode<ImageData> {
+	std::string const cam_name;
+	mqtt::client cli;
+
+   public:
+	ImageInputMQTT(std::string const &cam_name) : cam_name(cam_name), cli(mqtt::client("localhost", cam_name + "_sub", mqtt::create_options(MQTTVERSION_5))) {
+		auto connOpts = mqtt::connect_options_builder()
+		                    .mqtt_version(MQTTVERSION_5)
+		                    .automatic_reconnect(std::chrono::seconds(2), std::chrono::seconds(30))
+		                    .clean_start(false)
+		                    .properties({{mqtt::property::SESSION_EXPIRY_INTERVAL, std::numeric_limits<uint32_t>::max()}})
+		                    .finalize();
+
+		common::print("Connecting to the MQTT server...");
+		mqtt::connect_response rsp = cli.connect(connOpts);
+		common::println("OK");
+
+		mqtt::subscribe_options subOpts;
+		mqtt::properties props;
+		cli.subscribe(cam_name + "/image", 0, subOpts, props);
+	}
+
+	ImageData input_function() final {
+		auto msg = cli.consume_message();
+		auto props = msg->get_properties();
+
+		auto img = cv::imdecode({msg->get_payload().data(), static_cast<int>(msg->get_payload().size())}, cv::IMREAD_COLOR);
+
+		ImageData data(img, std::stoll(props.get(mqtt::property::USER_PROPERTY).c_struct().value.value.data), 1920, 1200, cam_name);
+
+		return data;
+	}
+};
 
 int main(int argc, char **argv) {
 	CameraSimulator cam_n("s110_n_cam_8");
 	CameraSimulator cam_o("s110_o_cam_8");
 	ImageStreamMQTT transmitter("s110_n_cam_8");
 	ImageStreamMQTT transmitter2("s110_o_cam_8");
+	ImageInputMQTT receiver("s110_n_cam_8");
+	ImageVisualization displayer;
 
 	cam_n += transmitter;
 	cam_o += transmitter2;
+
+	receiver += displayer;
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
 	std::thread transmitter_thread(&ImageStreamMQTT::operator(), &transmitter);
 	std::thread transmitter2_thread(&ImageStreamMQTT::operator(), &transmitter2);
+	std::thread receiver_thread(&ImageInputMQTT::operator(), &receiver);
+	std::thread displayer_thread(&ImageVisualization::operator(), &displayer);
 
 	for (;;) std::this_thread::sleep_for(10s);
 }

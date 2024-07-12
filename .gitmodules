@@ -163,3 +163,6 @@
 [submodule "thirdparty/boost/functional"]
 	path = thirdparty/boost/functional
 	url = https://github.com/boostorg/functional.git
+[submodule "thirdparty/mqtt"]
+	path = thirdparty/mqtt
+	url = https://github.com/eclipse/paho.mqtt.cpp.git
