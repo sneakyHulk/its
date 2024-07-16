@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <vector>
@@ -20,33 +21,46 @@ struct StreamContext {
 };
 
 class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
-	std::shared_ptr<ImageData const> _image_data;
+	static const bool use_jpeg = true;
 
 	static GstRTSPServer *_server;
 	static GstRTSPMountPoints *_mounts;
-	GstRTSPMediaFactory *_factory;
 
+	std::shared_ptr<ImageData const> _image_data = nullptr;
+	GstRTSPMediaFactory *_factory;
    private:
 	static void need_data(GstElement *appsrc, guint unused, StreamContext *context) {
 		std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 		std::string wall_time = std::ctime(&time);
 
-		guint size = 1920 * 1200 * 3;
-		GstBuffer *buffer = gst_buffer_new_allocate(NULL, size, NULL);
 		std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
+		cv::putText(img->image, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
+		guint size;
+		GstBuffer *buffer;
 		GstMapInfo m;
-		gst_buffer_map(buffer, &m, GST_MAP_WRITE);
-		std::memcpy(m.data, img->image.data, size);
 
-		// use buffer from memcpy
-		cv::Mat image(1200, 1920, CV_8UC3, m.data);
-		cv::putText(image, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+		if constexpr (use_jpeg) {
+			std::vector<std::uint8_t> jpeg_buffer;
+			cv::imencode(".jpeg", img->image, jpeg_buffer);
+
+			size = jpeg_buffer.size();
+			buffer = gst_buffer_new_allocate(NULL, size, NULL);
+
+			gst_buffer_map(buffer, &m, GST_MAP_WRITE);
+			std::memcpy(m.data, jpeg_buffer.data(), size);
+		} else {
+			size = 1920 * 1200 * 3;
+			buffer = gst_buffer_new_allocate(NULL, size, NULL);
+
+			gst_buffer_map(buffer, &m, GST_MAP_WRITE);
+			std::memcpy(m.data, img->image.data, size);
+		}
 
 		gst_buffer_unmap(buffer, &m);
 
 		GST_BUFFER_PTS(buffer) = context->timestamp;
-		GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 15);
+		GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 30);
 		context->timestamp += GST_BUFFER_DURATION(buffer);
 
 		GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(appsrc), buffer);
@@ -64,7 +78,12 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 		/* this instructs appsrc that we will be dealing with timed buffer */
 		gst_util_set_object_arg(G_OBJECT(appsrc), "format", "time");
 		/* configure the caps of the video */
-		g_object_set(G_OBJECT(appsrc), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, 1920, "height", G_TYPE_INT, 1200, NULL), NULL);  // "framerate", GST_TYPE_FRACTION, 0, 1,
+
+		if constexpr (use_jpeg) {
+			g_object_set(G_OBJECT(appsrc), "caps", gst_caps_new_simple("image/jpeg", "width", G_TYPE_INT, 1920, "height", G_TYPE_INT, 1200, NULL), NULL);  // "framerate", GST_TYPE_FRACTION, 0, 1,
+		} else {
+			g_object_set(G_OBJECT(appsrc), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, 1920, "height", G_TYPE_INT, 1200, NULL), NULL);  // "framerate", GST_TYPE_FRACTION, 0, 1,
+		}
 
 		StreamContext *context = g_new0(StreamContext, 1);
 		context->timestamp = 0;
@@ -88,8 +107,13 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 		 * any launch line works as long as it contains elements named pay%d. Each
 		 * element with pay%d names will be a stream */
 		_factory = gst_rtsp_media_factory_new();
-		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
-		//gst_rtsp_media_factory_set_profiles(_factory, GST_RTSP_PROFILE_AVPF);
+		if constexpr (use_jpeg) {
+			gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! rtpjpegpay name=pay0 pt=26 )");
+		} else {
+			//gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+			gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
+		}
+		gst_rtsp_media_factory_set_shared(_factory, true);
 
 		/* notify when our media is ready, This is called whenever someone asks for
 		 * the media and a new pipeline with our appsrc is created */
@@ -109,7 +133,11 @@ class [[maybe_unused]] ImageStreamRTSP : public OutputPtrNode<ImageData> {
 };
 
 /* create a server instance */
-GstRTSPServer *ImageStreamRTSP::_server = gst_rtsp_server_new();
+GstRTSPServer *ImageStreamRTSP::_server = []() {
+	auto server = gst_rtsp_server_new();
+	gst_rtsp_server_set_service(server, "8880");
+	return server;
+}();
 /* get the mount points for this server, every server has a default object
  * that be used to map uri mount points to media factories */
 GstRTSPMountPoints *ImageStreamRTSP::_mounts = _mounts = gst_rtsp_server_get_mount_points(_server);
