@@ -1,7 +1,9 @@
 # src: cpu, cuda, rocm
 ARG src=cpu
 
-FROM ubuntu:jammy AS cpu-base
+FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-base
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM"
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive \
        apt-get -y --quiet --no-install-recommends install \
@@ -11,17 +13,29 @@ RUN apt-get update \
     && apt-get clean autoclean \
     && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
 
-# https://hub.docker.com/r/continuumio/miniconda3/tags
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O miniconda.sh -q \
-    && mkdir -p /opt \
-    && bash miniconda.sh -b -p /opt/conda \
-    && rm miniconda.sh \
-    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
-    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-    && echo "conda activate base" >> ~/.bashrc \
-    && find /opt/conda/ -follow -type f -name '*.a' -delete \
-    && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
-    && /opt/conda/bin/conda clean -afy
+RUN if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
+      wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh -q \
+      && mkdir -p /opt \
+      && bash miniconda.sh -b -p /opt/conda \
+      && rm miniconda.sh \
+      && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+      && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+      && echo "conda activate base" >> ~/.bashrc \
+      && find /opt/conda/ -follow -type f -name '*.a' -delete \
+      && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
+      && /opt/conda/bin/conda clean -afy; \
+    elif [ "$BUILDPLATFORM" = "linux/arm64" ]; then \
+      wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O miniconda.sh -q \
+      && mkdir -p /opt \
+      && bash miniconda.sh -b -p /opt/conda \
+      && rm miniconda.sh \
+      && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+      && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+      && echo "conda activate base" >> ~/.bashrc \
+      && find /opt/conda/ -follow -type f -name '*.a' -delete \
+      && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
+      && /opt/conda/bin/conda clean -afy; \
+    fi
 
 ENV PATH=/opt/conda/bin:$PATH
 
@@ -73,6 +87,7 @@ RUN apt-get update \
        libtbb-dev \
        libccrtp-dev \
        libmosquitto-dev \
+       libssl-dev \
        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-dev \
     && apt-get -y autoremove \
     && apt-get clean autoclean \

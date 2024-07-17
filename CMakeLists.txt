@@ -93,9 +93,9 @@ target_compile_features(common INTERFACE cxx_std_23)
 
 ### mqtt
 # git submodule add https://github.com/eclipse/paho.mqtt.cpp.git thirdparty/mqtt
-set(PAHO_WITH_MQTT_C ON)
-set(PAHO_WITH_SSL OFF)
-set(PAHO_HIGH_PERFORMANCE ON)
+set(PAHO_WITH_MQTT_C ON CACHE INTERNAL "")
+set(PAHO_WITH_SSL OFF CACHE INTERNAL "")
+set(PAHO_HIGH_PERFORMANCE ON CACHE INTERNAL "")
 add_subdirectory(thirdparty/mqtt)
 
 if (STREAMING_TEST)

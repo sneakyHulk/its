@@ -8,7 +8,7 @@ services:
       args:
         src: cpu
     image: its-cpu-build
-    profiles: [ "cpu", "its-cpu" ]
+    profiles: [ "cpu", "its-cpu", "streaming" ]
   cuda-build:
     build:
       context: .
@@ -36,10 +36,8 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
-    ports:
-      - "8554:8554"
     profiles: [ "its-cpu" ]
   its-cuda:
     image: its-cuda-build:latest
@@ -84,15 +82,28 @@ services:
     profiles: [ "mqtt" ]
   ##### streaming server test ##########################################################################################
   streaming-server:
-    # gst-launch-1.0 videotestsrc ! clockoverlay time-format="%D %H:%M:%S:%f" ! video/x-raw,width=640,height=480 ! videoconvert ! queue ! x264enc tune=zerolatency bitrate=1000 key-int-max=30 ! video/x-h264, profile=constrained-baseline ! rtph264pay pt=96 mtu=1200 ! udpsink host=127.0.0.1 port=1234
+    image: its-cpu-build:latest
+    network_mode: host
+    depends_on:
+      - cpu-build
+    container_name: streaming-server
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
+    ports:
+      - "8554:8554"
+    profiles: [ "streaming" ]
+  streaming-server2:
+    # ffmpeg -f lavfi -re -i smptebars=size=1280x720:rate=30 -pix_fmt yuv420p -vf "settb=AVTB,setpts='trunc(PTS/1K)*1K+st(1,trunc(RTCTIME/1K))-1K*trunc(ld(1)/1K)',drawtext=text='%{localtime}.%{eif\:1M*t-1K*trunc(t*1K)\:d}'" -c:v libx265 -preset ultrafast -b:v 600k -f mpegts udp://127.0.0.1:1234?pkt_size=1316
     image: bluenviron/mediamtx:latest-ffmpeg
     container_name: streaming_server
     network_mode: host
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
       - /etc/timezone:/etc/timezone:ro
-    profiles: [ "streaming" ]
-  streaming-server2:
+    profiles: [ "streaming2" ]
+  streaming-server3:
     image: ghcr.io/voc/srtrelay/srtrelay:latest
     restart: always
     container_name: srtrelay
@@ -100,4 +111,4 @@ services:
       - ./config.toml:/home/srtrelay/config.toml
       - /etc/timezone:/etc/timezone:ro
     network_mode: host
-    profiles: [ "streaming2" ]
+    profiles: [ "streaming3" ]
