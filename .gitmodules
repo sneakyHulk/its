@@ -166,3 +166,9 @@
 [submodule "thirdparty/mqtt"]
 	path = thirdparty/mqtt
 	url = https://github.com/eclipse/paho.mqtt.cpp.git
+[submodule "thirdparty/boost/circular_buffer"]
+	path = thirdparty/boost/circular_buffer
+	url = https://github.com/boostorg/circular_buffer.git
+[submodule "thirdparty/yas"]
+	path = thirdparty/yas
+	url = https://github.com/niXman/yas.git

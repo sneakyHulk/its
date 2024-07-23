@@ -32,7 +32,6 @@ class Sort {
 
 		double dt = std::chrono::duration<double>(std::chrono::nanoseconds(timestamp) - std::chrono::nanoseconds(old_timestamp)).count();
 		old_timestamp = timestamp;
-		common::print(dt);
 
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(trackers.size(), detections.size());
 #if __cpp_lib_ranges_enumerate

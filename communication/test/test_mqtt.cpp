@@ -17,6 +17,10 @@
 
 using namespace std::chrono_literals;
 
+
+
+
+
 class [[maybe_unused]] ImageStreamMQTT : public OutputNode<ImageData> {
 	std::string const cam_name;
 	mqtt::client cli;

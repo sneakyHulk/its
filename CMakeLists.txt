@@ -98,6 +98,13 @@ set(PAHO_WITH_SSL OFF CACHE INTERNAL "")
 set(PAHO_HIGH_PERFORMANCE ON CACHE INTERNAL "")
 add_subdirectory(thirdparty/mqtt)
 
+### yas
+add_library(yas INTERFACE)
+target_include_directories(yas INTERFACE thirdparty/yas/include)
+target_link_libraries(yas INTERFACE)
+target_compile_features(yas INTERFACE cxx_std_23)
+
+
 if (STREAMING_TEST)
     ### libdatachannel
     # git submodule add https://github.com/paullouisageneau/libdatachannel.git thirdparty/libdatachannel
@@ -193,4 +200,5 @@ target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC transformation_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC tracking_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC communication_nodes)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)

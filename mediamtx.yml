@@ -22,7 +22,7 @@ writeTimeout: 10s
 writeQueueSize: 512
 # Maximum size of outgoing UDP packets.
 # This can be decreased to avoid fragmentation on networks with a low UDP MTU.
-udpMaxPayloadSize: 1400 #1472
+udpMaxPayloadSize: 1400 #1472 #1316
 
 # Command to run when a client connects to the server.
 # This is terminated with SIGINT when a client disconnects from the server.
