@@ -15,8 +15,8 @@ struct StreamContext {
 };
 
 class ImageStreamRTSP : public OutputPtrNode<ImageData> {
-	inline static const bool use_jpeg = true;
-	inline static const char *port = "8554";
+	inline static const bool use_jpeg = false;
+	inline static const char *port = "7000";
 
 	static GstRTSPServer *_server;
 	static GstRTSPMountPoints *_mounts;
