@@ -12,9 +12,9 @@
 #include "yolo_node.h"
 
 #define undistort_enable 1
-#define track_vis_enable 0
+#define track_vis_enable 1
 #define stream_data_enable 0
-#define stream_video_enable 0
+#define stream_video_enable 1
 
 int main() {
 	Config config = make_config();
@@ -75,7 +75,7 @@ int main() {
 
 	trans += vis;
 
-	// std::thread vis_thread(&Visualization2D::operator(), &vis);
+	std::thread vis_thread(&Visualization2D::operator(), &vis);
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
