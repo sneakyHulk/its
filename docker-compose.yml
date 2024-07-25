@@ -79,7 +79,7 @@ services:
       - 1883:1883
       - 9001:9001
     network_mode: host
-    profiles: [ "mqtt" ]
+    profiles: [ "mqtt", "its-rocm" ]
   ##### streaming server test ##########################################################################################
   streaming-server:
     image: its-cpu-build:latest

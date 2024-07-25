@@ -233,8 +233,9 @@ Detections2D Yolo::function(ImageData const& data) {
 		common::println(e.msg());
 	}
 
-	common::println("source: ", std::setw(15), data.source, " took ",
-	    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - data.timestamp)).count(), "ms ");
+	// common::println("source: ", std::setw(13), data.source, " took ",
+	//	    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - data.timestamp)).count(), "ms
+	//");
 
 	return detections;
 }

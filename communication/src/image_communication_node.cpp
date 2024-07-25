@@ -116,13 +116,17 @@ void ImageStreamRTSP::run_loop() {
 
 		do {
 			image_data = std::atomic_load(&stream->_image_data);
+
 			std::this_thread::yield();
+			std::this_thread::sleep_for(1ms);
 		} while (!image_data);
 
 		/* attach the factory to the url */
 		gst_rtsp_mount_points_add_factory(_mounts, ("/" + image_data->source).c_str(), stream->_factory);
 		common::println("[ImageStreamRTSP]: Stream ready at 'ffplay -fflags nobuffer -i \"rtsp://127.0.0.1:", port, "/", image_data->source, "\"'");
 	}
+
+	common::println("[ImageStreamRTSP]: Streams ready!");
 
 	/* attach the server to the default maincontext */
 	gst_rtsp_server_attach(_server, NULL);
