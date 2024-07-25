@@ -12,9 +12,9 @@
 #include "yolo_node.h"
 
 #define undistort_enable 1
-#define track_vis_enable 1
-#define stream_data_enable 1
-#define stream_video_enable 1
+#define track_vis_enable 0
+#define stream_data_enable 0
+#define stream_video_enable 0
 
 int main() {
 	Config config = make_config();
@@ -26,8 +26,8 @@ int main() {
 #if stream_video_enable == 1
 	ImageStreamRTSP video_stream_w;
 	ImageStreamRTSP video_stream_n;
-	// ImageStreamRTSP video_stream_o;
-	// ImageStreamRTSP video_stream_s;
+	ImageStreamRTSP video_stream_o;
+	ImageStreamRTSP video_stream_s;
 #endif
 	Yolo yolo;
 #if undistort_enable == 1
@@ -46,8 +46,8 @@ int main() {
 #if stream_video_enable == 1
 	cam_w += video_stream_w;
 	cam_n += video_stream_n;
-	// cam_o += video_stream_o;
-	// cam_s += video_stream_s;
+	cam_o += video_stream_o;
+	cam_s += video_stream_s;
 #endif
 
 	cam_n += yolo;
@@ -75,17 +75,13 @@ int main() {
 
 	trans += vis;
 
+	// std::thread vis_thread(&Visualization2D::operator(), &vis);
+
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
 	std::thread cam_s_thread(&CameraSimulator::operator(), &cam_s);
 	std::thread cam_w_thread(&CameraSimulator::operator(), &cam_w);
-#if stream_video_enable == 1
-	std::thread video_stream_w_thread(&ImageStreamRTSP::operator(), &video_stream_w);
-	std::thread video_stream_n_thread(&ImageStreamRTSP::operator(), &video_stream_n);
-	// std::thread video_stream_o_thread(&ImageStreamRTSP::operator(), &video_stream_o);
-	// std::thread video_stream_s_thread(&ImageStreamRTSP::operator(), &video_stream_s);
-	std::thread video_streams_thread([]() { ImageStreamRTSP::run_loop(); });
-#endif
+
 	std::thread yolo_thread(&Yolo::operator(), &yolo);
 #if undistort_enable == 1
 	std::thread undistort_thread(&UndistortDetections::operator(), &undistort);
@@ -98,5 +94,14 @@ int main() {
 #if stream_data_enable == 1
 	std::thread data_stream_thread(&DataStreamMQTT::operator(), &data_stream);
 #endif
-	vis();
+#if stream_video_enable == 1
+	std::thread video_stream_w_thread(&ImageStreamRTSP::operator(), &video_stream_w);
+	std::thread video_stream_n_thread(&ImageStreamRTSP::operator(), &video_stream_n);
+	std::thread video_stream_o_thread(&ImageStreamRTSP::operator(), &video_stream_o);
+	std::thread video_stream_s_thread(&ImageStreamRTSP::operator(), &video_stream_s);
+
+	ImageStreamRTSP::run_loop();
+#else
+	std::this_thread::sleep_for(378432000s);
+#endif
 }

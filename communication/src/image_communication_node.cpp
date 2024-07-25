@@ -99,8 +99,8 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	if constexpr (use_jpeg) {
 		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! rtpjpegpay name=pay0 pt=26 )");
 	} else {
-		// gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
-		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
+		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+		//gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
 	}
 	gst_rtsp_media_factory_set_shared(_factory, true);
 
@@ -109,7 +109,7 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	g_signal_connect(_factory, "media-configure", G_CALLBACK(media_configure), this);
 }
 
-void ImageStreamRTSP::run_loop() {
+[[noreturn]] void ImageStreamRTSP::run_loop() {
 	// set mount point name with name of source
 	for (auto stream : all_streams) {
 		std::shared_ptr<ImageData const> image_data;
@@ -130,7 +130,15 @@ void ImageStreamRTSP::run_loop() {
 
 	/* attach the server to the default maincontext */
 	gst_rtsp_server_attach(_server, NULL);
-	g_main_loop_run(_loop);
+	//g_main_loop_run(_loop);
+
+	for (;;) {
+		g_main_context_iteration(NULL, false);
+		std::this_thread::yield();
+		std::this_thread::sleep_for(10ms);
+	}
+
+	common::println("[ImageStreamRTSP]: Streams unready!");
 }
 
 void ImageStreamRTSP::output_function(std::shared_ptr<ImageData const> const &data) { std::atomic_store(&_image_data, data); }

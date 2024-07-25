@@ -3,11 +3,11 @@
 #include <oneapi/tbb/concurrent_queue.h>
 #include <oneapi/tbb/concurrent_vector.h>
 
+#include <chrono>
 #include <memory>
 #include <ranges>
 #include <stdexcept>
 #include <utility>
-#include <chrono>
 using namespace std::chrono_literals;
 
 template <typename Output>
