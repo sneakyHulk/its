@@ -53,7 +53,7 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 		}
 
 		// update old tracker with matched detections:
-		for (auto const [tracker_index, detection_index] : matches) {
+		for (auto const& [tracker_index, detection_index] : matches) {
 			image_tracker[tracker_index].update(data.objects[detection_index].bbox);
 		}
 

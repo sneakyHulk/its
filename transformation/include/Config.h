@@ -30,9 +30,9 @@ struct Config {
 	      _affine_transformation_utm_to_map_origin(std::forward<decltype(affine_transformation_utm_to_map_origin)>(affine_transformation_utm_to_map_origin)),
 	      _affine_transformation_map_origin_to_bases(std::forward<decltype(affine_transformation_map_origin_to_bases)>(affine_transformation_map_origin_to_bases)),
 	      _affine_transformation_bases_to_map_origin(std::forward<decltype(affine_transformation_bases_to_map_origin)>(affine_transformation_bases_to_map_origin)),
-	      _camera_config(std::forward<decltype(camera_config)>(camera_config)),
 	      _lens_config(std::forward<decltype(lens_config)>(lens_config)),
-	      _new_camera_matrix(std::forward<decltype(new_camera_matrix)>(new_camera_matrix)) {}
+	      _new_camera_matrix(std::forward<decltype(new_camera_matrix)>(new_camera_matrix)),
+	      _camera_config(std::forward<decltype(camera_config)>(camera_config)) {}
 
 	template <typename scalar, int... other>
 	[[nodiscard]] Eigen::Matrix<scalar, 4, 1, other...> map_image_to_world_coordinate(std::string const& camera_name, scalar x, scalar y, scalar height) const {

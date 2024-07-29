@@ -13,7 +13,7 @@ class KalmanBoxTracker : private KalmanFilter<7, 4, 3, {0, 1, 2}, {4, 5, 6}> {
 	static thread_local unsigned int _id_max;
 
 	unsigned int _id = ++_id_max;
-	int _consecutive_hits = 0;
+	unsigned int _consecutive_hits = 0;
 	double _fail_age = 0.;
 	bool _established = false;
 	std::uint8_t _object_class = 0;

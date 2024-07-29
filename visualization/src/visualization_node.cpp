@@ -16,7 +16,7 @@ void ImageVisualization::output_function(ImageData const& data) {
 	cv::waitKey(1);
 }
 Visualization2D::Visualization2D(Config const& config, std::filesystem::path const& map_path) : config(config), drawing_fifo(5) {
-	std::tie(map, utm_to_image) = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/visualization/2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr"), config);
+	std::tie(map, utm_to_image) = draw_map(map_path, config);
 	cv::imshow("display", map);
 	cv::waitKey(100);
 }
