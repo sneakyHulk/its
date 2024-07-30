@@ -18,11 +18,8 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
-### RTP
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(CCRTP REQUIRED libccrtp)
-
 ### Gstreamer
+# apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-dev gstreamer1.0-rtsp
 find_package(PkgConfig REQUIRED)
 pkg_search_module(gstreamer REQUIRED IMPORTED_TARGET gstreamer-1.0>=1.4)
 pkg_search_module(gstreamer-sdp REQUIRED IMPORTED_TARGET gstreamer-sdp-1.0>=1.4)
@@ -31,6 +28,10 @@ pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=
 pkg_search_module(gstreamer-rtsp-server REQUIRED IMPORTED_TARGET gstreamer-rtsp-server-1.0>=1.4)
 
 if (STREAMING_TEST)
+    ### RTP
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(CCRTP REQUIRED libccrtp)
+
     ### mosquitto
     # apt install libmosquitto-dev
     find_package(PkgConfig REQUIRED)
@@ -192,6 +193,7 @@ add_subdirectory(camera_simulator)
 add_subdirectory(visualization)
 add_subdirectory(tracking)
 add_subdirectory(communication)
+add_subdirectory(area_blocking)
 
 
 ########## add main executable #########################################################################################

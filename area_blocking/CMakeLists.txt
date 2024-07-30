@@ -1,0 +1,16 @@
+project(area_blocking_nodes)
+
+add_library(${PROJECT_NAME} SHARED src/area_blocking_node.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC node)
+target_link_libraries(${PROJECT_NAME} PUBLIC msg)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+
+add_executable(test_${PROJECT_NAME} test/test_area_blocking.cpp)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC ${PROJECT_NAME})
+target_link_libraries(test_${PROJECT_NAME} PUBLIC camera_simulator_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC yolo_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC transformation_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC visualization_nodes)

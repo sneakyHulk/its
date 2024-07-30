@@ -172,3 +172,54 @@
 [submodule "thirdparty/yas"]
 	path = thirdparty/yas
 	url = https://github.com/niXman/yas.git
+[submodule "thirdparty/boost/geometry"]
+	path = thirdparty/boost/geometry
+	url = https://github.com/boostorg/geometry.git
+[submodule "thirdparty/boost/any"]
+	path = thirdparty/boost/any
+	url = https://github.com/boostorg/any.git
+[submodule "thirdparty/boost/type_index"]
+	path = thirdparty/boost/type_index
+	url = https://github.com/boostorg/type_index.git
+[submodule "thirdparty/boost/math"]
+	path = thirdparty/boost/math
+	url = https://github.com/boostorg/math.git
+[submodule "thirdparty/boost/multiprecision"]
+	path = thirdparty/boost/multiprecision
+	url = https://github.com/boostorg/multiprecision.git
+[submodule "thirdparty/boost/qvm"]
+	path = thirdparty/boost/qvm
+	url = https://github.com/boostorg/qvm.git
+[submodule "thirdparty/boost/rational"]
+	path = thirdparty/boost/rational
+	url = https://github.com/boostorg/rational.git
+[submodule "thirdparty/boost/variant"]
+	path = thirdparty/boost/variant
+	url = https://github.com/boostorg/variant.git
+[submodule "thirdparty/boost/serialization"]
+	path = thirdparty/boost/serialization
+	url = https://github.com/boostorg/serialization.git
+[submodule "thirdparty/boost/spirit"]
+	path = thirdparty/boost/spirit
+	url = https://github.com/boostorg/spirit.git
+[submodule "thirdparty/boost/endian"]
+	path = thirdparty/boost/endian
+	url = https://github.com/boostorg/endian.git
+[submodule "thirdparty/boost/phoenix"]
+	path = thirdparty/boost/phoenix
+	url = https://github.com/boostorg/phoenix.git
+[submodule "thirdparty/boost/proto"]
+	path = thirdparty/boost/proto
+	url = https://github.com/boostorg/proto.git
+[submodule "thirdparty/boost/thread"]
+	path = thirdparty/boost/thread
+	url = https://github.com/boostorg/thread.git
+[submodule "thirdparty/boost/atomic"]
+	path = thirdparty/boost/atomic
+	url = https://github.com/boostorg/atomic.git
+[submodule "thirdparty/boost/chrono"]
+	path = thirdparty/boost/chrono
+	url = https://github.com/boostorg/chrono.git
+[submodule "thirdparty/boost/ratio"]
+	path = thirdparty/boost/ratio
+	url = https://github.com/boostorg/ratio.git
