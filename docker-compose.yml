@@ -101,5 +101,7 @@ services:
     network_mode: host
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
+      - ../caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/heyn.dev/heyn.dev.crt:/server.crt
+      - ../caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/heyn.dev/heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
     profiles: [ "streaming" ]
