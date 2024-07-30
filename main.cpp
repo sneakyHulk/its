@@ -29,7 +29,7 @@ int main() {
 	ImageStreamRTSP video_stream_o;
 	ImageStreamRTSP video_stream_s;
 #endif
-	Yolo yolo;
+	Yolo yolo(0);
 #if undistort_enable == 1
 	UndistortDetections undistort(config);
 #endif

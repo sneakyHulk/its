@@ -16,7 +16,7 @@ class Yolo final : public InputOutputNode<ImageData, Detections2D> {
 	torch::jit::script::Module yolo_model;
 
    public:
-	explicit Yolo(std::filesystem::path const& model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov9c.torchscript"));
+	Yolo(int device_id = 0, std::filesystem::path const& model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/yolo") / std::filesystem::path("yolov9c.torchscript"));
 
 	Detections2D function(ImageData const& data) final;
 };

@@ -185,7 +185,7 @@ inline torch::Tensor scale_boxes(const std::vector<int>& img1_shape, torch::Tens
 	return boxes;
 }
 
-Yolo::Yolo(std::filesystem::path const& model_path) : device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU) {
+Yolo::Yolo(int device_id, std::filesystem::path const& model_path) : device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU, device_id) {
 	common::println(torch::cuda::is_available() ? "GPU mode inference" : "CPU mode inference");
 
 	try {
