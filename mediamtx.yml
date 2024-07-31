@@ -439,7 +439,7 @@ pathDefaults:
   # readers connected and this amount of time has passed.
   sourceOnDemandCloseAfter: 10s
   # Maximum number of readers. Zero means no limit.
-  maxReaders: 0
+  maxReaders: 4
   # SRT encryption passphrase require to read from this path
   srtReadPassphrase:
   # If the stream is not available, redirect readers to this path.

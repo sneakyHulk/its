@@ -105,6 +105,7 @@ services:
       - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
     profiles: [ "streaming" ]
+  ##### https streaming site ###########################################################################################
   caddy2: # only for DNS challenge
     build:
       context: caddy
