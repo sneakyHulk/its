@@ -86,22 +86,38 @@ services:
     network_mode: host
     depends_on:
       - cpu-build
-    container_name: streaming-server
+    container_name: rtsp-streaming-server
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
-    ports:
-      - "7000:7000"
     profiles: [ "streaming" ]
   streaming-server2:
     # ffmpeg -f lavfi -re -i smptebars=size=1280x720:rate=30 -pix_fmt yuv420p -vf "settb=AVTB,setpts='trunc(PTS/1K)*1K+st(1,trunc(RTCTIME/1K))-1K*trunc(ld(1)/1K)',drawtext=text='%{localtime}.%{eif\:1M*t-1K*trunc(t*1K)\:d}'" -c:v libx265 -preset ultrafast -b:v 600k -f mpegts udp://127.0.0.1:1234?pkt_size=1316
     image: bluenviron/mediamtx:latest-ffmpeg
-    container_name: streaming_server
+    container_name: hls-streaming-server
     network_mode: host
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
-      - ../caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/heyn.dev/heyn.dev.crt:/server.crt
-      - ../caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/heyn.dev/heyn.dev.key:/server.key
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
+      - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
+      - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
     profiles: [ "streaming" ]
+  caddy2: # only for DNS challenge
+    build:
+      context: caddy
+      dockerfile: Dockerfile
+    container_name: caddy
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/site:/srv
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - ./caddy/container-vars.env
+    profiles: [ "streaming_caddy" ]
