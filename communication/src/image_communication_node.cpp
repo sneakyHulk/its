@@ -20,11 +20,16 @@ GMainLoop *ImageStreamRTSP::_loop = g_main_loop_new(NULL, FALSE);
 std::vector<ImageStreamRTSP *> ImageStreamRTSP::all_streams;
 
 void ImageStreamRTSP::need_data(GstElement *appsrc, guint unused, StreamContext *context) {
-	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
+
+	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(img->timestamp)));
 	std::string wall_time = std::ctime(&time);
 
-	std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
-	cv::putText(img->image, wall_time, cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	cv::putText(img->image, wall_time, cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+
+	time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	wall_time = std::ctime(&time);
+	cv::putText(img->image, wall_time, cv::Point2d(50, 100), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
 	guint size;
 	GstBuffer *buffer;
@@ -100,7 +105,7 @@ ImageStreamRTSP::ImageStreamRTSP() {
 		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! rtpjpegpay name=pay0 pt=26 )");
 	} else {
 		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
-		//gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
+		// gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
 	}
 	gst_rtsp_media_factory_set_shared(_factory, true);
 
@@ -130,7 +135,7 @@ ImageStreamRTSP::ImageStreamRTSP() {
 
 	/* attach the server to the default maincontext */
 	gst_rtsp_server_attach(_server, NULL);
-	//g_main_loop_run(_loop);
+	// g_main_loop_run(_loop);
 
 	for (;;) {
 		g_main_context_iteration(NULL, false);

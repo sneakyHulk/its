@@ -700,7 +700,9 @@ paths:
     source: rtsp://127.0.0.1:7000/s110_n_cam_8
   stream_o:
     source: rtsp://127.0.0.1:7000/s110_o_cam_8
-#  stream_s:
-#    source: rtsp://127.0.0.1:7000/s110_s_cam_8
-#  stream_w:
-#    source: rtsp://127.0.0.1:7000/s110_w_cam_8
+  stream_s:
+    source: rtsp://127.0.0.1:7000/s110_s_cam_8
+  stream_w:
+    source: rtsp://127.0.0.1:7000/s110_w_cam_8
+  bird:
+    source: rtsp://127.0.0.1:7000/bird

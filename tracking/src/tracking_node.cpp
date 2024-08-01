@@ -42,7 +42,8 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(image_tracker.size(), data.objects.size());
 		for (auto i = 0; i < image_tracker.size(); ++i) {
 			for (auto j = 0; j < data.objects.size(); ++j) {
-				association_matrix(i, j) -= association_function(image_tracker[i].state(), data.objects[j].bbox);
+				auto value = association_function(image_tracker[i].state(), data.objects[j].bbox);
+				association_matrix(i, j) -= std::isnan(value) ? 0. : value;
 			}
 		}
 		auto const [matches, unmatched_tracks, unmatched_detections] = linear_assignment(association_matrix, 1. - association_threshold);

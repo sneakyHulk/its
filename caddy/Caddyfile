@@ -1,7 +1,8 @@
-{
-	acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
-}
+# {
+# 	acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+# }
 s110.heyn.dev {
+	reverse_proxy webserver:80
 	tls {
 		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
 	}

@@ -88,15 +88,16 @@ inline std::tuple<std::vector<std::pair<int, int>>, std::set<int>, std::set<int>
 	}
 
 	// Modify the cost matrix to mark values above the threshold.
-	Eigen::MatrixXd modified_cost_matrix = cost_matrix.unaryExpr([thresh](double val) { return (val > thresh) ? thresh + 1e-4 : val; });
+	//Eigen::MatrixXd modified_cost_matrix = cost_matrix.unaryExpr([thresh](double val) { return (val > thresh) ? thresh + 1e-4 : val; });
 
 	// reverse step before TODO: remove
-	modified_cost_matrix = cost_matrix;
+	Eigen::MatrixXd modified_cost_matrix = cost_matrix;
 
 	Eigen::VectorXi assignment = Eigen::VectorXi::Constant(modified_cost_matrix.rows(), -1);
 
 	// Solve the assignment problem using the Hungarian Algorithm.
 	HungarianAlgorithmEigen hungarian;
+
 	hungarian.solve_assignment_problem(modified_cost_matrix, assignment);
 
 	// Convert the solution to indices format.
