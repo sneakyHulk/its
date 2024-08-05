@@ -16,7 +16,6 @@
 #define stream_data_enable 0
 #define stream_video_enable 1
 #define stream_vis_enable 1
-#define global_image_tracking 1
 
 int main() {
 	Config config = make_config();
@@ -35,25 +34,18 @@ int main() {
 #if undistort_enable == 1
 	UndistortDetections undistort(config);
 #endif
-
-#if stream_vis_enable == 1
 	GlobalImageTracking track(config);
-#else
-	SortTracking track(config);
-#endif
-
 #if track_vis_enable == 1
 	ImageTrackingVisualization2 track_vis;
 #endif
-	ImageTrackingTransformation trans(config);
 #if stream_data_enable == 1
 	DataStreamMQTT data_stream;
 #endif
+	BirdEyeVisualization vis(config);
 #if stream_vis_enable == 1
 	ImageStreamRTSP video_stream_bird;
-	BirdEyeVisualization vis(config);
 #else
-	Visualization2D vis(config);
+	ImageVisualization bird_image_vis;
 #endif
 
 #if stream_video_enable == 1
@@ -80,13 +72,7 @@ int main() {
 	track += track_vis;
 #endif
 
-#if stream_vis_enable == 1
 	track += vis;
-
-#else
-	track += trans;
-	trans += vis;
-#endif
 
 #if stream_data_enable == 1
 	trans += data_stream;
@@ -94,13 +80,10 @@ int main() {
 
 #if stream_vis_enable == 1
 	vis += video_stream_bird;
-	std::thread video_stream_bird_thread(&ImageStreamRTSP::operator(), &video_stream_bird);
-
-	std::thread vis_thread(&BirdEyeVisualization::operator(), &vis);
 #else
-	trans += vis;
-	std::thread vis_thread(&Visualization2D::operator(), &vis);
+	vis += bird_image_vis;
 #endif
+
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
@@ -111,19 +94,22 @@ int main() {
 #if undistort_enable == 1
 	std::thread undistort_thread(&UndistortDetections::operator(), &undistort);
 #endif
-#if stream_vis_enable == 1
 	std::thread track_thread(&GlobalImageTracking::operator(), &track);
-#else
-	std::thread track_thread(&SortTracking::operator(), &track);
-#endif
-
 #if track_vis_enable == 1
 	std::thread track_vis_thread = std::thread(&ImageTrackingVisualization2::operator(), &track_vis);
 #endif
-	std::thread trans_thread(&ImageTrackingTransformation::operator(), &trans);
+
 #if stream_data_enable == 1
 	std::thread data_stream_thread(&DataStreamMQTT::operator(), &data_stream);
 #endif
+
+	std::thread vis_thread(&BirdEyeVisualization::operator(), &vis);
+#if stream_vis_enable == 1
+	std::thread video_stream_bird_thread(&ImageStreamRTSP::operator(), &video_stream_bird);
+#else
+	std::thread bird_image_vis_thread(&ImageVisualization::operator(), &bird_image_vis);
+#endif
+
 #if stream_video_enable == 1
 	std::thread video_stream_w_thread(&ImageStreamRTSP::operator(), &video_stream_w);
 	std::thread video_stream_n_thread(&ImageStreamRTSP::operator(), &video_stream_n);
