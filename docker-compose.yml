@@ -49,7 +49,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
-    profiles: [ "its-cuda" ]
+    profiles: [ "its-cuda", "live" ]
   its-rocm:
     image: its-rocm-build:latest
     depends_on:
@@ -106,7 +106,7 @@ services:
       #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
-    profiles: [ "streaming_test", "streaming", "streaming_home" ]
+    profiles: [ "streaming_test", "streaming", "streaming_home", "live" ]
   ##### https streaming site ###########################################################################################
   caddy: # only for DNS challenge
     build:
@@ -127,7 +127,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - ./caddy/container-vars.env
-    profiles: [ "caddy", "streaming", "streaming_home" ]
+    profiles: [ "caddy", "streaming", "streaming_home", "live" ]
   ##### dyndns #########################################################################################################
   dyndns:
     container_name: dyndns
@@ -143,4 +143,4 @@ services:
     container_name: webserver
     volumes:
       - ./web:/usr/local/apache2/htdocs
-    profiles: [ "webserver", "streaming", "streaming_home" ]
+    profiles: [ "webserver", "streaming", "streaming_home", "live" ]
