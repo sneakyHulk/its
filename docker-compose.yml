@@ -97,24 +97,28 @@ services:
     image: bluenviron/mediamtx:latest-ffmpeg
     container_name: hls-streaming-server
     network_mode: host
+    volumes_from:
+      - caddy:ro
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
-      - ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
       #- ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
-      - ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
-    profiles: [ "streaming_test", "streaming" ]
+    profiles: [ "streaming_test", "streaming", "streaming_home" ]
   ##### https streaming site ###########################################################################################
-  caddy2: # only for DNS challenge
+  caddy: # only for DNS challenge
     build:
       context: caddy
       dockerfile: Dockerfile
     container_name: caddy
+    hostname: caddy
     cap_add:
       - NET_ADMIN
     ports:
       - 443:443
+      - 2019:2019
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
       - ./caddy/site:/srv
@@ -123,7 +127,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - ./caddy/container-vars.env
-    profiles: [ "caddy", "streaming" ]
+    profiles: [ "caddy", "streaming", "streaming_home" ]
   ##### dyndns #########################################################################################################
   dyndns:
     container_name: dyndns
@@ -132,11 +136,11 @@ services:
     restart: unless-stopped
     ports:
       - 9017:80
-    profiles: [ "dyndns", "streaming" ]
+    profiles: [ "dyndns", "streaming_home" ]
   ##### webserver ######################################################################################################
   webserver:
     image: httpd:latest
     container_name: webserver
     volumes:
       - ./web:/usr/local/apache2/htdocs
-    profiles: [ "webserver", "streaming" ]
+    profiles: [ "webserver", "streaming", "streaming_home" ]

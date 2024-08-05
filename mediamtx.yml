@@ -135,9 +135,9 @@ apiEncryption: no
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-apiServerKey: server.key
+apiServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-apiServerCert: server.crt
+apiServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 apiAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the HTTP server.
@@ -158,9 +158,9 @@ metricsEncryption: no
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-metricsServerKey: server.key
+metricsServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-metricsServerCert: server.crt
+metricsServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 metricsAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the HTTP server.
@@ -181,9 +181,9 @@ pprofEncryption: no
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-pprofServerKey: server.key
+pprofServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-pprofServerCert: server.crt
+pprofServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 pprofAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the HTTP server.
@@ -204,9 +204,9 @@ playbackEncryption: no
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-playbackServerKey: server.key
+playbackServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-playbackServerCert: server.crt
+playbackServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 playbackAllowOrigin: '*'
 # List of IPs or CIDRs of proxies placed before the HTTP server.
@@ -247,9 +247,9 @@ multicastRTCPPort: 8003
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-serverKey: server.key
+serverKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate. This is needed only when encryption is "strict" or "optional".
-serverCert: server.crt
+serverCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Authentication methods. Available are "basic" and "digest".
 # "digest" doesn't provide any additional security and is available for compatibility only.
 rtspAuthMethods: [basic]
@@ -270,9 +270,9 @@ rtmpsAddress: :1936
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-rtmpServerKey: server.key
+rtmpServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate. This is needed only when encryption is "strict" or "optional".
-rtmpServerCert: server.crt
+rtmpServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 
 ###############################################
 # Global settings -> HLS server
@@ -288,9 +288,9 @@ hlsEncryption: yes
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-hlsServerKey: server.key
+hlsServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-hlsServerCert: server.crt
+hlsServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 # This allows to play the HLS stream from an external website.
 hlsAllowOrigin: '*'
@@ -346,9 +346,9 @@ webrtcEncryption: no
 # This can be generated with:
 # openssl genrsa -out server.key 2048
 # openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
-webrtcServerKey: server.key
+webrtcServerKey: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key
 # Path to the server certificate.
-webrtcServerCert: server.crt
+webrtcServerCert: /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt
 # Value of the Access-Control-Allow-Origin header provided in every HTTP response.
 # This allows to play the WebRTC stream from an external website.
 webrtcAllowOrigin: '*'
