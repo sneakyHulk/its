@@ -183,7 +183,7 @@ endif ()
 
 ########## add local stuff #############################################################################################
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+#set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 add_subdirectory(msg)
 add_subdirectory(node)
