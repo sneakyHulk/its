@@ -157,4 +157,4 @@ networks:
   mdex:
     ipam:
       config:
-        gateway: 10.10.110.1
+        - gateway: 10.10.110.1
