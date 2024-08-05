@@ -17,7 +17,7 @@ services:
       args:
         src: cuda
     image: its-cuda-build
-    profiles: [ "cuda", "its-cuda" ]
+    profiles: [ "cuda", "its-cuda", "live" ]
   rocm-build:
     build:
       context: .
