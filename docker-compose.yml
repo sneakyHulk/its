@@ -50,6 +50,8 @@ services:
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
     profiles: [ "its-cuda", "live" ]
+    networks:
+      - mdex
   its-rocm:
     image: its-rocm-build:latest
     depends_on:
@@ -107,6 +109,8 @@ services:
       # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
     profiles: [ "streaming_test", "streaming", "streaming_home", "live" ]
+    networks:
+      - mdex
   ##### https streaming site ###########################################################################################
   caddy: # only for DNS challenge
     build:
@@ -128,6 +132,8 @@ services:
     env_file:
       - ./caddy/container-vars.env
     profiles: [ "caddy", "streaming", "streaming_home", "live" ]
+    networks:
+      - mdex
   ##### dyndns #########################################################################################################
   dyndns:
     container_name: dyndns
@@ -144,3 +150,11 @@ services:
     volumes:
       - ./web:/usr/local/apache2/htdocs
     profiles: [ "webserver", "streaming", "streaming_home", "live" ]
+    networks:
+      - mdex
+
+networks:
+  mdex:
+    ipam:
+      config:
+        gateway: 10.10.110.1
