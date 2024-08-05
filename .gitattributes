@@ -1,3 +1,0 @@
-data/yolo/yolov8s.torchscript filter=lfs diff=lfs merge=lfs -text
-data/yolo/yolov9e.torchscript filter=lfs diff=lfs merge=lfs -text
-data/yolo/yolov9c.torchscript filter=lfs diff=lfs merge=lfs -text
