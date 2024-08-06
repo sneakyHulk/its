@@ -3,11 +3,11 @@
 
 #include "KalmanFilter.h"
 
-class GlobalTracker : private KalmanFilter<4, 4, 2, {0, 1}, {2, 3}> {
+class GlobalTracker : private KalmanFilter<4, 4, {0, 2}, {1, 3}> {
 	static thread_local unsigned int _id_max;
 	unsigned int _id = ++_id_max;
 
-	static KalmanFilter<4, 4, 2, {0, 1}, {2, 3}> make_constant_velocity_model_kalman_filter(double x_init, double y_init) {
+	static KalmanFilter<4, 4, {0, 2}, {1, 3}> make_constant_velocity_model_kalman_filter(double x_init, double y_init) {
 		decltype(x) x_;
 
 		x_ << x_init, y_init, 0., 0.;

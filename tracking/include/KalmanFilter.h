@@ -9,9 +9,7 @@
 #include <range/v3/view/zip.hpp>
 #endif
 
-#include "common_output.h"
-
-template <std::size_t dim_x, std::size_t dim_z, std::size_t n_velocity_components = 0, std::array<int, n_velocity_components> i = {}, std::array<int, n_velocity_components> j = {}>
+template <std::size_t dim_x, std::size_t dim_z, std::pair<std::size_t, std::size_t>... velocity_components>
 class KalmanFilter {
    protected:
 	Eigen::Matrix<double, dim_x, 1> x;      // x: This is the Kalman state variable. [dim_x, 1].
@@ -32,13 +30,10 @@ class KalmanFilter {
 	    decltype(Q)&& Q = decltype(Q)::Identity())
 	    : x(std::forward<decltype(x)>(x)), F(std::forward<decltype(F)>(F)), H(std::forward<decltype(H)>(H)), P(std::forward<decltype(P)>(P)), R(std::forward<decltype(R)>(R)), Q(std::forward<decltype(Q)>(Q)) {}
 
+	inline void adapt_prediction_matrix(double dt) { ((F(std::get<0>(velocity_components), std::get<1>(velocity_components)) = dt), ...); }
 	void predict(double dt) {
-		for (auto k = 0; k < n_velocity_components; ++k) {
-			F(i[k], j[k]) = dt;
-		}
-		return predict();
-	}
-	void predict() {
+		adapt_prediction_matrix(dt);
+
 		x = F * x;
 		P = (F * P) * F.transpose() + Q;
 	}

@@ -2,22 +2,24 @@
 
 #include <Eigen/Eigen>
 
-SortTracking::SortTracking(const Config& config) : config(config) {}
-ImageTrackerResults SortTracking::function(Detections2D const& data) {
-	// static thread_local std::map<std::string, Sort<>> trackers;  // will work for now because all Nodes are running on a different thread
+#include "linear_assignment.h"
 
-	if (!trackers.contains(data.source)) {
-		trackers.insert({data.source, Sort<>()});
-	}
-
-	ImageTrackerResults results;
-
-	results.objects = trackers.at(data.source).update(data.timestamp, data.objects);
-	results.source = data.source;
-	results.timestamp = data.timestamp;
-
-	return results;
-}
+// SortTracking::SortTracking(const Config& config) : config(config) {}
+// ImageTrackerResults SortTracking::function(Detections2D const& data) {
+//	// static thread_local std::map<std::string, Sort<>> trackers;  // will work for now because all Nodes are running on a different thread
+//
+//	if (!trackers.contains(data.source)) {
+//		trackers.insert({data.source, Sort<>()});
+//	}
+//
+//	ImageTrackerResults results;
+//
+//	results.objects = trackers.at(data.source).update(data.timestamp, data.objects);
+//	results.source = data.source;
+//	results.timestamp = data.timestamp;
+//
+//	return results;
+// }
 
 GlobalImageTracking::GlobalImageTracking(Config const& config) : config(config) {}
 GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
@@ -25,14 +27,16 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 		image_trackers.insert({data.source, {}});
 	}
 
-	double const dt = std::chrono::duration<double>(std::chrono::nanoseconds(data.timestamp) - std::chrono::nanoseconds(old_timestamp)).count();
-	old_timestamp = data.timestamp;
+	// double const dt = std::chrono::duration<double>(std::chrono::nanoseconds(data.timestamp) - std::chrono::nanoseconds(old_timestamp)).count();
+	// old_timestamp = data.timestamp;
 
 	for (auto& [source, image_tracker] : image_trackers) {
-		if (source == data.source)
-			for (auto& track : image_tracker) track.predict(dt);
-		else {
-			for (auto& track : image_tracker) track.predict_between(dt);
+		if (source == data.source) {
+			for (auto track = image_tracker.begin(); track != image_tracker.end(); ++track)
+				if (!track->predict(data.timestamp)) track = --image_tracker.erase(track);
+		} else {
+			for (auto track = image_tracker.begin(); track != image_tracker.end(); ++track)
+				if (!track->predict_between(data.timestamp)) track = --image_tracker.erase(track);
 		}
 	}
 
@@ -42,7 +46,11 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(image_tracker.size(), data.objects.size());
 		for (auto i = 0; i < image_tracker.size(); ++i) {
 			for (auto j = 0; j < data.objects.size(); ++j) {
-				auto value = association_function(image_tracker[i].state(), data.objects[j].bbox);
+				auto state = image_tracker[i].state();
+				auto value = association_function(state, data.objects[j].bbox);
+				if (std::isnan(value)) {
+					auto x = 0;
+				}
 				association_matrix(i, j) -= std::isnan(value) ? 0. : value;
 			}
 		}
@@ -50,15 +58,13 @@ GlobalTrackerResults GlobalImageTracking::function(Detections2D const& data) {
 
 		// create new tracker from new not matched detections:
 		for (auto const detection_index : unmatched_detections) {
-			image_tracker.emplace_back(data.objects[detection_index].bbox, data.objects[detection_index].object_class);
+			image_tracker.emplace_back(data.objects[detection_index].bbox, data.timestamp, data.objects[detection_index].object_class);
 		}
 
 		// update old tracker with matched detections:
 		for (auto const& [tracker_index, detection_index] : matches) {
 			image_tracker[tracker_index].update(data.objects[detection_index].bbox);
 		}
-
-		std::erase_if(image_tracker, [this](KalmanBoxTracker<3> const& track) { return track.fail_age() > max_age; });
 	}
 
 	GlobalTrackerResults res;

@@ -14,8 +14,8 @@
 #define undistort_enable 1
 #define track_vis_enable 0
 #define stream_data_enable 0
-#define stream_video_enable 1
-#define stream_vis_enable 1
+#define stream_video_enable 0
+#define stream_vis_enable 0
 
 int main() {
 	Config config = make_config();
