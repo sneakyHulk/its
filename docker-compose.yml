@@ -44,6 +44,8 @@ services:
     depends_on:
       - cuda-build
     container_name: its-cuda
+    ports:
+      - 8554:8554
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
@@ -65,6 +67,8 @@ services:
       - seccomp:unconfined
     group_add:
       - video
+    ports:
+      - 8554:8554
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
@@ -79,7 +83,7 @@ services:
       - 1883:1883
       - 9001:9001
     network_mode: host
-    profiles: [ "mqtt", "its-rocm" ]
+    profiles: [ "mqtt" ]
   ##### streaming server test ##########################################################################################
   streaming-server2:
     image: its-cpu-build:latest
