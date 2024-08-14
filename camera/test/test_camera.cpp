@@ -1,10 +1,21 @@
 #include <pylon/PylonIncludes.h>
 
-using namespace Pylon;
+#include "common_output.h"
 
 int main() {
-	PylonInitialize();
+	Pylon::PylonInitialize();
 
-	PylonTerminate();
+	auto& pylon_instance = Pylon::CTlFactory::GetInstance();
+
+	Pylon::DeviceInfoList device_list;
+	pylon_instance.EnumerateDevices(device_list);
+
+	if (device_list.empty()) common::println("No Basler devices found!");
+
+	for (auto const& e : device_list) {
+		common::println(e.GetModelName(), ": ", e.GetIpAddress(), ", ", e.GetMacAddress());
+	}
+
+	Pylon::PylonTerminate();
 	return 0;
 }
