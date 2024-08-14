@@ -14,19 +14,23 @@ int main() {
 		Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 		if (device_list.empty()) throw common::Exception("No Basler devices found!");
 
-		Pylon::CInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-		common::println("Using device ", camera.GetDeviceInfo().GetModelName());
+		Pylon::CInstantCameraArray cameras(device_list.size());
+		for (auto i = 0; i < device_list.size(); ++i) {
+			common::println("Found device with model name '", device_list.at(i).GetModelName(), "', ip address '", device_list.at(i).GetIpAddress(), "', and mac address '", device_list.at(i).GetMacAddress(), "'.");
+			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device_list.at(i)));
+		}
+
+		while (cameras.IsGrabbing()) {
+			Pylon::CGrabResultPtr result;
+			bool grabbed = cameras.RetrieveResult(1000, result);
+
+			common::println("width: ", result->GetWidth(), ", height:", result->GetHeight());
+
+			if (!grabbed) {
+				common::println("No image retrieved!");
+			}
+		}
 	}
-
-
-
-	// Pylon::CInstantCameraArray cameras(device_list.size());
-	//
-	// for (auto i = 0; i < device_list.size(); ++i) {
-	//	common::println("Found device with model name '", device_list.at(i).GetModelName(), "', ip address '", device_list.at(i).GetIpAddress(), "', and mac address '", device_list.at(i).GetMacAddress(), "'.");
-	//
-	//	cameras[i].Attach(pylon_instance.CreateDevice(device_list.at(i)));
-	//}
 
 	Pylon::PylonTerminate();
 }
