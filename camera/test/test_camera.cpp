@@ -15,8 +15,9 @@ int main() {
 	pylon_instance.EnumerateDevices(device_list);
 	if (device_list.empty()) throw common::Exception("No Basler devices found!");
 
-	Pylon::CInstantCamera camera(pylon_instance.CreateDevice(device_list.at(0)));
 
+	common::println("Using device ", device_list.at(0).GetModelName());
+	Pylon::CInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
 	common::println("Using device ", camera.GetDeviceInfo().GetModelName());
 
 
