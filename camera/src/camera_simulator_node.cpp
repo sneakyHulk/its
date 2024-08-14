@@ -4,7 +4,7 @@
 using namespace std::chrono_literals;
 
 CameraSimulator::CameraSimulator(std::string const& cam_name) {
-	files = std::vector(std::filesystem::recursive_directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera_simulator") / std::filesystem::path(cam_name)), {});
+	files = std::vector(std::filesystem::recursive_directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/camera") / std::filesystem::path(cam_name)), {});
 	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().extension() != ".jpg"; }), files.end());
 	files.erase(std::remove_if(files.begin(), files.end(), [](auto const& e) { return e.path().generic_string().find("_distorted") == std::string::npos; }), files.end());
 

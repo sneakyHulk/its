@@ -9,3 +9,10 @@ target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC node)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(test_camera)
+include_directories(${Pylon_INCLUDE_DIRS})
+
+add_executable(${PROJECT_NAME} test/test_camera.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${Pylon_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Pylon_LIBRARIES})

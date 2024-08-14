@@ -42,7 +42,7 @@ ENV PATH=/opt/conda/bin:$PATH
 FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS cuda-base
 FROM rocm/dev-ubuntu-22.04:6.0-complete AS rocm-base
 
-FROM ${src}-base AS image
+FROM --platform=$BUILDPLATFORM ${src}-base AS image
 
 # https://apt.kitware.com/
 RUN apt-get update \
@@ -111,6 +111,31 @@ RUN if [ "$src" = "cpu" ]; then \
       && wget --quiet -c https://download.pytorch.org/libtorch/rocm6.0/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Brocm6.0.zip --output-document libtorch.zip \
       && unzip libtorch.zip -d ~/src; \
     fi
+
+ARG BUILDPLATFORM
+# Install Pylon
+RUN if [ -z "$LIVE" ]; then \
+      if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
+        wget --quiet https://www2.baslerweb.com/media/downloads/software/pylon_software/pylon-7.5.0.15658-linux-x86_64_debs.tar.gz -O pylon.tar.gz \
+        && tar -xzf pylon.tar.gz \
+        && dpkg -i pylon*.deb \
+        && apt-get update \
+        && DEBIAN_FRONTEND=noninteractive \
+           apt-get -y --quiet --no-install-recommends install \
+           net-tools \
+           telnet \
+           iputils-ping \
+           iproute2 \
+           build-essential \
+           cmake \
+           gcc-12 \
+           g++-12 \
+        && apt-get -y autoremove \
+        && apt-get clean autoclean \
+        && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*; \
+      fi; \
+    fi
+
 
 ENV PYTHONPATH "${PYTHONPATH}:/src"
 ENV CC gcc-12

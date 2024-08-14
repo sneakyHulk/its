@@ -18,6 +18,11 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
+if (DEFINED ENV{LIVE})
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
+    message("Pylon found!")
+endif ()
+
 ### Gstreamer
 # apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-dev gstreamer1.0-rtsp
 find_package(PkgConfig REQUIRED)
@@ -189,7 +194,7 @@ add_subdirectory(msg)
 add_subdirectory(node)
 add_subdirectory(yolo)
 add_subdirectory(transformation)
-add_subdirectory(camera_simulator)
+add_subdirectory(camera)
 add_subdirectory(visualization)
 add_subdirectory(tracking)
 add_subdirectory(communication)

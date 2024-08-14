@@ -72,6 +72,32 @@ services:
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
     stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
+  ##### LIVE ###########################################################################################################
+  its-live:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: rocm
+    container_name: its-live
+    volumes:
+      - .:/src:ro
+      - /etc/timezone:/etc/timezone:ro
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    security_opt:
+      - seccomp:unconfined
+    group_add:
+      - video
+    ports:
+      - 8554:8554
+    command: sh -c "printenv && ls /opt/pylon && mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_camera -j 8 && camera/test_camera"
+    stop_signal: SIGTERM
+    profiles: [ "its-live" ]
+    environment:
+      - LIVE=1
   ##### MQTT ###########################################################################################################
   mqtt:
     image: eclipse-mosquitto:2
@@ -85,7 +111,7 @@ services:
     network_mode: host
     profiles: [ "mqtt" ]
   ##### streaming server test ##########################################################################################
-  streaming-server2:
+  rtsp-streaming-server-test:
     image: its-cpu-build:latest
     network_mode: host
     depends_on:
@@ -96,7 +122,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
     profiles: [ "streaming_test" ]
-  streaming-server:
+  hls-streaming-server:
     # ffmpeg -f lavfi -re -i smptebars=size=1280x720:rate=30 -pix_fmt yuv420p -vf "settb=AVTB,setpts='trunc(PTS/1K)*1K+st(1,trunc(RTCTIME/1K))-1K*trunc(ld(1)/1K)',drawtext=text='%{localtime}.%{eif\:1M*t-1K*trunc(t*1K)\:d}'" -c:v libx265 -preset ultrafast -b:v 600k -f mpegts udp://127.0.0.1:1234?pkt_size=1316
     image: bluenviron/mediamtx:latest-ffmpeg
     container_name: hls-streaming-server
