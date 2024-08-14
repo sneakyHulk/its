@@ -1,61 +1,52 @@
 services:
-  ##### build images (cpu, cuda, rocm) #################################################################################
-  cpu-build:
+  ##### run cpu ########################################################################################################
+  its-cpu:
     build:
       context: .
       dockerfile: Dockerfile
       target: image
       args:
         src: cpu
-    image: its-cpu-build
-    profiles: [ "cpu", "its-cpu", "streaming" ]
-  cuda-build:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: image
-      args:
-        src: cuda
-    image: its-cuda-build
-    profiles: [ "cuda", "its-cuda", "live" ]
-  rocm-build:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: image
-      args:
-        src: rocm
-    image: its-rocm-build
-    profiles: [ "rocm", "its-rocm" ]
-  ##### run ############################################################################################################
-  its-cpu:
-    image: its-cpu-build:latest
     depends_on:
       - cpu-build
     container_name: its-cpu
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
+    ports:
+      - "${IP}:8554:8554"
+    environment:
+      - LIVE=${LIVE}
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-cpu" ]
+  ##### run cuda #######################################################################################################
   its-cuda:
-    image: its-cuda-build:latest
-    depends_on:
-      - cuda-build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cuda
     container_name: its-cuda
-    ports:
-      - 8554:8554
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target its -j 8 && ./its"
+    ports:
+      - "${IP}:8554:8554"
+    environment:
+      - LIVE=${LIVE}
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-cuda", "live" ]
+  ##### run rocm #######################################################################################################
   its-rocm:
-    image: its-rocm-build:latest
-    depends_on:
-      - rocm-build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: rocm
     container_name: its-rocm
     volumes:
       - .:/src:ro
@@ -68,36 +59,12 @@ services:
     group_add:
       - video
     ports:
-      - 8554:8554
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && ./its"
+      - "${IP}:8554:8554"
+    environment:
+      - LIVE=${LIVE}
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
-  ##### LIVE ###########################################################################################################
-  its-live:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: image
-      args:
-        src: rocm
-    container_name: its-live
-    volumes:
-      - .:/src:ro
-      - /etc/timezone:/etc/timezone:ro
-    devices:
-      - /dev/kfd
-      - /dev/dri
-    security_opt:
-      - seccomp:unconfined
-    group_add:
-      - video
-    ports:
-      - 8554:8554
-    command: sh -c "printenv && ls /opt/pylon && mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_camera -j 8 && camera/test_camera"
-    stop_signal: SIGTERM
-    profiles: [ "its-live" ]
-    environment:
-      - LIVE=1
   ##### MQTT ###########################################################################################################
   mqtt:
     image: eclipse-mosquitto:2
@@ -110,18 +77,6 @@ services:
       - 9001:9001
     network_mode: host
     profiles: [ "mqtt" ]
-  ##### streaming server test ##########################################################################################
-  rtsp-streaming-server-test:
-    image: its-cpu-build:latest
-    network_mode: host
-    depends_on:
-      - cpu-build
-    container_name: rtsp-streaming-server
-    volumes:
-      - .:/src:ro
-      - /etc/timezone:/etc/timezone:ro
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target test_communication_nodes_rtsp -j 8 && communication/test_communication_nodes_rtsp"
-    profiles: [ "streaming_test" ]
   hls-streaming-server:
     # ffmpeg -f lavfi -re -i smptebars=size=1280x720:rate=30 -pix_fmt yuv420p -vf "settb=AVTB,setpts='trunc(PTS/1K)*1K+st(1,trunc(RTCTIME/1K))-1K*trunc(ld(1)/1K)',drawtext=text='%{localtime}.%{eif\:1M*t-1K*trunc(t*1K)\:d}'" -c:v libx265 -preset ultrafast -b:v 600k -f mpegts udp://127.0.0.1:1234?pkt_size=1316
     image: bluenviron/mediamtx:latest-ffmpeg
@@ -131,12 +86,8 @@ services:
       - caddy:ro
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
-      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
-      #- ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
-      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
-      # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
-    profiles: [ "streaming_test", "streaming", "streaming_home", "live" ]
+    profiles: [ "hls-streaming", "streaming_home", "streaming_live" ]
   ##### https streaming site ###########################################################################################
   caddy: # only for DNS challenge
     build:
@@ -155,9 +106,9 @@ services:
       - ./caddy/data:/data
       - ./caddy/config:/config
       - /etc/localtime:/etc/localtime:ro
-    env_file:
-      - ./caddy/container-vars.env
-    profiles: [ "caddy", "streaming", "streaming_home", "live" ]
+    secrets:
+      - CLOUDFLARE_API_TOKEN
+    profiles: [ "caddy", "streaming_home", "streaming_live" ]
   ##### dyndns #########################################################################################################
   dyndns:
     container_name: dyndns
@@ -173,4 +124,8 @@ services:
     container_name: webserver
     volumes:
       - ./web:/usr/local/apache2/htdocs
-    profiles: [ "webserver", "streaming", "streaming_home", "live" ]
+    profiles: [ "webserver", "streaming_home", "streaming_live" ]
+
+secrets:
+  CLOUDFLARE_API_TOKEN:
+    file: cloudflare_api_token.txt
