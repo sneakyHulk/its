@@ -30,7 +30,11 @@ int main() {
 	ImageStreamRTSP video_stream_o;
 	ImageStreamRTSP video_stream_s;
 #endif
-	Yolo yolo(0);
+	int gpu_id = 0;
+	if (std::getenv("LIVE")) gpu_id = 1;
+
+	common::println("Using GPU with id '", gpu_id, "'.");
+	Yolo yolo(gpu_id);
 #if undistort_enable == 1
 	UndistortDetections undistort(config);
 #endif
@@ -83,7 +87,6 @@ int main() {
 #else
 	vis += bird_image_vis;
 #endif
-
 
 	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
 	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
