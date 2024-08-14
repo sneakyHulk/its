@@ -26,11 +26,12 @@ int main() {
 			Pylon::CGrabResultPtr result;
 			bool grabbed = cameras.RetrieveResult(1000, result);
 
-			common::println("width: ", result->GetWidth(), ", height:", result->GetHeight());
-
 			if (!grabbed) {
 				common::println("No image retrieved!");
+				continue;
 			}
+
+			common::println("width: ", result->GetWidth(), ", height:", result->GetHeight());
 		}
 	}
 
