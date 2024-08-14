@@ -9,14 +9,14 @@
 int main() {
 	Pylon::PylonInitialize();
 
-	auto& pylon_instance = Pylon::CTlFactory::GetInstance();
+	//auto& pylon_instance = Pylon::CTlFactory::GetInstance();
 
-	Pylon::DeviceInfoList device_list;
-	pylon_instance.EnumerateDevices(device_list);
-	if (device_list.empty()) throw common::Exception("No Basler devices found!");
+	//Pylon::DeviceInfoList device_list;
+	//pylon_instance.EnumerateDevices(device_list);
+	//if (device_list.empty()) throw common::Exception("No Basler devices found!");
 
 	{
-		common::println("Using device ", device_list.at(0).GetModelName());
+		//common::println("Using device ", device_list.at(0).GetModelName());
 		Pylon::CInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
 		common::println("Using device ", camera.GetDeviceInfo().GetModelName());
 	}
@@ -30,5 +30,4 @@ int main() {
 	//}
 
 	Pylon::PylonTerminate();
-	return 0;
 }
