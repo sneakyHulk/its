@@ -7,8 +7,6 @@ services:
       target: image
       args:
         src: cpu
-    depends_on:
-      - cpu-build
     container_name: its-cpu
     volumes:
       - .:/src:ro
