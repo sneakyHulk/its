@@ -20,6 +20,8 @@ int main() {
 			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device_list.at(i)));
 		}
 
+		cameras.StartGrabbing();
+
 		while (cameras.IsGrabbing()) {
 			Pylon::CGrabResultPtr result;
 			bool grabbed = cameras.RetrieveResult(1000, result);
