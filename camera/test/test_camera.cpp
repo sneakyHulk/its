@@ -20,11 +20,13 @@ int main() {
 			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device_list.at(i)));
 		}
 
-		cameras.StartGrabbing();
+		cameras.StartGrabbing(Pylon::EGrabStrategy::GrabStrategy_LatestImages);
 
 		while (cameras.IsGrabbing()) {
 			Pylon::CGrabResultPtr result;
-			bool grabbed = cameras.RetrieveResult(1000, result);
+
+			common::println("Retrieving Images...");
+			bool grabbed = cameras[0].RetrieveResult(1000, result);
 
 			if (!grabbed) {
 				common::println("No image retrieved!");
