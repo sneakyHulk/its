@@ -67,7 +67,7 @@ class OutputNodePair : public OutputNode<Input2> {
 	std::atomic_flag _flag = ATOMIC_FLAG_INIT;
 	std::vector<std::shared_ptr<Input1 const>> _input_vector;
 
-	using OutputNode<Input2>::input; // name hiding see https://bastian.rieck.me/blog/2016/name_hiding_cxx/
+	using OutputNode<Input2>::input;  // name hiding see https://bastian.rieck.me/blog/2016/name_hiding_cxx/
 	void input(std::shared_ptr<Input1 const>&& input) {
 		while (_flag.test_and_set())
 			;
@@ -128,6 +128,22 @@ class InputNode {
 	}
 };
 
+template <typename Output>
+class InputNodeExternalTrigger : public InputNode<Output> {
+   protected:
+	std::vector<std::function<void(std::shared_ptr<Output const>)>> _output_connections;
+
+   public:
+	virtual ~InputNodeExternalTrigger() = default;
+	void operator()() final {}
+
+	void input_function_external_trigger() {
+		std::shared_ptr<Output const> output = std::make_shared<Output>(InputNode<Output>::input_function());
+
+		for (auto const& connection : _output_connections) connection(output);
+	}
+};
+
 template <typename Input, typename Output>
 class InputOutputNode : public InputNode<Output>, public OutputNode<Input> {
 	Output input_function() final { throw std::logic_error("unreachable code"); };
@@ -146,4 +162,20 @@ class InputOutputNode : public InputNode<Output>, public OutputNode<Input> {
 	}
 
 	virtual Output function(Input const&) = 0;
+};
+
+template <typename Input, typename Output>
+class InputOutputNodeExternalTrigger : public InputNode<Output>, public OutputNode<Input> {
+	Output input_function() final { throw std::logic_error("unreachable code"); };
+	void output_function(Input const&) final { throw std::logic_error("unreachable code"); };
+
+	void operator()() final {}
+
+	virtual Output function(Input const&) = 0;
+
+	void function_external_trigger(Input const& data) {
+		std::shared_ptr<Output const> output = std::make_shared<Output>(function(data));
+
+		for (auto const& connection : InputNode<Output>::_output_connections) connection(output);
+	}
 };

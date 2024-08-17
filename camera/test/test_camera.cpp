@@ -1,3 +1,6 @@
+#include <pylon/BaslerUniversalInstantCamera.h>
+#include <pylon/GrabResultPtr.h>
+#include <pylon/ImageEventHandler.h>
 #include <pylon/PylonIncludes.h>
 
 #include <ranges>
@@ -6,104 +9,72 @@
 #include "common_exception.h"
 #include "common_output.h"
 
-// Grab.cpp
-/*
-    Note: Before getting started, Basler recommends reading the "Programmer's Guide" topic
-    in the pylon C++ API documentation delivered with pylon.
-    If you are upgrading to a higher major version of pylon, Basler also
-    strongly recommends reading the "Migrating from Previous Versions" topic in the pylon C++ API documentation.
+class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
+   public:
+	void OnAttach(Pylon::CInstantCamera& /*camera*/) final { std::cout << "OnAttach event" << std::endl; }
+	void OnAttached(Pylon::CInstantCamera& camera) final { std::cout << "OnAttached event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnOpen(Pylon::CInstantCamera& camera) final { std::cout << "OnOpen event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnOpened(Pylon::CInstantCamera& camera) final { std::cout << "OnOpened event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnGrabStart(Pylon::CInstantCamera& camera) final { std::cout << "OnGrabStart event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnGrabStarted(Pylon::CInstantCamera& camera) final { std::cout << "OnGrabStarted event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnGrabStop(Pylon::CInstantCamera& camera) final { std::cout << "OnGrabStop event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnGrabStopped(Pylon::CInstantCamera& camera) final { std::cout << "OnGrabStopped event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnClose(Pylon::CInstantCamera& camera) final { std::cout << "OnClose event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnClosed(Pylon::CInstantCamera& camera) final { std::cout << "OnClosed event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnDestroy(Pylon::CInstantCamera& camera) final { std::cout << "OnDestroy event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnDestroyed(Pylon::CInstantCamera& /*camera*/) final { std::cout << "OnDestroyed event" << std::endl; }
+	void OnDetach(Pylon::CInstantCamera& camera) final { std::cout << "OnDetach event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnDetached(Pylon::CInstantCamera& camera) final { std::cout << "OnDetached event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+	void OnGrabError(Pylon::CInstantCamera& camera, const char* errorMessage) final {
+		std::cout << "OnGrabError event for device " << camera.GetDeviceInfo().GetModelName() << std::endl;
+		std::cout << "Error Message: " << errorMessage << std::endl;
+	}
+	void OnCameraDeviceRemoved(Pylon::CInstantCamera& camera) final { std::cout << "OnCameraDeviceRemoved event for device " << camera.GetDeviceInfo().GetModelName() << std::endl; }
+};
 
-    This sample illustrates how to grab and process images using the CInstantCamera class.
-    The images are grabbed and processed asynchronously, i.e.,
-    while the application is processing a buffer, the acquisition of the next buffer is done
-    in parallel.
-
-    The CInstantCamera class uses a pool of buffers to retrieve image data
-    from the camera device. Once a buffer is filled and ready,
-    the buffer can be retrieved from the camera object for processing. The buffer
-    and additional image data are collected in a grab result. The grab result is
-    held by a smart pointer after retrieval. The buffer is automatically reused
-    when explicitly released or when the smart pointer object is destroyed.
-*/
-
-// Include files to use the pylon API.
-#include <pylon/PylonIncludes.h>
-#ifdef PYLON_WIN_BUILD
-#include <pylon/PylonGUI.h>
-#endif
-
-// Namespace for using pylon objects.
-using namespace Pylon;
-
-// Namespace for using cout.
-using namespace std;
-
-// Number of images to be grabbed.
-static const uint32_t c_countOfImagesToGrab = 100;
-
-int main(int /*argc*/, char* /*argv*/[]) {
-	// The exit code of the sample application.
-	int exitCode = 0;
-
-	// Before using any pylon methods, the pylon runtime must be initialized.
-	PylonInitialize();
-
-	try {
-		// Create an instant camera object with the camera device found first.
-		CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-
-		// Print the model name of the camera.
-		cout << "Using device " << camera.GetDeviceInfo().GetModelName() << endl;
-
-		// The parameter MaxNumBuffer can be used to control the count of buffers
-		// allocated for grabbing. The default value of this parameter is 10.
-		camera.MaxNumBuffer = 5;
-
-		// Start the grabbing of c_countOfImagesToGrab images.
-		// The camera device is parameterized with a default configuration which
-		// sets up free-running continuous acquisition.
-		camera.StartGrabbing(c_countOfImagesToGrab);
-
-		// This smart pointer will receive the grab result data.
-		CGrabResultPtr ptrGrabResult;
-
-		// Camera.StopGrabbing() is called automatically by the RetrieveResult() method
-		// when c_countOfImagesToGrab images have been retrieved.
-		while (camera.IsGrabbing()) {
-			// Wait for an image and then retrieve it. A timeout of 5000 ms is used.
-			camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
-
-			// Image grabbed successfully?
-			if (ptrGrabResult->GrabSucceeded()) {
-				// Access the image data.
-				cout << "SizeX: " << ptrGrabResult->GetWidth() << endl;
-				cout << "SizeY: " << ptrGrabResult->GetHeight() << endl;
-				const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
-				cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << endl << endl;
-
-#ifdef PYLON_WIN_BUILD
-				// Display the grabbed image.
-				Pylon::DisplayImage(1, ptrGrabResult);
-#endif
-			} else {
-				cout << "Error: " << std::hex << ptrGrabResult->GetErrorCode() << std::dec << " " << ptrGrabResult->GetErrorDescription() << endl;
-			}
-		}
-	} catch (const GenericException& e) {
-		// Error handling.
-		cerr << "An exception occurred." << endl << e.GetDescription() << endl;
-		exitCode = 1;
+class CImageEventPrinter : public Pylon::CImageEventHandler {
+   public:
+	void OnImagesSkipped(Pylon::CInstantCamera& camera, size_t countOfSkippedImages) final {
+		std::cout << "OnImagesSkipped event for device " << camera.GetDeviceInfo().GetModelName() << std::endl;
+		std::cout << countOfSkippedImages << " images have been skipped." << std::endl;
+		std::cout << std::endl;
 	}
 
-	// Comment the following two lines to disable waiting on exit.
-	cerr << endl << "Press enter to exit." << endl;
-	while (cin.get() != '\n')
-		;
+	void OnImageGrabbed(Pylon::CInstantCamera& camera, const Pylon::CGrabResultPtr& ptrGrabResult) final {
+		std::cout << "OnImageGrabbed event for device " << camera.GetDeviceInfo().GetModelName() << std::endl;
 
-	// Releases all pylon resources.
-	PylonTerminate();
+		// Image grabbed successfully?
+		if (ptrGrabResult->GrabSucceeded()) {
+			std::cout << "SizeX: " << ptrGrabResult->GetWidth() << std::endl;
+			std::cout << "SizeY: " << ptrGrabResult->GetHeight() << std::endl;
+			const uint8_t* pImageBuffer = (uint8_t*)ptrGrabResult->GetBuffer();
+			std::cout << "Gray value of first pixel: " << (uint32_t)pImageBuffer[0] << std::endl;
+			std::cout << std::endl;
+		} else {
+			std::cout << "Error: " << std::hex << ptrGrabResult->GetErrorCode() << std::dec << " " << ptrGrabResult->GetErrorDescription() << std::endl;
+		}
+	}
+};
 
-	return exitCode;
+int main(int argc, char* argv[]) {
+	// Before using any pylon methods, the pylon runtime must be initialized.
+	Pylon::PylonInitialize();
+
+	try {
+		Pylon::CDeviceInfo info;
+		info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
+
+		Pylon::CBaslerUniversalInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+
+		camera.Open();
+
+		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+
+	} catch (const Pylon::GenericException& e) {
+		common::println("An exception occurred: ", e.GetDescription());
+
+		return 1;
+	}
 }
 
 // int main() {
