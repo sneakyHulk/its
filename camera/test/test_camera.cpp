@@ -141,11 +141,13 @@ int main(int argc, char* argv[]) {
 
 		video.write(image);
 		if (++frames > 1000) {
-			return 0;
+			break;
 		}
 
 		camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 	}
+
+	Pylon::PylonTerminate();
 }
 
 // int main() {
