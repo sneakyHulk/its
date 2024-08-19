@@ -65,20 +65,29 @@ int main(int argc, char* argv[]) {
 		info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
 
 		Pylon::CBaslerUniversalInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+
+		common::println("Pylon::CBaslerUniversalInstantCamera");
+
 		camera.Open();
+
+		common::println("Open");
+
 		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+
+		common::println("camera.GetStreamGrabberParams().TransmissionType");
+
 		camera.StartGrabbing();
+
+		common::println("camera.StartGrabbing()");
 
 		Pylon::CGrabResultPtr ptrGrabResult;
 
 		while (camera.IsGrabbing()) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+
+			common::println("camera.RetrieveResult()");
 		}
 
-	} catch (const Pylon::AccessException& e) {
-		common::println("An access exception occurred: ", e.GetDescription());
-
-		return 1;
 	} catch (const Pylon::GenericException& e) {
 		common::println("A generic exception occurred: ", e.GetDescription());
 
