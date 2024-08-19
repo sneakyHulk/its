@@ -27,7 +27,6 @@ services:
       target: image
       args:
         src: cuda
-    container_name: its-cuda
     deploy:
       mode: replicated
       replicas: 2
