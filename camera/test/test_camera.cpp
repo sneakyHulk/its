@@ -96,8 +96,6 @@ int main(int argc, char* argv[]) {
 
 		camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 
-		std::this_thread::sleep_for(100s);
-
 		camera.StartGrabbing();
 		Pylon::CGrabResultPtr ptrGrabResult;
 
