@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
 		cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
 		video.write(image);
-		if (++frames > 1000) {
+		if (++frames > (controller_mode ? 1000 : 999)) {
 			break;
 		}
 
