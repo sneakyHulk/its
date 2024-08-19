@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 			common::println("camera.RetrieveResult()");
 
-			cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC3, ptrGrabResult->GetBuffer());
+			cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, ptrGrabResult->GetBuffer());
 			cv::Mat image;
 			cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
