@@ -33,7 +33,7 @@ services:
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
-      - ./result:/src/${TARGET_FOLDER}
+      - ./result:/result
     ports:
       - "${IP}:8554:8554"
     network_mode: host

@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 			cv::Mat image;
 			cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
-			cv::imwrite("test.png", image);
+			cv::imwrite("/result/test.png", image);
 		}
 	}
 }
