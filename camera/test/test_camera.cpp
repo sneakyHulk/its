@@ -71,12 +71,16 @@ int main(int argc, char* argv[]) {
 
 		Pylon::CGrabResultPtr ptrGrabResult;
 
-		while (camera.IsGrabbing())  {
-			camera.RetrieveResult( 5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException );
+		while (camera.IsGrabbing()) {
+			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 		}
 
+	} catch (const Pylon::AccessException& e) {
+		common::println("An access exception occurred: ", e.GetDescription());
+
+		return 1;
 	} catch (const Pylon::GenericException& e) {
-		common::println("An exception occurred: ", e.GetDescription());
+		common::println("A generic exception occurred: ", e.GetDescription());
 
 		return 1;
 	}
