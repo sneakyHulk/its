@@ -60,6 +60,21 @@ class CImageEventPrinter : public Pylon::CImageEventHandler {
 	}
 };
 
+void save_raw(Pylon::CGrabResultPtr const& ptrGrabResult) {
+	std::ofstream out("/result/image.raw", std::ios::binary);
+	out.write(static_cast<const char*>(ptrGrabResult->GetBuffer()), static_cast<int>(ptrGrabResult->GetBufferSize()));
+
+	out.close();
+}
+
+void save_png(Pylon::CGrabResultPtr const& ptrGrabResult) {
+	cv::Mat bayer_image(static_cast<int>(ptrGrabResult->GetHeight()), static_cast<int>(ptrGrabResult->GetWidth()), CV_8UC1, ptrGrabResult->GetBuffer());
+	cv::Mat image;
+	cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+	cv::imwrite("/result/image.png", image);
+}
+
 int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	Pylon::PylonInitialize();
@@ -93,44 +108,43 @@ int main(int argc, char* argv[]) {
 		// camera.GetStreamGrabberParams().DestinationPort = 49152;
 
 		camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
+	} else {
+		// The default configuration must be removed when monitor mode is selected
+		// because the monitoring application is not allowed to modify any parameter settings.
+		camera.RegisterConfiguration((Pylon::CConfigurationEventHandler*)NULL, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_None);
 
-		camera.StartGrabbing();
-		Pylon::CGrabResultPtr ptrGrabResult;
+		// Set MonitorModeActive to true to act as monitor
+		camera.MonitorModeActive = true;
 
-		while (camera.IsGrabbing()) {
-			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-			common::println("camera.RetrieveResult()");
+		camera.Open();
 
-			std::ofstream out("/result/image.raw", std::ios::binary);
-			out.write(static_cast<const char*>(ptrGrabResult->GetBuffer()), ptrGrabResult->GetBufferSize());
+		// Select transmission type. If the camera is already controlled by another application
+		// and configured for multicast, the active camera configuration can be used
+		// (IP Address and Port will be set automatically).
+		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
+	}
 
-			out.close();
+	camera.StartGrabbing();
+	Pylon::CGrabResultPtr ptrGrabResult;
+	camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 
-			{
-				cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, ptrGrabResult->GetBuffer());
-				cv::Mat image;
-				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+	cv::Size size(static_cast<int>(ptrGrabResult->GetWidth()), static_cast<int>(ptrGrabResult->GetHeight()));
 
-				cv::imwrite("/result/test1.png", image);
-			}
+	cv::VideoWriter video;
+	video.open(controller_mode ? "/result/video_controller.mp4" : "/result/video_monitor.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., size);
 
+	int frames = 0;
+	while (camera.IsGrabbing()) {
+		cv::Mat bayer_image(size, CV_8UC1, ptrGrabResult->GetBuffer());
+		cv::Mat image;
+		cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
-			{
-				cv::Mat bayer_image(ptrGrabResult->GetHeight() * 4, ptrGrabResult->GetWidth(), CV_8UC1, ptrGrabResult->GetBuffer());
-				cv::Mat image;
-				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
-
-				cv::imwrite("/result/test2.png", image);
-			}
-
-			{
-				cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth() * 4, CV_8UC1, ptrGrabResult->GetBuffer());
-				cv::Mat image;
-				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
-
-				cv::imwrite("/result/test3.png", image);
-			}
+		video.write(image);
+		if (++frames > 1000) {
+			return 0;
 		}
+
+		camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 	}
 }
 
