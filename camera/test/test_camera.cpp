@@ -9,6 +9,9 @@
 #include "common_exception.h"
 #include "common_output.h"
 
+#include <thread>
+using namespace std::chrono_literals;
+
 class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
    public:
 	void OnAttach(Pylon::CInstantCamera& /*camera*/) final { std::cout << "OnAttach event" << std::endl; }
@@ -65,26 +68,23 @@ int main(int argc, char* argv[]) {
 		info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
 
 		Pylon::CBaslerUniversalInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-
 		common::println("Pylon::CBaslerUniversalInstantCamera");
 
 		camera.Open();
-
 		common::println("Open");
 
-		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+		std::this_thread::sleep_for(100s);
 
+		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
 		common::println("camera.GetStreamGrabberParams().TransmissionType");
 
 		camera.StartGrabbing();
-
 		common::println("camera.StartGrabbing()");
 
 		Pylon::CGrabResultPtr ptrGrabResult;
 
 		while (camera.IsGrabbing()) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-
 			common::println("camera.RetrieveResult()");
 		}
 
