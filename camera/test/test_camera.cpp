@@ -3,8 +3,8 @@
 #include <pylon/ImageEventHandler.h>
 #include <pylon/PylonIncludes.h>
 
+#include <fstream>
 #include <opencv2/opencv.hpp>
-
 #include <ranges>
 #include <thread>
 #include <vector>
@@ -101,11 +101,35 @@ int main(int argc, char* argv[]) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 			common::println("camera.RetrieveResult()");
 
-			cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC4, ptrGrabResult->GetBuffer());
-			cv::Mat image;
-			cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+			std::ofstream out("/result/image.raw", std::ios::binary);
+			out.write(static_cast<const char*>(ptrGrabResult->GetBuffer()), ptrGrabResult->GetBufferSize());
 
-			cv::imwrite("/result/test.png", image);
+			out.close();
+
+			{
+				cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, ptrGrabResult->GetBuffer());
+				cv::Mat image;
+				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+				cv::imwrite("/result/test1.png", image);
+			}
+
+
+			{
+				cv::Mat bayer_image(ptrGrabResult->GetHeight() * 4, ptrGrabResult->GetWidth(), CV_8UC1, ptrGrabResult->GetBuffer());
+				cv::Mat image;
+				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+				cv::imwrite("/result/test2.png", image);
+			}
+
+			{
+				cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth() * 4, CV_8UC1, ptrGrabResult->GetBuffer());
+				cv::Mat image;
+				cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+				cv::imwrite("/result/test3.png", image);
+			}
 		}
 	}
 }
