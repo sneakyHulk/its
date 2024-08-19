@@ -60,8 +60,6 @@ class CImageEventPrinter : public Pylon::CImageEventHandler {
 	}
 };
 
-bool check_already_controlled() {}
-
 int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	Pylon::PylonInitialize();
@@ -103,7 +101,9 @@ int main(int argc, char* argv[]) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 			common::println("camera.RetrieveResult()");
 
-			cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC4, ptrGrabResult->GetBuffer());
+			cv::Mat bayer_image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC4, ptrGrabResult->GetBuffer());
+			cv::Mat image;
+			cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
 			cv::imwrite("test.png", image);
 		}
