@@ -28,6 +28,9 @@ services:
       args:
         src: cuda
     container_name: its-cuda
+    deploy:
+      mode: replicated
+      replicas: 2
     volumes:
       - .:/src:ro
       - /etc/timezone:/etc/timezone:ro
