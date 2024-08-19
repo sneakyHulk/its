@@ -3,13 +3,14 @@
 #include <pylon/ImageEventHandler.h>
 #include <pylon/PylonIncludes.h>
 
+#include <opencv2/opencv.hpp>
+
 #include <ranges>
+#include <thread>
 #include <vector>
 
 #include "common_exception.h"
 #include "common_output.h"
-
-#include <thread>
 using namespace std::chrono_literals;
 
 class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
@@ -59,39 +60,55 @@ class CImageEventPrinter : public Pylon::CImageEventHandler {
 	}
 };
 
+bool check_already_controlled() {}
+
 int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	Pylon::PylonInitialize();
 
+	// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
+	bool controller_mode = true;
+
+	Pylon::CDeviceInfo info;
+	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
+	Pylon::CBaslerUniversalInstantCamera camera;
 	try {
-		Pylon::CDeviceInfo info;
-		info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
-
-		Pylon::CBaslerUniversalInstantCamera camera(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-		common::println("Pylon::CBaslerUniversalInstantCamera");
-
+		camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
 		camera.Open();
-		common::println("Open");
+	} catch (const Pylon::GenericException& e) {
+		std::string error_description = e.GetDescription();
+
+		// if other error than
+		if (error_description.find("The device is controlled by another application.") == std::string::npos) {
+			common::println("[Camera]: ", e.GetDescription());
+
+			return 1;
+		}
+
+		controller_mode = false;
+	}
+
+	if (controller_mode) {
+		// Set transmission type to "multicast"
+		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+		// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
+		// camera.GetStreamGrabberParams().DestinationPort = 49152;
+
+		camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 
 		std::this_thread::sleep_for(100s);
 
-		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
-		common::println("camera.GetStreamGrabberParams().TransmissionType");
-
 		camera.StartGrabbing();
-		common::println("camera.StartGrabbing()");
-
 		Pylon::CGrabResultPtr ptrGrabResult;
 
 		while (camera.IsGrabbing()) {
 			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 			common::println("camera.RetrieveResult()");
+
+			cv::Mat image(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC4, ptrGrabResult->GetBuffer());
+
+			cv::imwrite("test.png", image);
 		}
-
-	} catch (const Pylon::GenericException& e) {
-		common::println("A generic exception occurred: ", e.GetDescription());
-
-		return 1;
 	}
 }
 
