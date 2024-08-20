@@ -117,6 +117,9 @@ int main(int argc, char* argv[]) {
 
 				camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 			} else {
+				// when controller mode and monitor mode started at the same time
+				std::this_thread::sleep_for(1s);
+
 				// The default configuration must be removed when monitor mode is selected
 				// because the monitoring application is not allowed to modify any parameter settings.
 				camera.RegisterConfiguration((Pylon::CConfigurationEventHandler*)NULL, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_None);
@@ -136,6 +139,14 @@ int main(int argc, char* argv[]) {
 
 			try {
 				camera.StartGrabbing();
+			} catch (Pylon::GenericException const& e) {
+				common::println("[Camera]: ", e.GetDescription(), "Reconnect in 5s...");
+
+				std::this_thread::sleep_for(5s);
+				continue;
+			}
+
+			try {
 				Pylon::CGrabResultPtr ptrGrabResult;
 
 				int frames = 0;
@@ -147,7 +158,7 @@ int main(int argc, char* argv[]) {
 					cv::Mat image;
 					cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
-					if (++frames > (controller_mode ? 100 : 150)) {
+					if (++frames > (controller_mode ? 200 : 350)) {
 						break;
 					}
 				}
