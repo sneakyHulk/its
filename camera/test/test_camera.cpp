@@ -132,6 +132,8 @@ int main(int argc, char* argv[]) {
 				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
 			}
 
+			common::println("[Camera]: Camera in ", (controller_mode ? "controller" : "monitor"), " mode.");
+
 			try {
 				camera.StartGrabbing();
 				Pylon::CGrabResultPtr ptrGrabResult;
