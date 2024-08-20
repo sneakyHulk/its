@@ -154,11 +154,6 @@ int main(int argc, char* argv[]) {
 					common::println("[Camera]: Application in controller mode terminated! Switching to controller mode...");
 					continue;
 				}
-			} catch (std::exception const& e) {
-				throw e;
-			} catch (...) {
-				// rethrow unknown exception
-				throw;
 			}
 
 			common::println("[Camera]: Cannot access camera anymore! Reconnect in 5s...");
