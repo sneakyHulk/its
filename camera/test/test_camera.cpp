@@ -9,20 +9,11 @@
 #include <thread>
 #include <vector>
 
-// for hostname
-#include <unistd.h>
-
-#include <climits>
-
 #include "common_exception.h"
 #include "common_output.h"
-using namespace std::chrono_literals;
+#include "../include/camera_node.h"
 
-class PylonRAII {
-   public:
-	PylonRAII() { Pylon::PylonInitialize(); }
-	~PylonRAII() { Pylon::PylonTerminate(); }
-};
+using namespace std::chrono_literals;
 
 class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
    public:
@@ -155,7 +146,8 @@ int main(int argc, char* argv[]) {
 				Pylon::CGrabResultPtr ptrGrabResult;
 
 				cv::VideoWriter video;
-				video.open(std::string("/result/video_") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
+				video.open(std::string("/result/video_") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) + ".mp4",
+				    cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
 
 				int frames = 0;
 				while (camera.IsGrabbing()) {
@@ -234,3 +226,4 @@ int main(int argc, char* argv[]) {
 //
 //	Pylon::PylonTerminate();
 // }
+

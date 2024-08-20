@@ -10,7 +10,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 add_executable(test_${PROJECT_NAME} test/test_area_blocking.cpp)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC ${PROJECT_NAME})
-target_link_libraries(test_${PROJECT_NAME} PUBLIC camera_simulator_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC camera_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC yolo_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC transformation_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC visualization_nodes)
