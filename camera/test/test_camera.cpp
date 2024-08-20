@@ -13,6 +13,12 @@
 #include "common_output.h"
 using namespace std::chrono_literals;
 
+class PylonRAII {
+   public:
+	PylonRAII() { Pylon::PylonInitialize(); }
+	~PylonRAII() { Pylon::PylonTerminate(); }
+};
+
 class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
    public:
 	void OnAttach(Pylon::CInstantCamera& /*camera*/) final { std::cout << "OnAttach event" << std::endl; }
@@ -77,77 +83,104 @@ void save_png(Pylon::CGrabResultPtr const& ptrGrabResult) {
 
 int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
-	Pylon::PylonInitialize();
+	PylonRAII pylon_raii;
 
-	// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
-	bool controller_mode = true;
-
-	Pylon::CDeviceInfo info;
-	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
-	Pylon::CBaslerUniversalInstantCamera camera;
 	try {
-		camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
-		camera.Open();
-	} catch (const Pylon::GenericException& e) {
-		std::string error_description = e.GetDescription();
+		while (true) {
+			// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
+			bool controller_mode = true;
 
-		// if other error than
-		if (error_description.find("The device is controlled by another application.") == std::string::npos) {
-			common::println("[Camera]: ", e.GetDescription());
+			Pylon::CDeviceInfo info;
+			info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
+			Pylon::CBaslerUniversalInstantCamera camera;
+			try {
+				camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
+				camera.Open();
+			} catch (const Pylon::GenericException& e) {
+				std::string error_description = e.GetDescription();
 
-			return 1;
+				// if other error than "The device is controlled by another application."
+				if (error_description.find("The device is controlled by another application.") == std::string::npos) {
+					common::println("[Camera]: ", e.GetDescription());
+
+					return 1;
+				}
+
+				controller_mode = false;
+			}
+
+			if (controller_mode) {
+				// Set transmission type to "multicast"
+				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+				// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
+				// camera.GetStreamGrabberParams().DestinationPort = 49152;
+
+				camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
+			} else {
+				// The default configuration must be removed when monitor mode is selected
+				// because the monitoring application is not allowed to modify any parameter settings.
+				camera.RegisterConfiguration((Pylon::CConfigurationEventHandler*)NULL, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_None);
+
+				// Set MonitorModeActive to true to act as monitor
+				camera.MonitorModeActive = true;
+
+				camera.Open();
+
+				// Select transmission type. If the camera is already controlled by another application
+				// and configured for multicast, the active camera configuration can be used
+				// (IP Address and Port will be set automatically).
+				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
+			}
+
+			try {
+				camera.StartGrabbing();
+				Pylon::CGrabResultPtr ptrGrabResult;
+
+				int frames = 0;
+				while (camera.IsGrabbing()) {
+					camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+
+					cv::Size size(static_cast<int>(ptrGrabResult->GetWidth()), static_cast<int>(ptrGrabResult->GetHeight()));
+					cv::Mat bayer_image(size, CV_8UC1, ptrGrabResult->GetBuffer());
+					cv::Mat image;
+					cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+					if (++frames > (controller_mode ? 100 : 150)) {
+						break;
+					}
+				}
+			} catch (Pylon::TimeoutException const& e) {
+				if (!controller_mode) {
+					common::println("[Camera]: Application in controller mode terminated! Switching to controller mode...");
+					continue;
+				}
+			} catch (std::exception const& e) {
+				throw e;
+			} catch (...) {
+				// rethrow unknown exception
+				throw;
+			}
+
+			common::println("[Camera]: Cannot access camera anymore! Reconnect in 5s...");
+			std::this_thread::sleep_for(5s);
 		}
-
-		controller_mode = false;
+	} catch (std::exception const& e) {
+		common::println("[Camera]: ", e.what());
+	} catch (...) {
+		common::println("[Camera]: Unknown error occurred!");
 	}
 
-	if (controller_mode) {
-		// Set transmission type to "multicast"
-		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
-		// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
-		// camera.GetStreamGrabberParams().DestinationPort = 49152;
-
-		camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
-	} else {
-		// The default configuration must be removed when monitor mode is selected
-		// because the monitoring application is not allowed to modify any parameter settings.
-		camera.RegisterConfiguration((Pylon::CConfigurationEventHandler*)NULL, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_None);
-
-		// Set MonitorModeActive to true to act as monitor
-		camera.MonitorModeActive = true;
-
-		camera.Open();
-
-		// Select transmission type. If the camera is already controlled by another application
-		// and configured for multicast, the active camera configuration can be used
-		// (IP Address and Port will be set automatically).
-		camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
-	}
-
-	camera.StartGrabbing();
-	Pylon::CGrabResultPtr ptrGrabResult;
-	camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-
-	cv::Size size(static_cast<int>(ptrGrabResult->GetWidth()), static_cast<int>(ptrGrabResult->GetHeight()));
-
-	cv::VideoWriter video;
-	video.open(controller_mode ? "/result/video_controller.mp4" : "/result/video_monitor.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., size);
-
-	int frames = 0;
-	while (camera.IsGrabbing()) {
-		cv::Mat bayer_image(size, CV_8UC1, ptrGrabResult->GetBuffer());
-		cv::Mat image;
-		cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
-
-		video.write(image);
-		if (++frames > (controller_mode ? 1000 : 999)) {
-			break;
-		}
-
-		camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-	}
-
-	Pylon::PylonTerminate();
+	// camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+	//
+	// cv::VideoWriter video;
+	// video.open(controller_mode ? "/result/video_controller.mp4" : "/result/video_monitor.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., size);
+	//
+	// while (camera.IsGrabbing()) {
+	//	video.write(image);
+	//	if (++frames > (controller_mode ? 1000 : 999)) {
+	//		break;
+	//	}
+	//}
 }
 
 // int main() {
