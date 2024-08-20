@@ -9,6 +9,11 @@
 #include <thread>
 #include <vector>
 
+// for hostname
+#include <unistd.h>
+
+#include <climits>
+
 #include "common_exception.h"
 #include "common_output.h"
 using namespace std::chrono_literals;
@@ -85,6 +90,12 @@ int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	PylonRAII pylon_raii;
 
+	cv::VideoWriter video;
+	char hostname[HOST_NAME_MAX + 1];
+	gethostname(hostname, HOST_NAME_MAX + 1);
+
+	video.open(std::string("/result/video_") + hostname + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
+
 	try {
 		while (true) {
 			// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
@@ -158,6 +169,8 @@ int main(int argc, char* argv[]) {
 					cv::Mat image;
 					cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
+					video.write(image);
+
 					if (++frames > (controller_mode ? 200 : 350)) {
 						break;
 					}
@@ -181,7 +194,7 @@ int main(int argc, char* argv[]) {
 	// camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 	//
 	// cv::VideoWriter video;
-	// video.open(controller_mode ? "/result/video_controller.mp4" : "/result/video_monitor.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., size);
+	//
 	//
 	// while (camera.IsGrabbing()) {
 	//	video.write(image);
