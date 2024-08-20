@@ -90,12 +90,6 @@ int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	PylonRAII pylon_raii;
 
-	cv::VideoWriter video;
-	char hostname[HOST_NAME_MAX + 1];
-	gethostname(hostname, HOST_NAME_MAX + 1);
-
-	video.open(std::string("/result/video_") + hostname + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
-
 	try {
 		while (true) {
 			// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
@@ -159,6 +153,9 @@ int main(int argc, char* argv[]) {
 
 			try {
 				Pylon::CGrabResultPtr ptrGrabResult;
+
+				cv::VideoWriter video;
+				video.open(std::string("/result/video_") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
 
 				int frames = 0;
 				while (camera.IsGrabbing()) {
