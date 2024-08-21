@@ -66,7 +66,7 @@ void Camera::init_camera() {
 
 				// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
 				common::println("[Camera]: Waiting for PTP network devices to be sufficiently synchronized...");
-				boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
+				boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10000, std::chrono::nanoseconds::max());
 				do {
 					camera.GevIEEE1588DataSetLatch();
 					common::println(camera.GevIEEE1588Status());
