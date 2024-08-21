@@ -78,7 +78,7 @@ void save_raw(Pylon::CGrabResultPtr const& ptrGrabResult) {
 void save_png(Pylon::CGrabResultPtr const& ptrGrabResult) {
 	cv::Mat bayer_image(static_cast<int>(ptrGrabResult->GetHeight()), static_cast<int>(ptrGrabResult->GetWidth()), CV_8UC1, ptrGrabResult->GetBuffer());
 	cv::Mat image;
-	cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+	cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
 	cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("result/image.png"), image);
 }

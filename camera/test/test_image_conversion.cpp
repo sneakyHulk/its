@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 	{
 		cv::Mat bayer_image(1200, 1920, CV_8UC1, image_raw.data());
 		cv::Mat image;
-		cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+		cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
 		cv::imshow("image", image);
 
