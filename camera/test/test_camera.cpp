@@ -3,11 +3,12 @@
 #include <pylon/ImageEventHandler.h>
 #include <pylon/PylonIncludes.h>
 
+#include <boost/circular_buffer.hpp>
+#include <filesystem>
 #include <fstream>
 #include <opencv2/opencv.hpp>
 #include <ranges>
 #include <thread>
-#include <vector>
 
 #include "common_exception.h"
 #include "common_output.h"
@@ -68,7 +69,7 @@ class CImageEventPrinter : public Pylon::CImageEventHandler {
 };
 
 void save_raw(Pylon::CGrabResultPtr const& ptrGrabResult) {
-	std::ofstream out("/result/image.raw", std::ios::binary);
+	std::ofstream out(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("result/image.raw"), std::ios::binary);
 	out.write(static_cast<const char*>(ptrGrabResult->GetBuffer()), static_cast<int>(ptrGrabResult->GetBufferSize()));
 
 	out.close();
@@ -79,47 +80,85 @@ void save_png(Pylon::CGrabResultPtr const& ptrGrabResult) {
 	cv::Mat image;
 	cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
 
-	cv::imwrite("/result/image.png", image);
+	cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("result/image.png"), image);
 }
 
 int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	PylonRAII pylon_raii;
 
-	try {
-		while (true) {
-			// try to get camera in controller mode -> if device is controlled by another application it will fail -> controller_mode is set to false
-			bool controller_mode = true;
+	Pylon::CDeviceInfo info;
+	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
 
-			Pylon::CDeviceInfo info;
-			info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
-			Pylon::CBaslerUniversalInstantCamera camera;
-			try {
-				camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
-				camera.Open();
-			} catch (const Pylon::GenericException& e) {
-				std::string error_description = e.GetDescription();
+	while (true) {
+		Pylon::CBaslerUniversalInstantCamera camera;
+		bool controller_mode;
 
-				// if other error than "The device is controlled by another application."
-				if (error_description.find("The device is controlled by another application.") == std::string::npos) {
-					common::println("[Camera]: ", e.GetDescription());
+		try {
+			controller_mode = true;
 
-					return 1;
+			camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
+			camera.Open();  // can fail
+
+			common::println("[Camera]: Camera in controller mode.");
+
+			// Set transmission type to "multicast"
+			camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+			// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
+			// camera.GetStreamGrabberParams().DestinationPort = 49152;
+
+			camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
+
+			// Enabling PTP Clock Synchronization
+			if (camera.GevIEEE1588.GetValue()) {
+				common::println("[Camera]: IEEE1588 enabled, disabling...");
+				camera.GevIEEE1588.SetValue(false);
+				std::this_thread::sleep_for(5s);
+			}
+			common::println("[Camera]: Enable PTP clock synchronization...");
+			camera.GevIEEE1588.SetValue(true);
+
+			// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
+			common::println("[Camera]: Waiting for PTP network devices to be sufficiently synchronized...");
+			boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
+			do {
+				camera.GevIEEE1588DataSetLatch();
+
+				if (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+					continue;
 				}
 
+				auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+				clock_offsets.push_back(current_offset);
+				common::println("[Camera]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+
+				std::this_thread::sleep_for(1s);
+			} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
+
+			// common::println("[Camera]: Waiting for slave mode...");
+			// while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
+
+			common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
+
+			common::println("[Camera]: Start to grab images...");
+			camera.StartGrabbing();
+		} catch (Pylon::GenericException const& e) {
+			std::string error_description = e.GetDescription();
+
+			// errors related to camera already being in controller mode
+			if (error_description.find("The device is controlled by another application.") != std::string::npos || error_description.find("Node is not writable!") != std::string::npos) {
+				common::println("[Camera]: Camera already in controller mode. Switching to monitor mode...");
+
 				controller_mode = false;
+			} else {
+				common::println("[Camera]: ", e.GetDescription(), "! Reconnect in 5s...");
+
+				std::this_thread::sleep_for(5s);
+				continue;
 			}
 
-			if (controller_mode) {
-				// Set transmission type to "multicast"
-				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
-				// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
-				// camera.GetStreamGrabberParams().DestinationPort = 49152;
-
-				camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
-			} else {
-				// when controller mode and monitor mode started at the same time
-				std::this_thread::sleep_for(1s);
+			try {
+				camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
 
 				// The default configuration must be removed when monitor mode is selected
 				// because the monitoring application is not allowed to modify any parameter settings.
@@ -130,72 +169,67 @@ int main(int argc, char* argv[]) {
 
 				camera.Open();
 
+				common::println("[Camera]: Camera in monitor mode.");
+
 				// Select transmission type. If the camera is already controlled by another application
 				// and configured for multicast, the active camera configuration can be used
 				// (IP Address and Port will be set automatically).
 				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
-			}
 
-			common::println("[Camera]: Camera in ", (controller_mode ? "controller" : "monitor"), " mode.");
-
-			try {
 				camera.StartGrabbing();
 			} catch (Pylon::GenericException const& e) {
-				common::println("[Camera]: ", e.GetDescription(), "Reconnect in 5s...");
+				common::println("[Camera]: ", e.GetDescription(), "! Reconnect in 5s...");
 
 				std::this_thread::sleep_for(5s);
 				continue;
 			}
+		} catch (...) {
+			common::println("[Camera]: Unknown error occurred!");
+			throw;
+		}
 
+		int frame = 0;
+		do {
+			if (!camera.IsGrabbing()) {
+				common::println("[Camera]: Image Grabbing failed! Reconnect in 5s...");
+
+				std::this_thread::sleep_for(5s);
+				break;
+			}
+
+			Pylon::CGrabResultPtr ptrGrabResult;
 			try {
-				Pylon::CGrabResultPtr ptrGrabResult;
-
-				cv::VideoWriter video;
-				video.open(std::string("/result/video_") + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) + ".mp4",
-				    cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(1920, 1200));
-
-				int frames = 0;
-				while (camera.IsGrabbing()) {
-					camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-
-					cv::Size size(static_cast<int>(ptrGrabResult->GetWidth()), static_cast<int>(ptrGrabResult->GetHeight()));
-					cv::Mat bayer_image(size, CV_8UC1, ptrGrabResult->GetBuffer());
-					cv::Mat image;
-					cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
-
-					video.write(image);
-
-					if (++frames > (controller_mode ? 200 : 350)) {
-						break;
-					}
-				}
+				camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 			} catch (Pylon::TimeoutException const& e) {
 				if (!controller_mode) {
 					common::println("[Camera]: Application in controller mode terminated! Switching to controller mode...");
-					continue;
+				} else {
+					common::println("[Camera]: Image Grabbing failed! Reconnect in 5s...");
+
+					std::this_thread::sleep_for(5s);
 				}
+
+				break;
 			}
 
-			common::println("[Camera]: Cannot access camera anymore! Reconnect in 5s...");
-			std::this_thread::sleep_for(5s);
-		}
-	} catch (std::exception const& e) {
-		common::println("[Camera]: ", e.what());
-	} catch (...) {
-		common::println("[Camera]: Unknown error occurred!");
-	}
+			if (!ptrGrabResult->GrabSucceeded()) {
+				if (!controller_mode) {
+					common::println("[Camera]: Application in controller mode terminated! Switching to controller mode...");
+				} else {
+					common::println("[Camera]: Image Grabbing failed! Reconnect in 5s...");
 
-	// camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
-	//
-	// cv::VideoWriter video;
-	//
-	//
-	// while (camera.IsGrabbing()) {
-	//	video.write(image);
-	//	if (++frames > (controller_mode ? 1000 : 999)) {
-	//		break;
-	//	}
-	//}
+					std::this_thread::sleep_for(5s);
+				}
+
+				break;
+			}
+
+			save_png(ptrGrabResult);
+			save_raw(ptrGrabResult);
+
+			if (++frame > (controller_mode ? 500 : 1000)) break;
+		} while (true);
+	}
 }
 
 // int main() {
@@ -231,4 +265,3 @@ int main(int argc, char* argv[]) {
 //
 //	Pylon::PylonTerminate();
 // }
-
