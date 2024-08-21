@@ -61,6 +61,7 @@ void Camera::init_camera() {
 				camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 
 				// Enabling PTP Clock Synchronization
+				common::println("IEEE1588 enabled: ", camera.GevIEEE1588.GetValue());
 				common::println("[Camera]: Enable PTP clock synchronization...");
 				camera.GevIEEE1588.SetValue(true);
 
@@ -69,12 +70,9 @@ void Camera::init_camera() {
 				boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10000, std::chrono::nanoseconds::max());
 				do {
 					camera.GevIEEE1588DataSetLatch();
-					common::println(camera.GevIEEE1588Status());
 
 					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing)
 						;
-
-					common::println(camera.GevIEEE1588Status());
 
 					auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
 					clock_offsets.push_back(current_offset);
