@@ -63,18 +63,21 @@ void Camera::init_camera() {
 				camera.GevIEEE1588.SetValue(true);
 
 				// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
-				camera.GevIEEE1588DataSetLatch();
-				common::println("[Camera]: IEEE1588 Initializing...");
-				while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing) {
-					std::this_thread::sleep_for(1ms);
-				}
 				common::println("[Camera]: Waiting for PTP network devices to be sufficiently synchronized...");
-				while (std::max({std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()),
-				           std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster())}) < std::chrono::milliseconds(1)) {
-					std::this_thread::sleep_for(1ms);
-				}
-				common::println("[Camera]: Highest offset from master ~ < 1ms. Can start to grab images.");
+				std::chrono::nanoseconds clock_offset;
+				do {
+					camera.GevIEEE1588DataSetLatch();
+					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing) {
+						std::this_thread::sleep_for(1ms);
+					}
+					clock_offset = 0ns;
+					for (auto i = 0; i < 10; ++i, std::this_thread::sleep_for(100us)) {
+						clock_offset = std::max(std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), clock_offset);
+					}
+					common::println("[Camera]: Highest offset from master approx. ", clock_offset);
+				} while(clock_offset < 1ms);
 
+				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
 			} else {
 				common::println("[Camera]: Camera in monitor mode.");
 
