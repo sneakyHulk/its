@@ -64,9 +64,11 @@ void Camera::init_camera() {
 
 				// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
 				camera.GevIEEE1588DataSetLatch();
+				common::println("[Camera]: IEEE1588S Initializing...");
 				while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588Status_Initializing) {
 					std::this_thread::sleep_for(1ms);
 				}
+				common::println("[Camera]: Waiting for PTP network devices to be sufficiently synchronized...");
 				while (std::max({std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()),
 				           std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster())}) < std::chrono::milliseconds(1)) {
 					std::this_thread::sleep_for(1ms);
@@ -95,7 +97,9 @@ void Camera::init_camera() {
 
 			break;
 		} catch (Pylon::GenericException const& e) {
-			common::println("[Camera]: ", e.GetDescription(), "Reconnect in 5s...");
+			common::println("[Camera]: ", e.GetDescription(), "! Reconnect in 5s...");
+
+			camera.Close();
 
 			std::this_thread::sleep_for(5s);
 			continue;
