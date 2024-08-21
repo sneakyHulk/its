@@ -75,8 +75,8 @@ void Camera::init_camera() {
 				do {
 					camera.GevIEEE1588DataSetLatch();
 
-					common::println("[Camera]: IEEE1588Status: ", camera.GevIEEE1588Status());
-					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Initializing);
+					common::println("[Camera]: IEEE1588Status: ", camera.GevIEEE1588StatusLatched());
+					while (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing);
 
 					auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
 					clock_offsets.push_back(current_offset);
