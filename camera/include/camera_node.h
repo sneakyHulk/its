@@ -12,16 +12,7 @@
 #include "common_output.h"
 #include "node.h"
 
-class PylonRAII {
-   public:
-	PylonRAII() { Pylon::PylonInitialize(); }
-	~PylonRAII() { Pylon::PylonTerminate(); }
-};
-
 class Camera : public InputNode<ImageData> {
-	// Before using any pylon methods, the pylon runtime must be initialized.
-	static PylonRAII pylon_raii;
-
 	bool controller_mode;
 	Pylon::CBaslerUniversalInstantCamera camera;
 
