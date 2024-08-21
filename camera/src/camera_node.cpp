@@ -83,7 +83,7 @@ void Camera::init_camera() {
 					clock_offsets.push_back(current_offset);
 
 					common::println("[Camera]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
-					std::this_thread::sleep_for(200ms);
+					std::this_thread::sleep_for(1s);
 				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
 				// common::println("[Camera]: Waiting for slave mode...");
