@@ -72,7 +72,13 @@ void Camera::init_camera() {
 					}
 					clock_offset = 0ns;
 					for (auto i = 0; i < 10; ++i, std::this_thread::sleep_for(100us)) {
-						clock_offset = std::max(std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster()), clock_offset);
+						auto offset_master = std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster());
+
+						common::println("[CameraDebug]: Offset from master approx. ", offset_master);
+
+						clock_offset = std::max(offset_master, clock_offset);
+
+						common::println("[CameraDebug]: Highest Offset from master approx. ", clock_offset);
 					}
 					common::println("[Camera]: Highest offset from master approx. ", clock_offset);
 				} while(clock_offset < 1ms);
