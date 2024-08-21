@@ -11,9 +11,14 @@
 
 #include "common_exception.h"
 #include "common_output.h"
-#include "../include/camera_node.h"
 
 using namespace std::chrono_literals;
+
+class PylonRAII {
+   public:
+	PylonRAII() { Pylon::PylonInitialize(); }
+	~PylonRAII() { Pylon::PylonTerminate(); }
+};
 
 class CConfigurationEventPrinter : public Pylon::CConfigurationEventHandler {
    public:
