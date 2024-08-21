@@ -1,5 +1,7 @@
 #include "camera_node.h"
 
+#include <boost/circular_buffer.hpp>
+
 Camera::Camera() { init_camera(); }
 ImageData Camera::input_function() {
 	do {
@@ -64,24 +66,15 @@ void Camera::init_camera() {
 
 				// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
 				common::println("[Camera]: Waiting for PTP network devices to be sufficiently synchronized...");
-				std::chrono::nanoseconds clock_offset;
+				boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(3, std::chrono::nanoseconds::max());
 				do {
 					camera.GevIEEE1588DataSetLatch();
-					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing) {
-						std::this_thread::sleep_for(1ms);
-					}
-					clock_offset = 0ns;
-					for (auto i = 0; i < 10; ++i, std::this_thread::sleep_for(100us)) {
-						auto offset_master = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing)
+						;
+					clock_offsets.push_back(std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster())));
 
-						common::println("[CameraDebug]: Offset from master approx. ", offset_master);
-
-						clock_offset = std::max(offset_master, clock_offset);
-
-						common::println("[CameraDebug]: Highest Offset from master approx. ", clock_offset);
-					}
-					common::println("[Camera]: Highest offset from master approx. ", clock_offset);
-				} while(clock_offset < 1ms);
+					common::println("[Camera]: Highest offset from master approx. ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) < 1000000ns);  // 1ms
 
 				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
 			} else {
