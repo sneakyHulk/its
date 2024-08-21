@@ -85,6 +85,9 @@ void Camera::init_camera() {
 					std::this_thread::sleep_for(1ms);
 				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
+				common::println("[Camera]: Waiting for slave mode...");
+				while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
+
 				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
 			} else {
 				common::println("[Camera]: Camera in monitor mode.");
