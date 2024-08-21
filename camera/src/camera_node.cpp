@@ -75,8 +75,9 @@ void Camera::init_camera() {
 				do {
 					camera.GevIEEE1588DataSetLatch();
 
-					common::println("[Camera]: IEEE1588Status: ", camera.GevIEEE1588StatusLatched());
-					while (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing);
+					if (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+						continue;
+					}
 
 					auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
 					clock_offsets.push_back(current_offset);
@@ -85,12 +86,14 @@ void Camera::init_camera() {
 					std::this_thread::sleep_for(1ms);
 				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
-				common::println("[Camera]: Waiting for slave mode...");
-				while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
+				// common::println("[Camera]: Waiting for slave mode...");
+				// while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
 
 				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
 			} else {
 				common::println("[Camera]: Camera in monitor mode.");
+
+				std::this_thread::sleep_for(10s);
 
 				// The default configuration must be removed when monitor mode is selected
 				// because the monitoring application is not allowed to modify any parameter settings.
