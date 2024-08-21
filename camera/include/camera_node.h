@@ -22,5 +22,4 @@ class Camera : public InputNode<ImageData> {
    private:
 	ImageData input_function() final;
 	void init_camera();
-	static bool is_camera_in_controller_mode(Pylon::CBaslerUniversalInstantCamera& camera);
 };
