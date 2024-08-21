@@ -114,6 +114,7 @@ int main(int argc, char* argv[]) {
 			throw;
 		}
 
+		int frame = 0;
 		do {
 			if (!camera.IsGrabbing()) {
 				common::println("[Camera]: Image Grabbing failed! Reconnect in 5s...");
@@ -153,6 +154,8 @@ int main(int argc, char* argv[]) {
 			cv::Mat bayer_image(size, CV_8UC1, ptrGrabResult->GetBuffer());
 			cv::Mat image;
 			cv::cvtColor(bayer_image, image, cv::COLOR_BayerRG2BGR);
+
+			if (++frame > (controller_mode ? 500 : 1000)) break;
 		} while (true);
 	}
 
