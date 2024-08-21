@@ -74,7 +74,7 @@ void Camera::init_camera() {
 					clock_offsets.push_back(std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster())));
 
 					common::println("[Camera]: Highest offset from master approx. ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
-				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);  // 1ms
+				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
 				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
 			} else {
