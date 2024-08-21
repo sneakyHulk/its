@@ -72,7 +72,7 @@ void Camera::init_camera() {
 					}
 					clock_offset = 0ns;
 					for (auto i = 0; i < 10; ++i, std::this_thread::sleep_for(100us)) {
-						auto offset_master = std::chrono::nanoseconds(camera.GevIEEE1588OffsetFromMaster());
+						auto offset_master = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
 
 						common::println("[CameraDebug]: Offset from master approx. ", offset_master);
 
