@@ -71,9 +71,11 @@ void Camera::init_camera() {
 					camera.GevIEEE1588DataSetLatch();
 					while (camera.GevIEEE1588Status() == Basler_UniversalCameraParams::GevIEEE1588Status_Initializing)
 						;
-					clock_offsets.push_back(std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster())));
 
-					common::println("[Camera]: Highest offset from master approx. ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+					auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+					clock_offsets.push_back(current_offset);
+
+					common::println("[Camera]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
 				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
 				common::println("[Camera]: Highest offset from master < 1ms. Can start to grab images.");
