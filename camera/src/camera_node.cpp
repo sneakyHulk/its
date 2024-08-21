@@ -61,7 +61,11 @@ void Camera::init_camera() {
 				camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 
 				// Enabling PTP Clock Synchronization
-				common::println("IEEE1588 enabled: ", camera.GevIEEE1588.GetValue());
+				if (camera.GevIEEE1588.GetValue()) {
+					common::println("[Camera]: IEEE1588 enabled, disabling...");
+					camera.GevIEEE1588.SetValue(false);
+					std::this_thread::sleep_for(5s);
+				}
 				common::println("[Camera]: Enable PTP clock synchronization...");
 				camera.GevIEEE1588.SetValue(true);
 
