@@ -83,7 +83,7 @@ void Camera::init_camera() {
 					clock_offsets.push_back(current_offset);
 
 					common::println("[Camera]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
-					std::this_thread::sleep_for(100ms);
+					std::this_thread::sleep_for(200ms);
 				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
 
 				// common::println("[Camera]: Waiting for slave mode...");
@@ -93,20 +93,21 @@ void Camera::init_camera() {
 			} else {
 				common::println("[Camera]: Camera in monitor mode.");
 
-				std::this_thread::sleep_for(20s);
-
 				// The default configuration must be removed when monitor mode is selected
 				// because the monitoring application is not allowed to modify any parameter settings.
+				common::println("[Camera]: Delete default configuration!");
 				camera.RegisterConfiguration((Pylon::CConfigurationEventHandler*)NULL, Pylon::RegistrationMode_ReplaceAll, Pylon::Cleanup_None);
 
 				// Set MonitorModeActive to true to act as monitor
 				camera.MonitorModeActive = true;
 
+				common::println("[Camera]: Open the camera!");
 				camera.Open();
 
 				// Select transmission type. If the camera is already controlled by another application
 				// and configured for multicast, the active camera configuration can be used
 				// (IP Address and Port will be set automatically).
+				common::println("[Camera]: Now use the configuration set by controller!");
 				camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_UseCameraConfig;
 			}
 
