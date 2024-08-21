@@ -32,8 +32,8 @@ services:
       replicas: 2
     volumes:
       - .:/src:ro
+      - ./result:/src/result
       - /etc/timezone:/etc/timezone:ro
-      - ./result:/result
     ports:
       - "${IP}:8554:8554"
     network_mode: host
@@ -53,6 +53,7 @@ services:
     container_name: its-rocm
     volumes:
       - .:/src:ro
+      - ./result:/src/result
       - /etc/timezone:/etc/timezone:ro
     devices:
       - /dev/kfd
