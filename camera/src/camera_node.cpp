@@ -16,7 +16,7 @@ ImageData Camera::input_function() {
 
 		Pylon::CGrabResultPtr ptrGrabResult;
 		try {
-			camera.RetrieveResult(1000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+			camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
 		} catch (Pylon::TimeoutException const& e) {
 			if (!controller_mode) {
 				common::println("[Camera ", cam_name, "]: Application in controller mode terminated! Switching to controller mode...");
