@@ -1,6 +1,7 @@
 #include "camera_node.h"
 
 #include <boost/circular_buffer.hpp>
+#include <filesystem>
 #include <utility>
 
 ImageData Camera::input_function() {
@@ -55,6 +56,22 @@ ImageData Camera::input_function() {
 
 	} while (true);
 }
+
+void Camera::save_png() {
+	Pylon::CGrabResultPtr ptrGrabResult;
+	camera.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+
+	auto width = static_cast<int>(ptrGrabResult->GetWidth());
+	auto height = static_cast<int>(ptrGrabResult->GetHeight());
+	std::uint64_t timestamp = ptrGrabResult->GetTimeStamp();
+
+	cv::Mat bayer_image(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
+	cv::Mat image;
+	cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
+
+	cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/video") + cam_name + "_" + std::to_string(timestamp) + ".png"), image);
+}
+
 void Camera::init_camera() {
 	Pylon::CDeviceInfo info;
 	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
@@ -116,6 +133,8 @@ void Camera::init_camera() {
 
 					common::println("[Camera ", cam_name, "]: Start to grab images...");
 					camera.StartGrabbing();
+
+					save_png();
 
 					break;
 				} catch (Pylon::GenericException const& e) {

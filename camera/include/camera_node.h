@@ -22,6 +22,7 @@ class Camera : public InputNode<ImageData> {
 	Camera(std::string mac_address, std::string cam_name);
 
    private:
+	void save_png();
 	ImageData input_function() final;
 	void init_camera();
 };
