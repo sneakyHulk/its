@@ -38,6 +38,11 @@ int main(int argc, char* argv[]) {
 			cv::Mat image;
 			cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
+			std::string test1(std::to_string(ptrGrabResult->GetTimeStamp()));
+			std::string test2(camera.GetDeviceInfo().GetDeviceID());
+
+			common::println(test1, ", ", test2);
+
 			if (cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/test2.png")), image)) {
 			} else {
 				common::println("Problem with imwrite!");
