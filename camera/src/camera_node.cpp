@@ -68,6 +68,8 @@ void Camera::init_camera() {
 		common::println("[Camera ", cam_name, "]: Found device with model name '", e.GetModelName(), "', ip address '", e.GetIpAddress(), "', and mac address '", e.GetMacAddress(), "'.");
 		if (std::string(e.GetMacAddress()) == mac_adress) {
 			common::println("[Camera ", cam_name, "]: Found ", cam_name, " via mac address match.");
+
+			device = e;
 			goto success;
 		}
 	}
