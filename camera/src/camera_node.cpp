@@ -59,13 +59,28 @@ void Camera::init_camera() {
 	Pylon::CDeviceInfo info;
 	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
 
-	info.SetMacAddress(mac_adress.c_str());
+	Pylon::DeviceInfoList device_list;
+	Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
+	if (device_list.empty()) throw common::Exception("No Basler devices found!");
+
+	Pylon::CDeviceInfo device;
+	for (auto const& e : device_list) {
+		common::println("[Camera ", cam_name, "]: Found device with model name '", e.GetModelName(), "', ip address '", e.GetIpAddress(), "', and mac address '", e.GetMacAddress(), "'.");
+		if (std::string(e.GetMacAddress()) == mac_adress) {
+			common::println("[Camera ", cam_name, "]: Found ", cam_name, " via mac address match.");
+			goto success;
+		}
+	}
+
+	common::println("[Camera ", cam_name, "]: Couldn't find ", cam_name, " via mac address match.");
+
+success:
 
 	while (true) {
 		try {
 			controller_mode = true;
 
-			camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
+			camera.Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 			camera.Open();  // can fail
 
 			common::println("[Camera ", cam_name, "]: Camera in controller mode.");
