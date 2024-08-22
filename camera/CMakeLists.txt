@@ -37,5 +37,13 @@ target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+project(test_camera_name_and_id)
 
+add_executable(${PROJECT_NAME} test/test_camera_name_and_id.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${Pylon_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Pylon_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 

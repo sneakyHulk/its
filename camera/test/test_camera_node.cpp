@@ -1,4 +1,5 @@
 #include <boost/circular_buffer.hpp>
+#include <filesystem>
 
 #include "camera_node.h"
 #include "video_node.h"
@@ -13,10 +14,12 @@ int main(int argc, char* argv[]) {
 	// Before using any pylon methods, the pylon runtime must be initialized.
 	PylonRAII pylon_raii;
 
-	Camera cam;
+	{
+		Camera cam;
 
-	VideoVisualization vid;
+		VideoVisualization vid;
 
-	std::thread cam_n_thread(&Camera::operator(), &cam);
-	vid();
+		std::thread cam_n_thread(&Camera::operator(), &cam);
+		vid();
+	}
 }
