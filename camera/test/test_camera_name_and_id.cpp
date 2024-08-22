@@ -18,7 +18,6 @@ int main(int argc, char* argv[]) {
 	PylonRAII pylon_raii;
 
 	{
-
 		Pylon::DeviceInfoList device_list;
 		Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 		if (device_list.empty()) throw common::Exception("No Basler devices found!");
