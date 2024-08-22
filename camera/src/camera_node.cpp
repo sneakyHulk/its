@@ -116,7 +116,11 @@ void Camera::init_camera() {
 			std::string error_description = e.GetDescription();
 
 			// errors related to camera already being in controller mode
-			if (error_description.find("The device is controlled by another application.") != std::string::npos || error_description.find("Node is not writable!") != std::string::npos) {
+			if (error_description.find("The device is controlled by another application.") != std::string::npos) {
+				common::println("[Camera]: Camera already in controller mode. Switching to monitor mode...");
+
+				controller_mode = false;
+			} else if (error_description.find("Node is not writable!") != std::string::npos) {
 				common::println("[Camera]: Camera already in controller mode. Switching to monitor mode...");
 
 				controller_mode = false;
