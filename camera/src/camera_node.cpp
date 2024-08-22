@@ -171,6 +171,8 @@ void Camera::init_camera() {
 					throw;
 				}
 			}
+
+			return;
 		}
 	}
 
