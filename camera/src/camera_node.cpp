@@ -101,12 +101,12 @@ void Camera::init_camera() {
 				common::println("[Camera ", cam_name, "]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
 
 				std::this_thread::sleep_for(1s);
-			} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 1ms);
+			} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 10ms);
 
 			// common::println("[Camera]: Waiting for slave mode...");
 			// while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
 
-			common::println("[Camera ", cam_name, "]: Highest offset from master < 1ms. Can start to grab images.");
+			common::println("[Camera ", cam_name, "]: Highest offset from master < 10ms. Can start to grab images.");
 
 			common::println("[Camera ", cam_name, "]: Start to grab images...");
 			camera.StartGrabbing();
