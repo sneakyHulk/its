@@ -5,7 +5,7 @@ void VideoVisualization::output_function(ImageData const& data) {
 
 		// will initialize and save video after frames > max_frames
 		video =
-		    cv::VideoWriter(std::string(CMAKE_SOURCE_DIR) + std::string("/result/video_") + data.source + "_" + std::to_string(data.timestamp) + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(data.width, data.height));
+		    cv::VideoWriter(std::string(CMAKE_SOURCE_DIR) + std::string("result/video_") + data.source + "_" + std::to_string(data.timestamp) + ".mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), 15., cv::Size(data.width, data.height));
 	}
 
 	video.write(data.image);

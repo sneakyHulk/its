@@ -14,6 +14,12 @@ class PylonRAII {
 	~PylonRAII() { Pylon::PylonTerminate(); }
 };
 
+// MAC-Address:		camera:
+// 0030532A9B7F		s110_s_cam_8
+// 003053305C72		s110_o_cam_8
+// 003053305C75		s110_n_cam_8
+// 003053380639		s110_w_cam_8
+
 int main(int argc, char* argv[]) {
 	PylonRAII pylon_raii;
 

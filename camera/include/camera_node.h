@@ -15,9 +15,11 @@
 class Camera : public InputNode<ImageData> {
 	bool controller_mode;
 	Pylon::CBaslerUniversalInstantCamera camera;
+	std::string const mac_adress;
+	std::string const cam_name;
 
    public:
-	Camera();
+	Camera(std::string mac_address, std::string cam_name);
 
    private:
 	ImageData input_function() final;

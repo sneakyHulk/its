@@ -1,8 +1,8 @@
 #include "camera_node.h"
 
 #include <boost/circular_buffer.hpp>
+#include <utility>
 
-Camera::Camera() { init_camera(); }
 ImageData Camera::input_function() {
 	do {
 		if (!camera.IsGrabbing()) {
@@ -45,19 +45,21 @@ ImageData Camera::input_function() {
 
 		auto width = static_cast<int>(ptrGrabResult->GetWidth());
 		auto height = static_cast<int>(ptrGrabResult->GetHeight());
-		auto timestamp = ptrGrabResult->GetTimeStamp();
+		std::uint64_t timestamp = ptrGrabResult->GetTimeStamp();
 
 		cv::Mat bayer_image(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
 		cv::Mat image;
 		cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
-		return ImageData(image, timestamp, width, height, "");
+		return ImageData(image, timestamp, width, height, cam_name);
 
 	} while (true);
 }
 void Camera::init_camera() {
 	Pylon::CDeviceInfo info;
 	info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
+
+	info.SetMacAddress(mac_adress.c_str());
 
 	while (true) {
 		try {
@@ -159,3 +161,4 @@ void Camera::init_camera() {
 		}
 	}
 }
+Camera::Camera(std::string mac_address, std::string cam_name) : mac_adress(std::move(mac_address)), cam_name(std::move(cam_name)) { init_camera(); }
