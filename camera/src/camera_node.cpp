@@ -79,12 +79,11 @@ void Camera::init_camera() {
 
 			// Enabling PTP Clock Synchronization
 			if (camera.GevIEEE1588.GetValue()) {
-				common::println("[Camera ", cam_name, "]: IEEE1588 enabled, disabling...");
-				camera.GevIEEE1588.SetValue(false);
-				std::this_thread::sleep_for(5s);
+				common::println("[Camera ", cam_name, "]: IEEE1588 already enabled!");
+			} else {
+				common::println("[Camera ", cam_name, "]: Enable PTP clock synchronization...");
+				camera.GevIEEE1588.SetValue(true);
 			}
-			common::println("[Camera ", cam_name, "]: Enable PTP clock synchronization...");
-			camera.GevIEEE1588.SetValue(true);
 
 			// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
 			common::println("[Camera ", cam_name, "]: Waiting for PTP network devices to be sufficiently synchronized...");
