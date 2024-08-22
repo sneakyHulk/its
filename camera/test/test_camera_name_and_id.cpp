@@ -38,10 +38,7 @@ int main(int argc, char* argv[]) {
 			cv::Mat image;
 			cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
-			cv::imwrite(
-			    std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("result") /
-			        std::filesystem::path(std::to_string(ptrGrabResult->GetTimeStamp()) + "_" + std::to_string(i) + "_" + std::string(device_list.at(i).GetModelName()) + "_" + std::string(camera.GetDeviceInfo().GetDeviceID()) + ".png"),
-			    image);
+			cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/") + std::string(camera.GetDeviceInfo().GetDeviceID()) + std::string(".png")), image);
 		}
 	}
 }
