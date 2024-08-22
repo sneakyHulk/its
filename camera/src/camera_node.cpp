@@ -120,7 +120,7 @@ void Camera::init_camera() {
 				common::println("[Camera]: Camera already in controller mode. Switching to monitor mode...");
 
 				controller_mode = false;
-			} else if (error_description.find("Node is not writable!") != std::string::npos) {
+			} else if (error_description.find("Node is not writable") != std::string::npos) {
 				common::println("[Camera]: Camera already in controller mode. Switching to monitor mode...");
 
 				controller_mode = false;
