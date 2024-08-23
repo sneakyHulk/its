@@ -134,7 +134,7 @@ void Camera::init_camera() {
 					common::println("[Camera ", cam_name, "]: Start to grab images...");
 					camera.StartGrabbing();
 
-					save_png();
+					// save_png();
 
 					break;
 				} catch (Pylon::GenericException const& e) {
