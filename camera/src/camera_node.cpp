@@ -157,7 +157,7 @@ void Camera::init_camera() {
 					}
 
 					try {
-						camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice(info));
+						camera.Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 
 						// The default configuration must be removed when monitor mode is selected
 						// because the monitoring application is not allowed to modify any parameter settings.
