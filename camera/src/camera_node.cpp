@@ -32,6 +32,7 @@ ImageData Camera::input_function() {
 		}
 
 		if (!ptrGrabResult->GrabSucceeded()) {
+			common::println("[Camera ", cam_name, "]: ", ptrGrabResult->GetErrorDescription());
 			if (!controller_mode) {
 				common::println("[Camera ", cam_name, "]: Application in controller mode terminated! Switching to controller mode...");
 			} else {
