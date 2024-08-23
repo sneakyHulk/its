@@ -96,7 +96,7 @@ void Camera::init_camera() {
 
 					// Set transmission type to "multicast"
 					camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
-					// camera.GetStreamGrabberParams().DestinationAddr = "239.0.0.1";    // These are default values.
+					camera.GetStreamGrabberParams().DestinationAddr = (std::string("239.0.0.") + std::to_string(++ip_index)).c_str();  // These are default values.
 					// camera.GetStreamGrabberParams().DestinationPort = 49152;
 
 					camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
@@ -198,3 +198,5 @@ void Camera::init_camera() {
 	throw common::Exception("[Camera ", cam_name, "]: Couldn't find ", cam_name, " via mac address match.");
 }
 Camera::Camera(std::string mac_address, std::string cam_name) : mac_adress(std::move(mac_address)), cam_name(std::move(cam_name)) { init_camera(); }
+
+int Camera::ip_index = 1;

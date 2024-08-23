@@ -13,6 +13,7 @@
 #include "node.h"
 
 class Camera : public InputNode<ImageData> {
+	static int ip_index;
 	bool controller_mode;
 	Pylon::CBaslerUniversalInstantCamera camera;
 	std::string const mac_adress;
