@@ -6,7 +6,7 @@
 #include "node.h"
 
 class VideoVisualization : public OutputNode<ImageData> {
-	static const int max_frames = 100;
+	static const int max_frames = 1000;
 	int current_frame = max_frames;
 	cv::VideoWriter video;
 
