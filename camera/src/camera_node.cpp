@@ -6,14 +6,14 @@
 
 ImageData Camera::input_function() {
 	do {
-		// if (!camera.IsGrabbing()) {
-		//	common::println("[Camera ", cam_name, "]: Image Grabbing failed! Reconnect in 5s...");
-		//
-		//	std::this_thread::sleep_for(5s);
-		//
-		//	init_camera();
-		//	continue;
-		//}
+		if (!camera.IsGrabbing()) {
+			common::println("[Camera ", cam_name, "]: Image Grabbing failed! Reconnect in 5s...");
+
+			std::this_thread::sleep_for(5s);
+
+			init_camera();
+			continue;
+		}
 
 		Pylon::CGrabResultPtr ptrGrabResult;
 		try {
@@ -69,7 +69,7 @@ void Camera::save_png() {
 	cv::Mat image;
 	cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
-	cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/video") + cam_name + "_" + std::to_string(timestamp) + ".png"), image);
+	cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/image_") + cam_name + "_" + std::to_string(timestamp) + ".png"), image);
 }
 
 void Camera::init_camera() {
