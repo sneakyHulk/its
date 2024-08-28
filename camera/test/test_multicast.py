@@ -28,6 +28,5 @@ for dev_info in tl_factory.EnumerateDevices():
                 format_ip_config(cam_info.GetIpConfigCurrent())
             )
         )
-        break
 else:
     raise EnvironmentError("no GigE device found")
