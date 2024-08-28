@@ -96,7 +96,7 @@ void Camera::init_camera() {
 					common::println("[Camera ", cam_name, "]: Camera in controller mode.");
 
 					// Set transmission type to "multicast"
-					camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
+					// camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_Multicast;
 					// camera.GetStreamGrabberParams().DestinationAddr = (std::string("239.255.0.") + std::to_string(++ip_index)).c_str();
 					// camera.GetStreamGrabberParams().DestinationPort = 49152 + ip_index;
 
