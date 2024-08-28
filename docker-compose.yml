@@ -139,7 +139,6 @@ services:
       - .:/src:ro
       - ./result:/src/result
       - /etc/timezone:/etc/timezone:ro
-    network_mode: host
     command: sh -c "python camera/test/test_multicast.py"
     stop_signal: SIGTERM
     profiles: [ "python" ]

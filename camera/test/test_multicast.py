@@ -21,6 +21,9 @@ try:
     devices = pylon.TlFactory.GetInstance().EnumerateDevices()
     cameras = pylon.InstantCameraArray(len(devices))
 
+
+
+
     for camera, device in zip(cameras, devices):
         if device.GetDeviceClass() == 'BaslerGigE':
             print(
@@ -34,7 +37,7 @@ try:
             camera.Attach(pylon.TlFactory.GetInstance().CreateDevice(device))
         else:
             raise EnvironmentError("device is no GigE device")
-    cameras.StartGrabbing()
+    cameras.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
 
     for i in range(1000):
         if not cameras.IsGrabbing():
