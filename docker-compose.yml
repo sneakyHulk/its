@@ -134,7 +134,7 @@ services:
       dockerfile: DockerfilePython
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
     volumes:
       - .:/src:ro
       - ./result:/src/result
