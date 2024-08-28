@@ -27,9 +27,6 @@ services:
       target: image
       args:
         src: cuda
-    deploy:
-      mode: replicated
-      replicas: 1
     volumes:
       - .:/src:ro
       - ./result:/src/result
@@ -130,6 +127,22 @@ services:
     volumes:
       - ./web:/usr/local/apache2/htdocs
     profiles: [ "webserver", "streaming_home", "streaming_live" ]
+  ##### pylon test #####################################################################################################
+  pypylon:
+    build:
+      context: .
+      dockerfile: DockerfilePython
+    deploy:
+      mode: replicated
+      replicas: 1
+    volumes:
+      - .:/src:ro
+      - ./result:/src/result
+      - /etc/timezone:/etc/timezone:ro
+    network_mode: host
+    command: sh -c "python camera/test/test_multicast.py"
+    stop_signal: SIGTERM
+    profiles: [ "python" ]
 
 secrets:
   CLOUDFLARE_API_TOKEN:
