@@ -29,7 +29,7 @@ services:
         src: cuda
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
     volumes:
       - .:/src:ro
       - ./result:/src/result
