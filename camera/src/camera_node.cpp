@@ -97,40 +97,44 @@ void Camera::init_camera() {
 
 					// Set transmission type to "multicast"
 					camera.GetStreamGrabberParams().TransmissionType = Basler_UniversalStreamParams::TransmissionType_LimitedBroadcast;
-					//camera.GetStreamGrabberParams().DestinationAddr = (std::string("239.255.0.") + std::to_string(++ip_index)).c_str();
-					//camera.GetStreamGrabberParams().DestinationPort = 49152 + ip_index;
+					// camera.GetStreamGrabberParams().DestinationAddr = (std::string("239.255.0.") + std::to_string(++ip_index)).c_str();
+					// camera.GetStreamGrabberParams().DestinationPort = 49152 + ip_index;
 
 					camera.PixelFormat.SetValue(Basler_UniversalCameraParams::PixelFormatEnums::PixelFormat_BayerRG8);
 
-					// Enabling PTP Clock Synchronization
-					if (camera.GevIEEE1588.GetValue()) {
-						common::println("[Camera ", cam_name, "]: IEEE1588 already enabled!");
-					} else {
-						common::println("[Camera ", cam_name, "]: Enable PTP clock synchronization...");
-						camera.GevIEEE1588.SetValue(true);
-					}
-
-					// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
-					common::println("[Camera ", cam_name, "]: Waiting for PTP network devices to be sufficiently synchronized...");
-					boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
-					do {
-						camera.GevIEEE1588DataSetLatch();
-
-						if (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
-							continue;
+					if constexpr (false) {
+						// Enabling PTP Clock Synchronization
+						if (camera.GevIEEE1588.GetValue()) {
+							common::println("[Camera ", cam_name, "]: IEEE1588 already enabled!");
+						} else {
+							common::println("[Camera ", cam_name, "]: Enable PTP clock synchronization...");
+							camera.GevIEEE1588.SetValue(true);
 						}
 
-						auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
-						clock_offsets.push_back(current_offset);
-						common::println("[Camera ", cam_name, "]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+						// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
+						common::println("[Camera ", cam_name, "]: Waiting for PTP network devices to be sufficiently synchronized...");
+						boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
+						do {
+							camera.GevIEEE1588DataSetLatch();
 
-						std::this_thread::sleep_for(1s);
-					} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
+							if (camera.GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+								continue;
+							}
 
-					// common::println("[Camera]: Waiting for slave mode...");
-					// while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
+							auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+							clock_offsets.push_back(current_offset);
+							common::println("[Camera ", cam_name, "]: Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
 
-					common::println("[Camera ", cam_name, "]: Highest offset from master < 15ms. Can start to grab images.");
+							std::this_thread::sleep_for(1s);
+						} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
+
+						// common::println("[Camera]: Waiting for slave mode...");
+						// while (camera.GevIEEE1588Status() != Basler_UniversalCameraParams::GevIEEE1588StatusEnums::GevIEEE1588Status_Slave);
+
+						common::println("[Camera ", cam_name, "]: Highest offset from master < 15ms. Can start to grab images.");
+					} else {
+						camera.GevIEEE1588.SetValue(false);
+					}
 
 					common::println("[Camera ", cam_name, "]: Start to grab images...");
 					camera.StartGrabbing();
