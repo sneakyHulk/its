@@ -14,19 +14,23 @@ def format_ip_config(cfg_str):
         result.append("LLA")
     return ", ".join(result)
 
+devices = pylon.TlFactory.GetInstance().EnumerateDevices()
+cameras = pylon.InstantCameraArray(len(devices))
 
-tl_factory = pylon.TlFactory.GetInstance()
-
-for dev_info in tl_factory.EnumerateDevices():
-    if dev_info.GetDeviceClass() == 'BaslerGigE':
-        cam_info = dev_info
+for camera, device in zip(cameras, devices):
+    if device.GetDeviceClass() == 'BaslerGigE':
         print(
             "using %s @ %s (%s), IP config = %s" % (
-                cam_info.GetModelName(),
-                cam_info.GetIpAddress(),
-                cam_info.GetMacAddress(),
-                format_ip_config(cam_info.GetIpConfigCurrent())
+                device.GetModelName(),
+                device.GetIpAddress(),
+                device.GetMacAddress(),
+                format_ip_config(device.GetIpConfigCurrent())
             )
         )
+        camera.Attach(pylon.TlFactory.GetInstance().CreateDevice(device))
     else:
-        raise EnvironmentError("no GigE device found")
+        raise EnvironmentError("device is no GigE device")
+
+
+
+
