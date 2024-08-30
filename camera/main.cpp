@@ -11,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-#define num_cams 4
+#define num_cams 3
 
 int main() {
 	Pylon::PylonInitialize();
