@@ -11,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-#define num_cams 3
+#define num_cams 4
 
 int main() {
 	Pylon::PylonInitialize();
@@ -19,7 +19,7 @@ int main() {
 	Pylon::DeviceInfoList device_list;
 	Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 	if (device_list.empty()) throw std::logic_error("No Basler devices found!");
-	if (device_list.size() < num_cams) throw std::logic_error("Not enough Basler devices found!");
+	//if (device_list.size() < num_cams) throw std::logic_error("Not enough Basler devices found!");
 
 	Pylon::CBaslerUniversalInstantCameraArray cameras(num_cams);
 	std::array<std::string, num_cams> camera_names;
