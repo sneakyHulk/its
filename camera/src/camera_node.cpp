@@ -37,6 +37,7 @@ Pylon::CGrabResultPtr BaslerCameras::input_function() {
 				continue;
 			}
 
+			common::println("[BaslerCameras]: ", index_to_cam_name[ptrGrabResult->GetCameraContext()], " grab successful.");
 			return ptrGrabResult;
 
 		} catch (Pylon::TimeoutException const& e) {
@@ -63,7 +64,7 @@ void BaslerCameras::init_cameras() {
 	try {
 		for (auto i = 0; Pylon::CDeviceInfo & device : device_list) {
 			index_to_cam_name[i] = mac_to_cam_name.at(device.GetMacAddress().c_str());
-			common::println("[Camera ", index_to_cam_name[i], "]: Found device with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
+			common::println("[BaslerCameras]: Found device ", index_to_cam_name[i], " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
 			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 			std::this_thread::sleep_for(1s);
 			++i;
@@ -71,9 +72,9 @@ void BaslerCameras::init_cameras() {
 
 		cameras.StartGrabbing();
 
-		common::println("[BaslerCamera]: Started grabbing!")
+		common::println("[BaslerCameras]: Started grabbing!")
 	} catch (Pylon::GenericException const& e) {
-		common::println("[BaslerCamera]: ", e.GetDescription());
+		common::println("[BaslerCameras]: ", e.GetDescription());
 
 		throw std::current_exception();
 	}
