@@ -66,6 +66,7 @@ void BaslerCameras::init_cameras() {
 			common::println("[Camera ", index_to_cam_name[i], "]: Found device with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
 			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 			std::this_thread::sleep_for(1s);
+			++i;
 		}
 
 		cameras.StartGrabbing();
