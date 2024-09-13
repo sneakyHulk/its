@@ -88,7 +88,9 @@ BaslerCameras::BaslerCameras(std::map<std::string, std::string> const& mac_and_c
 }
 BaslerSaveRAW::BaslerSaveRAW(BaslerCameras const& cameras, std::filesystem::path folder) : cameras(cameras), folder(std::move(folder)) {
 	for (auto const& e : cameras.index_to_cam_name) {
-		std::filesystem::create_directory(folder / e);
+		if (!std::filesystem::create_directories(folder / e)) {
+			throw common::Exception("[BaslerSaveRAW]: Create directory ", folder / e, " failed!");
+		}
 
 		common::println("[BaslerSaveRAW]: Created directory ", folder / e, ".");
 	}
