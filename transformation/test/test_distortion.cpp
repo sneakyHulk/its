@@ -82,7 +82,7 @@ int main() {
 			//cv::waitKey(0);
 			cv::imshow("undistorted/distorted", image_distorted);
 			cv::waitKey(0);
-			cv::imshow("undistorted/distorted", other_image_distorted);
+			cv::imshow("undistorted/distorted", image_distorted_initial);
 			cv::waitKey(0);
 		}
 	}

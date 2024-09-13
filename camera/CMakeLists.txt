@@ -1,5 +1,5 @@
 project(camera_nodes)
-add_library(${PROJECT_NAME} SHARED src/camera_simulator_node.cpp src/camera_node.cpp)
+add_library(${PROJECT_NAME} SHARED src/camera_simulator_node.cpp src/camera_node.cpp src/camera_node_multicast.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Pylon_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
@@ -14,6 +14,13 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 
 project(test_camera_node)
 add_executable(${PROJECT_NAME} test/test_camera_node.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC camera_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(test_grabbing_raw)
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC camera_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
