@@ -72,31 +72,31 @@ void BaslerCameras::init_cameras() {
 			++i;
 
 			// Enabling PTP Clock Synchronization
-			if (cameras[i].GevIEEE1588.GetValue()) {
-				common::println("[BaslerCameras]: ", index_to_cam_name[i], " IEEE1588 already enabled!");
-			} else {
-				common::println("[BaslerCameras]: ", index_to_cam_name[i], " Enable PTP clock synchronization...");
-				cameras[i].GevIEEE1588.SetValue(true);
-
-				// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
-				common::println("[BaslerCameras]: ", index_to_cam_name[i], " Waiting for PTP network devices to be sufficiently synchronized...");
-				boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
-				do {
-					cameras[i].GevIEEE1588DataSetLatch();
-
-					if (cameras[i].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
-						continue;
-					}
-
-					auto current_offset = std::chrono::nanoseconds(std::abs(cameras[i].GevIEEE1588OffsetFromMaster()));
-					clock_offsets.push_back(current_offset);
-					common::println("[BaslerCameras]: ", index_to_cam_name[i], " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
-
-					std::this_thread::sleep_for(1s);
-				} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
-
-				common::println("[BaslerCameras]: ", index_to_cam_name[i], " Highest offset from master < 15ms. Can start to grab images.");
-			}
+			// if (cameras[i].GevIEEE1588.GetValue()) {
+			//	common::println("[BaslerCameras]: ", index_to_cam_name[i], " IEEE1588 already enabled!");
+			//} else {
+			//	common::println("[BaslerCameras]: ", index_to_cam_name[i], " Enable PTP clock synchronization...");
+			//	cameras[i].GevIEEE1588.SetValue(true);
+			//
+			//	// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
+			//	common::println("[BaslerCameras]: ", index_to_cam_name[i], " Waiting for PTP network devices to be sufficiently synchronized...");
+			//	boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
+			//	do {
+			//		cameras[i].GevIEEE1588DataSetLatch();
+			//
+			//		if (cameras[i].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+			//			continue;
+			//		}
+			//
+			//		auto current_offset = std::chrono::nanoseconds(std::abs(cameras[i].GevIEEE1588OffsetFromMaster()));
+			//		clock_offsets.push_back(current_offset);
+			//		common::println("[BaslerCameras]: ", index_to_cam_name[i], " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+			//
+			//		std::this_thread::sleep_for(1s);
+			//	} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
+			//
+			//	common::println("[BaslerCameras]: ", index_to_cam_name[i], " Highest offset from master < 15ms. Can start to grab images.");
+			//}
 		}
 
 		cameras.StartGrabbing();
