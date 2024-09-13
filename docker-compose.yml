@@ -28,7 +28,7 @@ services:
       args:
         src: cuda
     volumes:
-      - .:/src
+      - .:/src:ro
       - ./result:/src/result
       - /etc/timezone:/etc/timezone:ro
     ports:

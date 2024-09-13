@@ -1,6 +1,7 @@
 #pragma once
 #include <pylon/GrabResultPtr.h>
 #include <pylon/PylonIncludes.h>
+#include <pylon/BaslerUniversalInstantCameraArray.h>
 
 #include <filesystem>
 #include <opencv2/opencv.hpp>
@@ -12,7 +13,7 @@
 
 class BaslerCameras : public InputNode<Pylon::CGrabResultPtr> {
 	friend class BaslerSaveRAW;
-	Pylon::CInstantCameraArray cameras;
+	Pylon::CBaslerUniversalInstantCameraArray cameras;
 	std::map<std::string, std::string> const mac_to_cam_name;
 	std::vector<std::string> index_to_cam_name;
 
