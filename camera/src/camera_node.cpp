@@ -17,6 +17,7 @@ class PylonRAII {
 		common::println("PylonRAII()");
 		std::signal(SIGTERM, pylon_uninitialization_handler);
 		std::signal(SIGABRT, pylon_uninitialization_handler);
+		std::signal(SIGINT, pylon_uninitialization_handler);
 		Pylon::PylonInitialize();
 	}
 	~PylonRAII() {
