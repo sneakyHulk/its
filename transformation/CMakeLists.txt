@@ -27,3 +27,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+
+project(test_distortion)
+
+add_executable(${PROJECT_NAME} test/test_distortion.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC transformation_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
