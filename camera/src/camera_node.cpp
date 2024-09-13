@@ -70,6 +70,8 @@ void BaslerCameras::init_cameras() {
 		}
 
 		cameras.StartGrabbing();
+
+		common::println("[BaslerCamera]: Started grabbing!")
 	} catch (Pylon::GenericException const& e) {
 		common::println("[BaslerCamera]: ", e.GetDescription());
 
