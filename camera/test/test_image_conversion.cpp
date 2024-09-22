@@ -33,7 +33,7 @@ class RAW2ImageData : public InputNode<ImageData> {
 };
 
 int main(int argc, char* argv[]) {
-	RAW2ImageData raw(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/basler/1726238661751532982_1726238661401530635"));
+	RAW2ImageData raw(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/basler/1726240173961886724_1726240173493404363"));
 	VideoVisualization vis;
 
 	raw += vis;

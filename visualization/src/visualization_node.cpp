@@ -10,15 +10,8 @@
 
 using namespace std::chrono_literals;
 
-void ImageVisualization::output_function(ImageData const &data) {
-	common::println(
-	    "Time taken = ", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - data.timestamp)));
-	cv::imshow("Display window", data.image);
-	cv::waitKey(1);
-}
-
-Visualization2D::Visualization2D(Config const &config, std::filesystem::path const &map_path) : config(config), drawing_fifo(5) {
-	std::tie(map, utm_to_image) = draw_map(map_path, config);
+Visualization2D::Visualization2D(Config const &config, std::filesystem::path &&map_path) : config(config), drawing_fifo(5) {
+	std::tie(map, utm_to_image) = draw_map(std::move(map_path), config);
 	cv::imshow("display", map);
 	cv::waitKey(100);
 }
@@ -55,7 +48,7 @@ void Visualization2D::output_function(CompactObjects const &data) {
 	cv::waitKey(10);
 }
 
-BirdEyeVisualization::BirdEyeVisualization(const Config &config, const std::filesystem::path &map_path) : config(config), drawing_fifo(5) { std::tie(map, utm_to_image) = draw_map(map_path, config); }
+BirdEyeVisualization::BirdEyeVisualization(const Config &config, std::filesystem::path &&map_path) : config(config), drawing_fifo(5) { std::tie(map, utm_to_image) = draw_map(std::move(map_path), config); }
 
 ImageData BirdEyeVisualization::function(const GlobalTrackerResults &data) {
 	auto tmp = map.clone();
@@ -76,5 +69,5 @@ ImageData BirdEyeVisualization::function(const GlobalTrackerResults &data) {
 		cv::circle(tmp, cv::Point(static_cast<int>(position(0)), static_cast<int>(position(1))), 1, color, 10);
 	}
 
-	return ImageData{tmp, data.timestamp, 1920, 1200, "bird"};
+	return ImageData{tmp, data.timestamp, "bird"};
 }

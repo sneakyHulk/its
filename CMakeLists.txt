@@ -6,7 +6,7 @@ option(STREAMING_TEST "Enable testing various streaming technology" OFF)
 
 ########## find local packages #########################################################################################
 ### OpenCV
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED PATHS ~/src/opencv)
 
 ### Intel Threading Blocks
 find_package(TBB REQUIRED)
@@ -199,6 +199,7 @@ add_subdirectory(visualization)
 add_subdirectory(tracking)
 add_subdirectory(communication)
 add_subdirectory(area_blocking)
+add_subdirectory(dgon)
 
 
 ########## add main executable #########################################################################################

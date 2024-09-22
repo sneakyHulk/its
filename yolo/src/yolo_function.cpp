@@ -126,7 +126,7 @@ inline torch::Tensor nms(const torch::Tensor& bboxes, const torch::Tensor& score
 	return keep_t.narrow(0, 0, num_to_keep);
 }
 
-inline torch::Tensor non_max_suppression(torch::Tensor& prediction, float conf_thres = 0.25, float iou_thres = 0.45, int max_det = 300) {
+inline torch::Tensor non_max_suppression(torch::Tensor& prediction, float conf_thres = 0.35, float iou_thres = 0.45, int max_det = 300) {
 	auto const bs = prediction.size(0);
 	auto nc = prediction.size(1) - 4;
 	auto nm = prediction.size(1) - nc - 4;
@@ -188,7 +188,7 @@ inline torch::Tensor scale_boxes(const std::vector<int>& img1_shape, torch::Tens
 }
 
 template <int height, int width>
-Detections2D run_yolo(ImageData& data) {
+Detections2D run_yolo(ImageData const& data) {
 	static torch::Device device = []() {
 		common::println(torch::cuda::is_available() ? "GPU mode inference" : "CPU mode inference");
 		return torch::Device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU, 0);
@@ -207,10 +207,7 @@ Detections2D run_yolo(ImageData& data) {
 
 	Detections2D detections;
 	try {
-		cv::Mat input_image;
-		letterbox(data.image, input_image, {height, width});
-
-		torch::Tensor image_tensor = torch::from_blob(input_image.data, {input_image.rows, input_image.cols, 3}, torch::kByte).to(device);
+		torch::Tensor image_tensor = torch::from_blob(data.image.data, {data.image.rows, data.image.cols, 3}, torch::kByte).to(device);
 		image_tensor = image_tensor.toType(torch::kFloat32).div(255);
 		image_tensor = image_tensor.permute({2, 0, 1});
 		image_tensor = image_tensor.unsqueeze(0);
@@ -222,7 +219,7 @@ Detections2D run_yolo(ImageData& data) {
 		// NMS
 		auto keep = non_max_suppression(output)[0];
 		auto boxes = keep.index({Slice(), Slice(None, 4)});
-		keep.index_put_({Slice(), Slice(None, 4)}, scale_boxes({input_image.rows, input_image.cols}, boxes, {data.image.rows, data.image.cols}));
+		keep.index_put_({Slice(), Slice(None, 4)}, scale_boxes({data.image.rows, data.image.cols}, boxes, {1200, 1920}));
 
 		// paint the results
 		for (int i = 0; i < keep.size(0); i++) {
@@ -244,5 +241,5 @@ Detections2D run_yolo(ImageData& data) {
 	return detections;
 }
 
-template Detections2D run_yolo<640, 640>(ImageData&);
-template Detections2D run_yolo<480, 640>(ImageData&);
+template Detections2D run_yolo<640, 640>(ImageData const&);
+template Detections2D run_yolo<480, 640>(ImageData const&);

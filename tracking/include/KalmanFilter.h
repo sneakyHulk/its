@@ -25,17 +25,28 @@ class KalmanFilter {
 	Eigen::Matrix<double, dim_z, dim_z> S;                            // S: Measurement residual covariance (system uncertainty). [dim_z, dim_z].
 	Eigen::Matrix<double, dim_z, dim_z> SI;                           // SI: Inverse of measurement residual covariance (simplified for subsequent calculations) (inverse system uncertainty). [dim_z, dim_z].
 	Eigen::Matrix<double, dim_x, dim_x> I = decltype(I)::Identity();  // I: Identity matrix. [dim_x, dim_x].
+
+	decltype(x) x_last_update;
+	decltype(P) P_last_update;
+
    public:
 	KalmanFilter(decltype(x)&& x = decltype(x)::Zero(), decltype(F)&& F = decltype(F)::Identity(), decltype(H)&& H = decltype(H)::Zero(), decltype(P)&& P = decltype(P)::Identity(), decltype(R)&& R = decltype(R)::Identity(),
 	    decltype(Q)&& Q = decltype(Q)::Identity())
-	    : x(std::forward<decltype(x)>(x)), F(std::forward<decltype(F)>(F)), H(std::forward<decltype(H)>(H)), P(std::forward<decltype(P)>(P)), R(std::forward<decltype(R)>(R)), Q(std::forward<decltype(Q)>(Q)) {}
+	    : x(std::forward<decltype(x)>(x)),
+	      F(std::forward<decltype(F)>(F)),
+	      H(std::forward<decltype(H)>(H)),
+	      P(std::forward<decltype(P)>(P)),
+	      R(std::forward<decltype(R)>(R)),
+	      Q(std::forward<decltype(Q)>(Q)),
+	      x_last_update(x),
+	      P_last_update(P) {}
 
 	inline void adapt_prediction_matrix(double dt) { ((F(std::get<0>(velocity_components), std::get<1>(velocity_components)) = dt), ...); }
 	void predict(double dt) {
 		adapt_prediction_matrix(dt);
 
-		x = F * x;
-		P = (F * P) * F.transpose() + Q;
+		x = F * x_last_update;
+		P = (F * P_last_update) * F.transpose() + Q;
 	}
 	void update(decltype(z) const& z_) {
 		y = z_ - H * x;
@@ -43,8 +54,8 @@ class KalmanFilter {
 		S = H * PHT + R;
 		SI = S.inverse();
 		K = PHT * SI;
-		x = x + K * y;
+		x = x_last_update = x + K * y;
 		auto I_KH = I - K * H;
-		P = (I_KH * P) * I_KH.transpose() + (K * R) * K.transpose();
+		P = P_last_update = (I_KH * P) * I_KH.transpose() + (K * R) * K.transpose();
 	}
 };

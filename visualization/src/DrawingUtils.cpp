@@ -83,7 +83,7 @@ void draw_camera_fov(cv::Mat& view, const Config& config, const std::string& cam
 	auto alpha = 0.2;
 	cv::addWeighted(view, alpha, overlay, 1 - alpha, 0, view);
 }
-auto draw_map(std::filesystem::path const& odr_map, Config const& config, std::string const& base_name, int const display_width, int const display_height, double const scaling) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
+auto draw_map(std::filesystem::path&& odr_map, Config const& config, std::string const& base_name, int const display_width, int const display_height, double const scaling) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
 	Eigen::Matrix<double, 4, 4> const affine_transformation_rotate_90 = make_matrix<4, 4>(0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_reflect = make_matrix<4, 4>(-1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_base_to_image_center =

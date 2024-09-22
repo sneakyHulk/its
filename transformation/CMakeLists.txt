@@ -30,6 +30,12 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 project(test_distortion)
 
-add_executable(${PROJECT_NAME} test/test_distortion.cpp)
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC transformation_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
+
+project(test_display_3d_boxes)
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC transformation_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
+target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)

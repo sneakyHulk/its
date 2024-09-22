@@ -38,5 +38,5 @@ constexpr auto diou = [](BoundingBoxXYXY const& bbox1, BoundingBoxXYXY const& bb
 	auto const outer_diag_squared = (xxc2 - xxc1) * (xxc2 - xxc1) + (yyc2 - yyc1) * (yyc2 - yyc1);
 
 	auto const diou = iou_ - inner_diag_squared / outer_diag_squared;
-	return (diou + 1) / 2.;  // resize from (-1,1) to (0,1)
+	return (diou + 1.) / 2.;  // resize from (-1,1) to (0,1)
 };
