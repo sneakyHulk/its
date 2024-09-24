@@ -2,19 +2,63 @@
 #include "CameraSimulator.h"
 #include "Downscaling.h"
 #include "DrawingUtils.h"
+#include "ImageDetectionVisualizationNode.h"
 #include "ImageTrackerNode.h"
 #include "ImageVisualizationNode.h"
 #include "Preprocessing.h"
+#include "TrackToTrackFusion.h"
+#include "TrackingVisualizationNode.h"
 #include "UndistortionNode.h"
 #include "YoloNode.h"
+#include "data_communication_node.h"
+#include "image_communication_node.h"
 #include "thread"
 #include "tracking_node.h"
-#include "TrackingVisualizationNode.h"
-#include "ImageDetectionVisualizationNode.h"
 
 int main() {
-	BayerBG8CameraSimulator cams({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_s_cam_8"}}); //, {"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8"},
-	   // {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_w_cam_8"}, {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_o_cam_8"}});
+	// DataStreamMQTT data_stream;
+	ImageStreamRTSP image_stream;
+	TrackToTrackFusionNode track_to_track({{"s110_s_cam_8", {{
+#include "projection_matrix_s110_s_cam_8"
+	                                                         },
+	                                                            {
+#include "affine_transformation_map_origin_to_s110_base"
+	                                                            },
+	                                                            {
+#include "affine_transformation_map_origin_to_utm"
+	                                                            }}},
+	    {"s110_n_cam_8", {{
+#include "projection_matrix_s110_n_cam_8"
+	                      },
+	                         {
+#include "affine_transformation_map_origin_to_s110_base"
+	                         },
+	                         {
+#include "affine_transformation_map_origin_to_utm"
+	                         }}},
+	    {"s110_o_cam_8", {{
+#include "projection_matrix_s110_o_cam_8"
+	                      },
+	                         {
+#include "affine_transformation_map_origin_to_s110_base"
+	                         },
+	                         {
+#include "affine_transformation_map_origin_to_utm"
+	                         }}},
+	    {"s110_w_cam_8", {{
+#include "projection_matrix_s110_w_cam_8"
+	                      },
+	                         {
+#include "affine_transformation_map_origin_to_s110_base"
+	                         },
+	                         {
+#include "affine_transformation_map_origin_to_utm"
+	                         }}}});
+
+	BayerBG8CameraSimulator cams({{"s110_s_cam_8",
+	    std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" /
+	        "s110_s_cam_8"}});  //, {"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8"},
+	                            // {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_w_cam_8"}, {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_o_cam_8"}});
 
 	BayerBG8Preprocessing preprocessing({{"s110_n_cam_8", {1200, 1920}}, {"s110_w_cam_8", {1200, 1920}}, {"s110_s_cam_8", {1200, 1920}}, {"s110_o_cam_8", {1200, 1920}}});
 
@@ -38,28 +82,33 @@ int main() {
 	Eigen::Matrix<double, 4, 4> utm_to_image;
 	std::tie(map, utm_to_image) = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "visualization" / "2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr", config);
 	BirdEyeVisualizationNode vis2d(map, utm_to_image);
-	//TrackingVisualizationNode track_vis([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
+	// TrackingVisualizationNode track_vis([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
 	ImageDetectionVisualizationNode img_det_vis([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
 	cams += preprocessing;
 	preprocessing += down;
+
+	down += image_stream;
+
 	down += yolo;
 	yolo += undistort;
 
-	//preprocessing += img_det_vis;
-	//yolo+= img_det_vis;
+	// preprocessing += img_det_vis;
+	// yolo+= img_det_vis;
 
 	undistort += track;
+	track += track_to_track;
+	track_to_track += vis2d;
 
+	// track_to_track += data_stream;
 
-
-	//preprocessing += track_vis;
-	//track += track_vis;
+	// preprocessing += track_vis;
+	// track += track_vis;
 
 	// undistort += glob_track;
 	// glob_track += vis2d;
-	//vis2d += vis;
+	// vis2d += vis;
 
 	std::thread cams_thread(&BayerBG8CameraSimulator::operator(), &cams);
 	std::thread preprocessing_thread(&BayerBG8Preprocessing::operator(), &preprocessing);
@@ -67,12 +116,15 @@ int main() {
 	std::thread yolo_thread(&YoloNode<480, 640>::operator(), &yolo);
 	std::thread undistort_thread(&UndistortionNode::operator(), &undistort);
 	std::thread track_thread(&ImageTrackerNode<>::operator(), &track);
-	//std::thread track_vis_thread(&TrackingVisualizationNode::operator(), &track_vis);
-	//std::thread vis2d_thread(&BirdEyeVisualizationNode::operator(), &vis2d);
-	//std::thread img_det_vis_thread(&ImageDetectionVisualizationNode::operator(), &img_det_vis);
+	std::thread track_to_track_thread(&TrackToTrackFusionNode::operator(), &track_to_track);
+	// std::thread data_stream_thread(&DataStreamMQTT::operator(), &data_stream);
+	std::thread image_stream_thread(&ImageStreamRTSP::operator(), &image_stream);
+	// std::thread track_vis_thread(&TrackingVisualizationNode::operator(), &track_vis);
+	std::thread vis2d_thread(&BirdEyeVisualizationNode::operator(), &vis2d);
+	// std::thread img_det_vis_thread(&ImageDetectionVisualizationNode::operator(), &img_det_vis);
 
-	//vis();
-	//img_det_vis();
+	// vis();
+	// img_det_vis();
 
-	vis2d();
+	ImageStreamRTSP::run_loop();
 }

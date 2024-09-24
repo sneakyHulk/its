@@ -1,12 +1,12 @@
 #pragma once
 
-#include "BirdEyeVisualizationData.h"
+#include "CompactObject.h"
 #include "ImageData.h"
 #include "KalmanBoxSourceTrack.h"
 #include "node.h"
 #include "opencv2/opencv.hpp"
 
-class BirdEyeVisualizationNode : public OutputNode<BirdEyeVisualizationDataPoints> {
+class BirdEyeVisualizationNode : public OutputNode<CompactObjects> {
 	cv::Mat _map;
 	Eigen::Matrix<double, 4, 4> _utm_to_image;
 
@@ -14,5 +14,5 @@ class BirdEyeVisualizationNode : public OutputNode<BirdEyeVisualizationDataPoint
 	explicit BirdEyeVisualizationNode(cv::Mat map, Eigen::Matrix<double, 4, 4> utm_to_image);
 
    private:
-	void output_function(BirdEyeVisualizationDataPoints const& data) final;
+	void output_function(CompactObjects const& data) final;
 };

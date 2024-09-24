@@ -31,8 +31,6 @@ ImageData CameraSimulator::input_function() {
 
 	ImageData data;
 	data.image = cv::imread(current_file.path(), cv::IMREAD_COLOR);
-	data.width = data.image.cols;
-	data.height = data.image.rows;
 	data.source = current_file.path().parent_path().parent_path().filename();
 
 	std::this_thread::sleep_until(current_time + (next - images_time));

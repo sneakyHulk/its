@@ -53,7 +53,7 @@ ImageData CameraMulticast::input_function() {
 		cv::Mat image;
 		cv::cvtColor(bayer_image, image, cv::COLOR_BayerBG2BGR);
 
-		return ImageData(image, timestamp, width, height, cam_name);
+		return ImageData(image, timestamp, cam_name);
 
 	} while (true);
 }
