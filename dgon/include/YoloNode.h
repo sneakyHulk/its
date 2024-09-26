@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AfterReturnTimeMeasure.h"
 #include "Detection2D.h"
 #include "ImageData.h"
 #include "node.h"
@@ -23,5 +24,8 @@ class YoloNode : public InputOutputNode<ImageData, Detections2D> {
    public:
 	YoloNode() = default;
 
-	Detections2D function(ImageData const& data) final { return run_yolo<height, width>(data); }
+	Detections2D function(ImageData const& data) final {
+		AfterReturnTimeMeasure after(data.timestamp);
+		return run_yolo<height, width>(data);
+	}
 };

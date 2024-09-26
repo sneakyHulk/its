@@ -4,6 +4,7 @@
 
 #include "ImageData.h"
 #include "node.h"
+#include "AfterReturnTimeMeasure.h"
 
 template <int height, int width>
 class DownscalingNode : public InputOutputNode<ImageData, ImageData> {
@@ -12,6 +13,8 @@ class DownscalingNode : public InputOutputNode<ImageData, ImageData> {
 	DownscalingNode() = default;
 
 	ImageData function(ImageData const& data) final {
+		AfterReturnTimeMeasure after(data.timestamp);
+
 		ImageData ret;
 		ret.source = data.source;
 		ret.timestamp = data.timestamp;

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "node.h"
+#include "AfterReturnTimeMeasure.h"
 
 class BayerBG8Preprocessing : public InputOutputNode<ImageDataRaw, ImageData> {
 	struct HeightWidthConfig {
@@ -22,6 +23,8 @@ class BayerBG8Preprocessing : public InputOutputNode<ImageDataRaw, ImageData> {
 	explicit BayerBG8Preprocessing(std::remove_const<decltype(config)>::type&& config) : config(std::move(config)) {}
 
 	ImageData function(ImageDataRaw const& data) final {
+		AfterReturnTimeMeasure after(data.timestamp);
+
 		// const cast is allowed here because vector is not changed
 		cv::Mat const bayer_image(config.at(data.source).height, config.at(data.source).width, CV_8UC1, const_cast<std::uint8_t*>(data.image_raw.data()));
 

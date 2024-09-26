@@ -16,7 +16,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 
 project(eval_latency)
 
-add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp src/CameraSimulator.cpp src/ImageVisualizationNode.cpp src/YoloNode.cpp src/ImageTrackerNode.cpp src/UndistortionNode.cpp src/BirdEyeVisualizationNode.cpp src/TrackToTrackFusion.cpp src/TrackingVisualizationNode.cpp src/SortTracking.cpp src/ImageDetectionVisualizationNode.cpp src/data_communication_node.cpp src/image_communication_node.cpp src/AfterReturnTimeMeasure.cpp)
+add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp src/CameraSimulator.cpp src/ImageVisualizationNode.cpp src/YoloNode.cpp src/ImageTrackerNode.cpp src/UndistortionNode.cpp src/BirdEyeVisualizationNode.cpp src/TrackToTrackFusion.cpp src/TrackingVisualizationNode.cpp src/SortTracking.cpp src/ImageDetectionVisualizationNode.cpp src/data_communication_node.cpp src/image_communication_node.cpp src/AfterReturnTimeMeasure.cpp src/ImageUndistortionNode.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/config)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})

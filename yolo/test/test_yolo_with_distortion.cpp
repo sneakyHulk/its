@@ -36,6 +36,8 @@ int main(int argc, char* argv[]) {
 	cv::Mat map_x, map_y;
 	cv::initInverseRectificationMap(camera_matrix, distortion_values, cv::Mat(), new_camera_matrix, cv::Size(1920, 1200), CV_32FC1, map_x, map_y);
 
+
+
 	std::regex const timestamp_regex("([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])-([0-9][0-9])([0-9][0-9])([0-9][0-9])\\.([0-9]+)");
 
 	for (const auto& image_path : std::filesystem::directory_iterator(std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "TUMTraf_Event_Dataset" / "val" / "images" / "rgb")) {
@@ -43,8 +45,6 @@ int main(int argc, char* argv[]) {
 		cv::Mat resize_image;
 		cv::resize(orig_image, resize_image, cv::Size(1920, 1200), 0, 0, cv::INTER_LANCZOS4);
 		ImageData data;
-		data.width = data.image.cols;
-		data.height = data.image.rows;
 		data.source = "s110_w_cam_8";
 
 		cv::remap(resize_image, data.image, map_x, map_y, cv::INTER_LINEAR, cv::BORDER_TRANSPARENT);

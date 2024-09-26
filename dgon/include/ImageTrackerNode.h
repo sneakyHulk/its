@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "AfterReturnTimeMeasure.h"
 #include "ImageTrackerResult.h"
 #include "KalmanBoxSourceTrack.h"
 #include "association_functions.h"
@@ -22,8 +23,10 @@ class ImageTrackerNode : public InputOutputNode<Detections2D, ImageTrackerResult
 	ImageTrackerNode() = default;
 
 	ImageTrackerResults2 function(Detections2D const& data) {
-		common::println("Time taken = ",
-		    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - data.timestamp)));
+		AfterReturnTimeMeasure after(data.timestamp);
+
+		// common::println("Time taken = ",
+		//     std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() - data.timestamp)));
 
 		auto& tracks = multiple_cameras_tracks[data.source];
 

@@ -79,6 +79,7 @@ class TrackToTrackFusionNode : public InputOutputNode<ImageTrackerResults2, Comp
 
 	CompactObjects function(ImageTrackerResults2 const& data) final {
 		AfterReturnTimeMeasure after(data.timestamp);
+
 		CompactObjects ret;
 		ret.timestamp = data.timestamp;
 

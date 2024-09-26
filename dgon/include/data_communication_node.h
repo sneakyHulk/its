@@ -1,13 +1,13 @@
 #pragma once
 
-#include "yas.h"
-
 #include <mqtt/client.h>
 
+#include "AfterReturnTimeMeasure.h"
 #include "CompactObject.h"
 #include "common_exception.h"
 #include "common_output.h"
 #include "node.h"
+#include "yas.h"
 
 class DataStreamMQTT : public OutputNode<CompactObjects> {
 	mqtt::client cli;
@@ -27,16 +27,11 @@ class DataStreamMQTT : public OutputNode<CompactObjects> {
 	}
 
 	void output_function(CompactObjects const &data) final {
-		std::uint64_t now = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
+		AfterReturnTimeMeasure after(data.timestamp);
 
 		yas::mem_ostream os;
 		yas::binary_oarchive<yas::mem_ostream> oa(os);
 		oa.serialize(data);
-
-		// mqtt::property timestamp(mqtt::property::USER_PROPERTY, "timestamp", std::to_string(now));
-		// mqtt::properties proplist;
-		// proplist.add(timestamp);
-		// cli.publish(mqtt::message("objects", os.get_intrusive_buffer().data, os.get_intrusive_buffer().size, 0, false, proplist));
 
 		cli.publish(mqtt::message("objects", os.get_intrusive_buffer().data, os.get_intrusive_buffer().size, 0, false));
 	}

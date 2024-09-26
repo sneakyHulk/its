@@ -1,15 +1,12 @@
 #pragma once
 
-#include <Eigen/Dense>
-#include <map>
-#include <opencv2/core/eigen.hpp>
 #include <opencv2/opencv.hpp>
 
 #include "AfterReturnTimeMeasure.h"
-#include "Detection2D.h"
+#include "ImageData.h"
 #include "node.h"
 
-class UndistortionNode : public InputOutputNode<Detections2D, Detections2D> {
+class ImageUndistortionNode : public InputOutputNode<ImageData, ImageData> {
 	struct UndistortionConfig {
 		std::vector<double> camera_matrix;
 		std::vector<double> distortion_values;
@@ -21,21 +18,14 @@ class UndistortionNode : public InputOutputNode<Detections2D, Detections2D> {
 		cv::Mat camera_matrix;
 		cv::Mat distortion_values;
 		cv::Mat new_camera_matrix;
+		cv::Mat undistortion_map1;
+		cv::Mat undistortion_map2;
 	};
 
 	std::map<std::string, UndistortionConfigInternal> _undistortion_config;
 
-	[[nodiscard]] std::tuple<double, double> undistort_point(std::string const& source, double const x, double const y) const {
-		std::vector<cv::Point2d> out(1);
-		std::vector<cv::Point2d> distorted_point = {{x, y}};
-
-		cv::undistortPoints(distorted_point, out, _undistortion_config.at(source).camera_matrix, _undistortion_config.at(source).distortion_values, cv::Mat_<double>::eye(3, 3), _undistortion_config.at(source).new_camera_matrix);
-
-		return {out.front().x, out.front().y};
-	}
-
    public:
-	explicit UndistortionNode(std::map<std::string, UndistortionConfig>&& config) {
+	ImageUndistortionNode(std::map<std::string, UndistortionConfig>&& config) {
 		for (auto const& [cam_name, undistortion_config] : config) {
 			cv::Mat camera_matrix = cv::Mat_<double>(3, 3);
 			for (auto i = 0; i < camera_matrix.rows; ++i) {
@@ -54,19 +44,19 @@ class UndistortionNode : public InputOutputNode<Detections2D, Detections2D> {
 			cv::Size image_size(undistortion_config.width, undistortion_config.height);
 			cv::Mat new_camera_matrix = cv::getOptimalNewCameraMatrix(_undistortion_config[cam_name].camera_matrix, _undistortion_config[cam_name].distortion_values, image_size, 0., image_size);
 			_undistortion_config[cam_name].new_camera_matrix = new_camera_matrix;
+
+			cv::initUndistortRectifyMap(_undistortion_config[cam_name].camera_matrix, _undistortion_config[cam_name].distortion_values, cv::Mat_<double>::eye(3, 3), _undistortion_config[cam_name].new_camera_matrix, image_size, CV_32F,
+			    _undistortion_config[cam_name].undistortion_map1, _undistortion_config[cam_name].undistortion_map2);
 		}
 	}
 
-	Detections2D function(Detections2D const& data) final {
+	ImageData function(ImageData const& data) {
 		AfterReturnTimeMeasure after(data.timestamp);
-		Detections2D ret = data;
 
-		for (auto& detection : ret.objects) {
-			auto& [left, top, right, bottom] = detection.bbox;
-
-			std::tie(left, top) = undistort_point(data.source, left, top);
-			std::tie(right, bottom) = undistort_point(data.source, right, bottom);
-		}
+		ImageData ret;
+		ret.timestamp = data.timestamp;
+		ret.source = data.source;
+		cv::remap(data.image, ret.image, _undistortion_config[data.source].undistortion_map1, _undistortion_config[data.source].undistortion_map2, cv::INTER_LINEAR);
 
 		return ret;
 	}
