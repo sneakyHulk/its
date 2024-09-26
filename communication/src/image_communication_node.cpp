@@ -147,3 +147,5 @@ ImageStreamRTSP::ImageStreamRTSP() {
 }
 
 void ImageStreamRTSP::output_function(std::shared_ptr<ImageData const> const &data) { std::atomic_store(&_image_data, data); }
+
+const char *ImageStreamRTSP::port = "8554";

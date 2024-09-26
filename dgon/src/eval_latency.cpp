@@ -16,8 +16,7 @@
 #include "tracking_node.h"
 
 int main() {
-	// DataStreamMQTT data_stream;
-	ImageStreamRTSP image_stream;
+	DataStreamMQTT data_stream;
 	TrackToTrackFusionNode track_to_track({{"s110_s_cam_8", {{
 #include "projection_matrix_s110_s_cam_8"
 	                                                         },
@@ -62,8 +61,6 @@ int main() {
 
 	BayerBG8Preprocessing preprocessing({{"s110_n_cam_8", {1200, 1920}}, {"s110_w_cam_8", {1200, 1920}}, {"s110_s_cam_8", {1200, 1920}}, {"s110_o_cam_8", {1200, 1920}}});
 
-	// ImageVisualizationNode vis([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
-	ImageVisualizationNode vis;
 	DownscalingNode<480, 640> down;
 	YoloNode<480, 640> yolo;
 	UndistortionNode undistort({{"s110_n_cam_8", {{1400.3096617691212, 0., 967.7899705163408, 0., 1403.041082755918, 581.7195041357244, 0., 0., 1.},
@@ -89,8 +86,6 @@ int main() {
 	cams += preprocessing;
 	preprocessing += down;
 
-	down += image_stream;
-
 	down += yolo;
 	yolo += undistort;
 
@@ -99,9 +94,9 @@ int main() {
 
 	undistort += track;
 	track += track_to_track;
-	track_to_track += vis2d;
+	track_to_track += data_stream;
 
-	// track_to_track += data_stream;
+	// track_to_track += vis2d;
 
 	// preprocessing += track_vis;
 	// track += track_vis;
@@ -118,13 +113,12 @@ int main() {
 	std::thread track_thread(&ImageTrackerNode<>::operator(), &track);
 	std::thread track_to_track_thread(&TrackToTrackFusionNode::operator(), &track_to_track);
 	// std::thread data_stream_thread(&DataStreamMQTT::operator(), &data_stream);
-	std::thread image_stream_thread(&ImageStreamRTSP::operator(), &image_stream);
+	// std::thread image_stream_thread(&ImageStreamRTSP::operator(), &image_stream);
 	// std::thread track_vis_thread(&TrackingVisualizationNode::operator(), &track_vis);
-	std::thread vis2d_thread(&BirdEyeVisualizationNode::operator(), &vis2d);
+	// std::thread vis2d_thread(&BirdEyeVisualizationNode::operator(), &vis2d);
 	// std::thread img_det_vis_thread(&ImageDetectionVisualizationNode::operator(), &img_det_vis);
 
 	// vis();
 	// img_det_vis();
-
-	ImageStreamRTSP::run_loop();
+	std::this_thread::sleep_for(1min);
 }

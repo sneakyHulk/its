@@ -1,0 +1,6 @@
+-rw-rw-r-- 1 lukas lukas  14825754 Sep 25 23:18 h264
+-rw-rw-r-- 1 lukas lukas  15046824 Sep 25 23:21 h264_down
+-rw-rw-r-- 1 lukas lukas   8796615 Sep 26 00:54 h264_down_open
+-rw-rw-r-- 1 lukas lukas  67709399 Sep 26 00:57 h264_open
+-rw-rw-r-- 1 lukas lukas 919495492 Sep 25 23:16 jpeg
+-rw-rw-r-- 1 lukas lukas 140876754 Sep 25 23:02 jpeg_down

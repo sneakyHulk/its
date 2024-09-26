@@ -14,8 +14,8 @@ struct StreamContext {
 	std::shared_ptr<ImageData const> *image;
 };
 
+template<bool use_jpeg>
 class ImageStreamRTSP : public OutputPtrNode<ImageData> {
-	static constexpr bool use_jpeg = false;
 	static const char *port;
 
 	static GstRTSPServer *_server;
@@ -23,6 +23,7 @@ class ImageStreamRTSP : public OutputPtrNode<ImageData> {
 	static GMainLoop *_loop;
 
 	static std::vector<ImageStreamRTSP *> all_streams;
+	static std::atomic<std::uint64_t> current_timestamp;
 
 	std::shared_ptr<ImageData const> _image_data = nullptr;
 	GstRTSPMediaFactory *_factory;

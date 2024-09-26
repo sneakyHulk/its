@@ -4,9 +4,11 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
 
+#include "AfterReturnTimeMeasure.h"
 #include "common_output.h"
 
-GstRTSPServer *ImageStreamRTSP::_server = []() {
+template <bool use_jpeg>
+GstRTSPServer *ImageStreamRTSP<use_jpeg>::_server = []() {
 	gst_init(NULL, NULL);
 
 	GstRTSPServer *server = gst_rtsp_server_new();
@@ -14,22 +16,27 @@ GstRTSPServer *ImageStreamRTSP::_server = []() {
 
 	return server;
 }();
-GstRTSPMountPoints *ImageStreamRTSP::_mounts = gst_rtsp_server_get_mount_points(_server);
-GMainLoop *ImageStreamRTSP::_loop = g_main_loop_new(NULL, FALSE);
 
-std::vector<ImageStreamRTSP *> ImageStreamRTSP::all_streams;
+template <bool use_jpeg>
+GstRTSPMountPoints *ImageStreamRTSP<use_jpeg>::_mounts = gst_rtsp_server_get_mount_points(_server);
+template <bool use_jpeg>
+GMainLoop *ImageStreamRTSP<use_jpeg>::_loop = g_main_loop_new(NULL, FALSE);
 
-void ImageStreamRTSP::need_data(GstElement *appsrc, guint unused, StreamContext *context) {
+template <bool use_jpeg>
+std::vector<ImageStreamRTSP<use_jpeg> *> ImageStreamRTSP<use_jpeg>::all_streams;
+
+template <bool use_jpeg>
+void ImageStreamRTSP<use_jpeg>::need_data(GstElement *appsrc, guint unused, StreamContext *context) {
 	std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
 
-	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(img->timestamp)));
-	std::string wall_time = std::ctime(&time);
-
-	cv::putText(img->image, wall_time, cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
-
-	time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	wall_time = std::ctime(&time);
-	cv::putText(img->image, wall_time, cv::Point2d(50, 100), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	// std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(img->timestamp)));
+	// std::string wall_time = std::ctime(&time);
+	//
+	// cv::putText(img->image, wall_time, cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+	//
+	// time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	// wall_time = std::ctime(&time);
+	// cv::putText(img->image, wall_time, cv::Point2d(50, 100), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
 	guint size;
 	GstBuffer *buffer;
@@ -45,7 +52,7 @@ void ImageStreamRTSP::need_data(GstElement *appsrc, guint unused, StreamContext 
 		gst_buffer_map(buffer, &m, GST_MAP_WRITE);
 		std::memcpy(m.data, jpeg_buffer.data(), size);
 	} else {
-		size = 1920 * 1200 * 3;
+		size = img->image.cols * img->image.rows * 3;
 		buffer = gst_buffer_new_allocate(NULL, size, NULL);
 
 		gst_buffer_map(buffer, &m, GST_MAP_WRITE);
@@ -61,7 +68,8 @@ void ImageStreamRTSP::need_data(GstElement *appsrc, guint unused, StreamContext 
 	GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(appsrc), buffer);
 }
 
-void ImageStreamRTSP::media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, ImageStreamRTSP *current_class) {
+template <bool use_jpeg>
+void ImageStreamRTSP<use_jpeg>::media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, ImageStreamRTSP *current_class) {
 	GstElement *element, *appsrc;
 
 	/* get the element used for providing the streams of the media */
@@ -96,7 +104,8 @@ void ImageStreamRTSP::media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia
 	gst_object_unref(element);
 }
 
-ImageStreamRTSP::ImageStreamRTSP() {
+template <bool use_jpeg>
+ImageStreamRTSP<use_jpeg>::ImageStreamRTSP() {
 	all_streams.push_back(this);
 	/* make a media factory for a test stream. The default media factory can use gst-launch syntax to create pipelines.
 	 * any launch line works as long as it contains elements named pay%d. Each element with pay%d names will be a stream */
@@ -104,8 +113,8 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	if constexpr (use_jpeg) {
 		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! rtpjpegpay name=pay0 pt=26 )");
 	} else {
-		// gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
-		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc multi-thread=4 complexity=low rate-control=buffer ! rtph264pay name=pay0 pt=96 )");
+		// gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! x264enc tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+		gst_rtsp_media_factory_set_launch(_factory, "( appsrc name=mysrc ! videoconvert ! video/x-raw,format=I420 ! openh264enc complexity=medium rate-control=buffer ! rtph264pay name=pay0 pt=96 )"); // rtph264pay aggregate-mode=zero-latency
 	}
 	gst_rtsp_media_factory_set_shared(_factory, true);
 
@@ -114,7 +123,8 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	g_signal_connect(_factory, "media-configure", G_CALLBACK(media_configure), this);
 }
 
-[[noreturn]] void ImageStreamRTSP::run_loop() {
+template <bool use_jpeg>
+[[noreturn]] void ImageStreamRTSP<use_jpeg>::run_loop() {
 	// set mount point name with name of source
 	for (auto stream : all_streams) {
 		std::shared_ptr<ImageData const> image_data;
@@ -128,7 +138,14 @@ ImageStreamRTSP::ImageStreamRTSP() {
 
 		/* attach the factory to the url */
 		gst_rtsp_mount_points_add_factory(_mounts, ("/" + image_data->source).c_str(), stream->_factory);
-		common::println("[ImageStreamRTSP]: Stream ready at 'ffplay -fflags nobuffer -i \"rtsp://127.0.0.1:", port, "/", image_data->source, "\"'");
+		// common::println("[ImageStreamRTSP]: Stream ready at 'ffplay -fflags nobuffer -i \"rtsp://127.0.0.1:", port, "/", image_data->source, "\"'");
+		if constexpr (use_jpeg) {
+			common::println("[ImageStreamRTSP]: Stream ready at 'gst-launch-1.0 rtspsrc location=rtsp://127.0.0.1:", port, "/", image_data->source, " latency=10 ! queue ! rtpjpegdepay ! jpegparse ! jpegdec ! videoconvert ! autovideosink'");
+
+		} else {
+			common::println(
+			    "[ImageStreamRTSP]: Stream ready at 'gst-launch-1.0 rtspsrc location=rtsp://127.0.0.1:", port, "/", image_data->source, " latency=10 ! queue ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! autovideosink'");
+		}
 	}
 
 	common::println("[ImageStreamRTSP]: Streams ready!");
@@ -137,15 +154,33 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	gst_rtsp_server_attach(_server, NULL);
 	// g_main_loop_run(_loop);
 
-	for (;;) {
+	// for (std::uint64_t timestamp = 0, old_timestamp = 0;;) {
+	//	std::this_thread::sleep_for(10ms);
+	//	timestamp = current_timestamp.load();
+	//	if (timestamp == old_timestamp) {
+	//		g_main_context_iteration(NULL, false);
+	//	} else {
+	//		AfterReturnTimeMeasure after(old_timestamp = timestamp);
+	//		g_main_context_iteration(NULL, false);
+	//	}
+	// }
+	for (std::uint64_t timestamp = 0;;) {
 		g_main_context_iteration(NULL, false);
 		std::this_thread::yield();
-		std::this_thread::sleep_for(10ms);
 	}
 
 	common::println("[ImageStreamRTSP]: Streams unready!");
 }
 
-void ImageStreamRTSP::output_function(std::shared_ptr<ImageData const> const &data) { std::atomic_store(&_image_data, data); }
+template <bool use_jpeg>
+void ImageStreamRTSP<use_jpeg>::output_function(std::shared_ptr<ImageData const> const &data) {
+	std::atomic_store(&_image_data, data);
+}
 
-const char *ImageStreamRTSP::port = "8554";
+template <bool use_jpeg>
+const char *ImageStreamRTSP<use_jpeg>::port = "8554";
+template <bool use_jpeg>
+std::atomic<std::uint64_t> ImageStreamRTSP<use_jpeg>::current_timestamp = 0;
+
+template class ImageStreamRTSP<true>;
+template class ImageStreamRTSP<false>;
