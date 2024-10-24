@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Detection2D.h"
 #include "ImageData.h"
 #include "node.h"
@@ -13,7 +15,7 @@ class ImageDetectionVisualizationNode : public OutputNodePair<ImageData, Detecti
    std::vector<KalmanBoxSourceTrack> tracks;
 
    public:
-	ImageDetectionVisualizationNode(std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }) : _image_mask(image_mask) {}
+	explicit ImageDetectionVisualizationNode(std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }) : _image_mask(std::move(image_mask)) {}
 	bool output_function(ImageData const& data, Detections2D const& detections) final {
 		if (!_image_mask(data)) return false;
 		if (data.source != detections.source) return false;

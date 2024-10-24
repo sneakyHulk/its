@@ -10,3 +10,11 @@ target_link_libraries(${PROJECT_NAME} PUBLIC transformation)
 target_link_libraries(${PROJECT_NAME} PUBLIC range-v3)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+
+project(test_bytetrack)
+
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC bytetrack)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

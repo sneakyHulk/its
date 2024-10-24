@@ -91,6 +91,9 @@ add_subdirectory(thirdparty/json)
 ### Boost 1.85.0
 add_subdirectory(thirdparty/boost)
 
+### bytetrack
+add_subdirectory(thirdparty/bytetrack)
+
 ### common
 add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)
@@ -109,7 +112,6 @@ add_library(yas INTERFACE)
 target_include_directories(yas INTERFACE thirdparty/yas/include)
 target_link_libraries(yas INTERFACE)
 target_compile_features(yas INTERFACE cxx_std_23)
-
 
 if (STREAMING_TEST)
     ### libdatachannel
@@ -199,8 +201,8 @@ add_subdirectory(visualization)
 add_subdirectory(tracking)
 add_subdirectory(communication)
 add_subdirectory(area_blocking)
-add_subdirectory(dgon)
-
+#add_subdirectory(dgon)
+add_subdirectory(image_processing)
 
 ########## add main executable #########################################################################################
 add_executable(${PROJECT_NAME} main.cpp)

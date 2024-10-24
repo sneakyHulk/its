@@ -1,5 +1,4 @@
 #include "BirdEyeVisualizationNode.h"
-#include "CameraSimulator.h"
 #include "Downscaling.h"
 #include "DrawingUtils.h"
 #include "ImageDetectionVisualizationNode.h"
@@ -7,6 +6,7 @@
 #include "ImageUndistortionNode.h"
 #include "ImageVisualizationNode.h"
 #include "Preprocessing.h"
+#include "RawDataCamerasSimulatorNode.h"
 #include "TrackToTrackFusion.h"
 #include "TrackingVisualizationNode.h"
 #include "UndistortionNode.h"
@@ -55,7 +55,7 @@ int main() {
 #include "affine_transformation_map_origin_to_utm"
 	                         }}}});
 
-	BayerBG8CameraSimulator cams({{"s110_s_cam_8",
+	RawDataCamerasSimulatorNode cams({{"s110_s_cam_8",
 	    std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" /
 	        "s110_s_cam_8"}});  //, {"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8"},
 	                            // {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_w_cam_8"}, {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_o_cam_8"}});

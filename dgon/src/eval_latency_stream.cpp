@@ -1,13 +1,13 @@
 #include <chrono>
 
 #include "BirdEyeVisualizationNode.h"
-#include "CameraSimulator.h"
 #include "Downscaling.h"
 #include "DrawingUtils.h"
 #include "ImageDetectionVisualizationNode.h"
 #include "ImageTrackerNode.h"
 #include "ImageVisualizationNode.h"
 #include "Preprocessing.h"
+#include "RawDataCameraSimulator.h"
 #include "TrackToTrackFusion.h"
 #include "TrackingVisualizationNode.h"
 #include "UndistortionNode.h"

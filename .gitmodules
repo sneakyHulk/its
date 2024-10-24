@@ -226,3 +226,6 @@
 [submodule "thirdparty/tumtraf"]
 	path = thirdparty/tumtraf
 	url = https://github.com/tum-traffic-dataset/tum-traffic-dataset-dev-kit.git
+[submodule "thirdparty/bytetrack"]
+	path = thirdparty/bytetrack
+	url = https://github.com/Vertical-Beach/ByteTrack-cpp.git
