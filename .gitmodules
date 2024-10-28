@@ -229,3 +229,6 @@
 [submodule "thirdparty/bytetrack"]
 	path = thirdparty/bytetrack
 	url = https://github.com/Vertical-Beach/ByteTrack-cpp.git
+[submodule "thirdparty/boost/multi_index"]
+	path = thirdparty/boost/multi_index
+	url = https://github.com/boostorg/multi_index.git
