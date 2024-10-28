@@ -2,9 +2,6 @@
 
 #include "CamerasSimulatorNode.h"
 
-CamerasSimulatorNode::CamerasSimulatorNode(std::map<std::string, std::filesystem::path> &&folders, std::function<std::vector<FilepathArrivedRecordedSourceConfig>(std::map<std::string, std::filesystem::path> &&)> &&get_data) {
-	_files = get_data(std::forward<decltype(folders)>(folders));
-}
 ImageData CamerasSimulatorNode::input_function() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());

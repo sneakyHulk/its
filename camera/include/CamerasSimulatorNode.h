@@ -6,6 +6,7 @@
 #include <functional>
 #include <map>
 #include <regex>
+#include <utility>
 
 #include "ImageData.h"
 #include "ImageDataRaw.h"
@@ -20,43 +21,7 @@ class CamerasSimulatorNode : public InputNode<ImageData> {
 		std::string source;
 	};
 
-	template <typename... T>
-	explicit CamerasSimulatorNode(
-	    T... args, std::function<std::vector<FilepathArrivedRecordedSourceConfig>(T&&...)>&& get_data = [](std::map<std::string, std::filesystem::path>&& folders) {
-		    std::vector<FilepathArrivedRecordedSourceConfig> ret;
-		    for (auto const& [source, folder] : folders) {
-			    for (auto const& file : std::filesystem::directory_iterator(folder)) {
-				    static std::regex const timestamp("([0-9]+)_([0-9]+)");
-				    std::cmatch m;
-				    std::string regex_string = file.path().filename();
-				    std::regex_match(regex_string.c_str(), m, timestamp);
-
-				    ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
-			    }
-		    }
-
-		    return ret;
-	    }) {
-		_files = get_data(std::forward<T...>(args...));
-	}
-
-	explicit CamerasSimulatorNode(
-	    std::map<std::string, std::filesystem::path>&& folders,
-	    std::function<std::vector<FilepathArrivedRecordedSourceConfig>(std::map<std::string, std::filesystem::path>&&)>&& get_data = [](std::map<std::string, std::filesystem::path>&& folders) {
-		    std::vector<FilepathArrivedRecordedSourceConfig> ret;
-		    for (auto const& [source, folder] : folders) {
-			    for (auto const& file : std::filesystem::directory_iterator(folder)) {
-				    static std::regex const timestamp("([0-9]+)_([0-9]+)");
-				    std::cmatch m;
-				    std::string regex_string = file.path().filename();
-				    std::regex_match(regex_string.c_str(), m, timestamp);
-
-				    ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
-			    }
-		    }
-
-		    return ret;
-	    });
+	explicit CamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}
 
    private:
 	ImageData input_function() final;
@@ -70,3 +35,33 @@ class CamerasSimulatorNode : public InputNode<ImageData> {
 	std::chrono::time_point<std::chrono::system_clock> _current_time;
 	std::priority_queue<FilepathArrivedRecordedSourceConfig, std::vector<FilepathArrivedRecordedSourceConfig>, sorting_function> _queue;
 };
+
+CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
+	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
+
+	for (auto const& [source, folder] : folders) {
+		for (auto const& file : std::filesystem::directory_iterator(folder)) {
+			static std::regex const timestamp("([0-9]+)_([0-9]+)");
+			std::cmatch m;
+			std::string regex_string = file.path().filename();
+			std::regex_match(regex_string.c_str(), m, timestamp);
+
+			ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
+		}
+	}
+
+	return CamerasSimulatorNode{std::move(ret)};
+}
+
+CamerasSimulatorNode make_cameras_simulator_node_arrived1(std::map<std::string, std::filesystem::path>&& folders) {
+	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
+
+	for (auto const& [source, folder] : folders) {
+		for (auto const& file : std::filesystem::directory_iterator(folder)) {
+			ret.emplace_back(file.path(), std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(std::stoull(file.path().stem()))).count(),
+			    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(std::stoull(file.path().stem()))).count(), source);
+		}
+	}
+
+	return CamerasSimulatorNode{std::forward<decltype(ret)>(ret)};
+}

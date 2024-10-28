@@ -20,43 +20,7 @@ class RawDataCamerasSimulatorNode : public InputNode<ImageDataRaw> {
 		std::string source;
 	};
 
-	template <typename... T>
-	explicit RawDataCamerasSimulatorNode(
-	    T... args, std::function<std::vector<FilepathArrivedRecordedSourceConfig>(T&&...)>&& get_data = [](std::map<std::string, std::filesystem::path>&& folders) {
-		    std::vector<FilepathArrivedRecordedSourceConfig> ret;
-		    for (auto const& [source, folder] : folders) {
-			    for (auto const& file : std::filesystem::directory_iterator(folder)) {
-				    static std::regex const timestamp("([0-9]+)_([0-9]+)");
-				    std::cmatch m;
-				    std::string regex_string = file.path().filename();
-				    std::regex_match(regex_string.c_str(), m, timestamp);
-
-				    ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
-			    }
-		    }
-
-		    return ret;
-	    }) {
-		_files = get_data(std::forward<T...>(args...));
-	}
-
-	explicit RawDataCamerasSimulatorNode(
-	    std::map<std::string, std::filesystem::path>&& folders,
-	    std::function<std::vector<FilepathArrivedRecordedSourceConfig>(std::map<std::string, std::filesystem::path>&&)>&& get_data = [](std::map<std::string, std::filesystem::path>&& folders) {
-		    std::vector<FilepathArrivedRecordedSourceConfig> ret;
-		    for (auto const& [source, folder] : folders) {
-			    for (auto const& file : std::filesystem::directory_iterator(folder)) {
-				    static std::regex const timestamp("([0-9]+)_([0-9]+)");
-				    std::cmatch m;
-				    std::string regex_string = file.path().filename();
-				    std::regex_match(regex_string.c_str(), m, timestamp);
-
-				    ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
-			    }
-		    }
-
-		    return ret;
-	    });
+	explicit RawDataCamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}
 
    private:
 	ImageDataRaw input_function() final;
@@ -70,3 +34,20 @@ class RawDataCamerasSimulatorNode : public InputNode<ImageDataRaw> {
 	std::chrono::time_point<std::chrono::system_clock> _current_time;
 	std::priority_queue<FilepathArrivedRecordedSourceConfig, std::vector<FilepathArrivedRecordedSourceConfig>, sorting_function> _queue;
 };
+
+RawDataCamerasSimulatorNode make_raw_data_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
+	std::vector<RawDataCamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
+
+	for (auto const& [source, folder] : folders) {
+		for (auto const& file : std::filesystem::directory_iterator(folder)) {
+			static std::regex const timestamp("([0-9]+)_([0-9]+)");
+			std::cmatch m;
+			std::string regex_string = file.path().filename();
+			std::regex_match(regex_string.c_str(), m, timestamp);
+
+			ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
+		}
+	}
+
+	return RawDataCamerasSimulatorNode{std::forward<decltype(ret)>(ret)};
+}
