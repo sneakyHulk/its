@@ -69,26 +69,24 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 		}
 
 		try {
-			for (auto it ; Pylon::CDeviceInfo & device : device_list) {
-				auto& config = *_cam_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>().find(device.GetMacAddress().c_str());
+			for (auto& mac_address_indexing = _cam_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); Pylon::CDeviceInfo & device : device_list) {
+				auto& config = *mac_address_indexing.find(device.GetMacAddress().c_str());
 
-				index_to_cam_name[i] = mac_to_cam_name.at(device.GetMacAddress().c_str());
-				common::println("[BaslerCameras]: Found device ", index_to_cam_name[i], " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
-				cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
+				_cameras[config.index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
+				common::println("[BaslerCamerasNode]: Found device ", config.camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
 				std::this_thread::sleep_for(1s);
-				++i;
 			}
 
-			cameras.StartGrabbing();
+			common::println("[BaslerCamerasNode]: Starting grabbing...");
 
-			common::println("[BaslerCameras]: Started grabbing!");
+			_cameras.StartGrabbing();
+
+			common::println("[BaslerCamerasNode]: Started grabbing.");
 		} catch (Pylon::GenericException const& e) {
-			common::println("[BaslerCameras]: ", e.GetDescription());
+			common::println("[BaslerCamerasNode]: ", e.GetDescription());
 
 			throw std::current_exception();
 		}
-
-		// index_to_cam_name.resize(device_list.size());
 	}
 
    private:
