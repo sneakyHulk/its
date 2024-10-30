@@ -105,7 +105,7 @@ void BaslerCameras::init_cameras() {
 	} catch (Pylon::GenericException const& e) {
 		common::println("[BaslerCameras]: ", e.GetDescription());
 
-		throw std::current_exception();
+		rethrow_exception(std::current_exception());
 	}
 }
 

@@ -18,10 +18,14 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
+### Pylon
 if (DEFINED ENV{LIVE})
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
     message("Pylon found!")
 endif ()
+
+### eCAL
+find_package(eCAL REQUIRED)
 
 ### Gstreamer
 # apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-dev gstreamer1.0-rtsp
@@ -194,6 +198,8 @@ endif ()
 
 add_subdirectory(msg)
 add_subdirectory(node)
+add_subdirectory(external)
+add_subdirectory(utils)
 add_subdirectory(yolo)
 add_subdirectory(transformation)
 add_subdirectory(camera)
@@ -203,6 +209,7 @@ add_subdirectory(communication)
 add_subdirectory(area_blocking)
 #add_subdirectory(dgon)
 add_subdirectory(image_processing)
+
 
 ########## add main executable #########################################################################################
 add_executable(${PROJECT_NAME} main.cpp)
