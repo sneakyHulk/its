@@ -32,9 +32,11 @@ int main(int argc, char* argv[]) {
 		for (auto i = 0; auto& device : device_list) {
 			common::println("[BaslerCamerasNode]: Found device ", "name", " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
 
-			cameras[i++].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
+			cameras[i].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 
 			common::println("Using device ", cameras[i].GetDeviceInfo().GetModelName());
+
+			++i;
 		}
 
 		// BaslerCamerasNode cameras({{"s110_s_cam_8", {"0030532A9B7F"}}, {"s110_o_cam_8", {"003053305C72"}}, {"s110_n_cam_8", {"003053305C75"}}, {"s110_w_cam_8", {"003053380639"}}});
