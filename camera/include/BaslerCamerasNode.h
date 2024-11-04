@@ -59,33 +59,6 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 
 				std::this_thread::sleep_for(1s);
 				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
-			}
-
-			common::print("[BaslerCamerasNode]: Starting grabbing...");
-
-			_cameras.StartGrabbing();
-
-			common::println("done!");
-		} catch (Pylon::GenericException const& e) {
-			common::println("[BaslerCamerasNode]: ", e.GetDescription());
-
-			rethrow_exception(std::current_exception());
-		}
-
-		return;
-
-		try {
-			for (auto& mac_address_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); auto const& device : device_list) {
-				auto const& config = mac_address_indexing.find(device.GetMacAddress().c_str());
-
-				common::println("[BaslerCamerasNode]: Found device ", config->camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
-				if (config == mac_address_indexing.end()) {
-					common::println("[BaslerCamerasNode]: Device not registered in constructor.");
-					continue;
-				}
-				std::this_thread::sleep_for(1s);
-
-				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
@@ -116,11 +89,11 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 				}
 			}
 
-			common::println("[BaslerCamerasNode]: Starting grabbing...");
+			common::print("[BaslerCamerasNode]: Starting grabbing...");
 
 			_cameras.StartGrabbing();
 
-			common::println("[BaslerCamerasNode]: Started grabbing.");
+			common::println("done!");
 		} catch (Pylon::GenericException const& e) {
 			common::println("[BaslerCamerasNode]: ", e.GetDescription());
 
