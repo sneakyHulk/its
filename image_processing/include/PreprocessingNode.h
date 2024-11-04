@@ -2,7 +2,6 @@
 
 #include <map>
 #include <opencv2/core/mat.hpp>
-#include <opencv2/gapi.hpp>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
