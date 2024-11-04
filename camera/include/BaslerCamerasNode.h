@@ -41,14 +41,14 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 		Pylon::CDeviceInfo info;
 		info.SetDeviceClass(Pylon::BaslerGigEDeviceClass);
 
-		Pylon::DeviceInfoList device_list;
+		Pylon::DeviceInfoList_t device_list;
 		Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 		if (device_list.empty()) {
 			throw common::Exception("[BaslerCamerasNode]: No Basler camera devices found!");
 		}
 
 		try {
-			for (auto& mac_address_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); Pylon::CDeviceInfo & device : device_list) {
+			for (auto& mac_address_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); auto const& device : device_list) {
 				auto const& config = mac_address_indexing.find(device.GetMacAddress().c_str());
 
 				common::println("[BaslerCamerasNode]: Found device ", config->camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");

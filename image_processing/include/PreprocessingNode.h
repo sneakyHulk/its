@@ -28,7 +28,6 @@ class PreprocessingNode : public InputOutputNode<ImageDataRaw, ImageData> {
 
    public:
 
-
 	explicit PreprocessingNode(std::remove_const<decltype(config)>::type&& config) : config(std::move(config)) {}
 
    private:
