@@ -97,7 +97,7 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 		} catch (Pylon::GenericException const& e) {
 			common::println("[BaslerCamerasNode]: ", e.GetDescription());
 
-			throw std::current_exception();
+			rethrow_exception(std::current_exception());
 		}
 	}
 
