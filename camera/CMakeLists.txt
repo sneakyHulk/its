@@ -27,7 +27,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${Pylon_LIBRARIES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-project(test_cameras_nodes)
+project(test_basler_cameras)
 add_executable(${PROJECT_NAME} test/test_basler_cameras.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC cameras_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC image_visualization_nodes)
