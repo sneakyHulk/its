@@ -56,9 +56,9 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 					common::println("[BaslerCamerasNode]: Device not registered in constructor.");
 					continue;
 				}
+				std::this_thread::sleep_for(1s);
 
 				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
-				std::this_thread::sleep_for(1s);
 
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
