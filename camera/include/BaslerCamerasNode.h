@@ -56,10 +56,11 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 				}
 
 				common::println("[BaslerCamerasNode]: Found device ", config->camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
-
 				std::this_thread::sleep_for(1s);
+
 				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 
+				_cameras[config->index].Open();
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
 					common::println("[BaslerCamerasNode]: ", config->camera_name, " IEEE1588 already enabled!");
