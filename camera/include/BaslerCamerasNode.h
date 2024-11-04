@@ -49,38 +49,43 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 
 		try {
 			for (auto& mac_address_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); Pylon::CDeviceInfo & device : device_list) {
-				auto const& config = *mac_address_indexing.find(device.GetMacAddress().c_str());
+				auto const& config = mac_address_indexing.find(device.GetMacAddress().c_str());
 
-				_cameras[config.index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
-				common::println("[BaslerCamerasNode]: Found device ", config.camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
+				common::println("[BaslerCamerasNode]: Found device ", config->camera_name, " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
+				if (config == mac_address_indexing.end()) {
+					common::println("[BaslerCamerasNode]: Device not registered in constructor.");
+					continue;
+				}
+
+				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 				std::this_thread::sleep_for(1s);
 
 				// Enabling PTP Clock Synchronization
-				if (_cameras[config.index].GevIEEE1588.GetValue()) {
-					common::println("[BaslerCamerasNode]: ", config.camera_name, " IEEE1588 already enabled!");
+				if (_cameras[config->index].GevIEEE1588.GetValue()) {
+					common::println("[BaslerCamerasNode]: ", config->camera_name, " IEEE1588 already enabled!");
 				} else {
-					common::println("[BaslerCamerasNode]: ", config.camera_name, " Enable PTP clock synchronization...");
-					_cameras[config.index].GevIEEE1588.SetValue(true);
+					common::println("[BaslerCamerasNode]: ", config->camera_name, " Enable PTP clock synchronization...");
+					_cameras[config->index].GevIEEE1588.SetValue(true);
 
 					// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
-					common::println("[BaslerCamerasNode]: ", config.camera_name, " Waiting for PTP network devices to be sufficiently synchronized...");
+					common::println("[BaslerCamerasNode]: ", config->camera_name, " Waiting for PTP network devices to be sufficiently synchronized...");
 					boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
 					do {
-						_cameras[config.index].GevIEEE1588DataSetLatch();
+						_cameras[config->index].GevIEEE1588DataSetLatch();
 
-						if (_cameras[config.index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+						if (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
 							std::this_thread::sleep_for(1ms);
 							continue;
 						}
 
-						auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config.index].GevIEEE1588OffsetFromMaster()));
+						auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster()));
 						clock_offsets.push_back(current_offset);
-						common::println("[BaslerCamerasNode]: ", config.camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+						common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
 
 						std::this_thread::sleep_for(1s);
 					} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
 
-					common::println("[BaslerCamerasNode]: ", config.camera_name, " Highest offset from master <= 15ms. Can start to grab images.");
+					common::println("[BaslerCamerasNode]: ", config->camera_name, " Highest offset from master <= 15ms. Can start to grab images.");
 				}
 			}
 
