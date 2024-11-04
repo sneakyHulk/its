@@ -23,6 +23,10 @@ int main(int argc, char* argv[]) {
 		Pylon::DeviceInfoList_t device_list;
 		Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 
+		if (device_list.empty()) {
+			throw common::Exception("[BaslerCamerasNode]: No Basler camera devices found!");
+		}
+
 		for (auto const& device : device_list) {
 			common::println("[BaslerCamerasNode]: Found device ", "name", " with model name '", device.GetModelName(), "', ip address '", device.GetIpAddress(), "', and mac address '", device.GetMacAddress(), "'.");
 		}
