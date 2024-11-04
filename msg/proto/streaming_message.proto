@@ -1,0 +1,65 @@
+// Protobuf container for raw sensor data
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package providentia;
+
+message Image {
+  bytes data = 1;
+  enum ImageEncoding {
+    RGB24 = 0;
+    BAYERRG8 = 1;
+    YUV24 = 2;
+    MONO8 = 3;
+    JPEG = 4;
+  }
+  ImageEncoding encoding = 2;
+}
+
+message PointCloud {
+  bytes data = 1;
+}
+
+message Video {
+  bytes data = 1;
+}
+
+message TrackPoint {
+  google.protobuf.Timestamp time = 1;
+  repeated float position = 2;
+}
+
+message ObjectViz {
+  uint64 object_id = 1;
+  uint32 short_object_id = 2;
+  repeated float position = 3;
+  repeated float velocity = 4;
+  float speed = 5;
+  repeated float heading = 6;
+  repeated float extent = 7;
+  uint32 reference_point = 8;
+  uint32 object_class = 9;
+  repeated uint32 color = 10;
+  bool highlighted = 11;
+  repeated TrackPoint track = 12;
+}
+
+message ObjectlistViz {
+  repeated ObjectViz objviz = 1;
+}
+
+message CarlaImage {
+  bytes data = 1;
+}
+
+message StreamingMessage {
+  string id = 1;
+  uint64 timestamp = 2;
+  providentia.Image image = 3;
+  providentia.PointCloud pointcloud = 4;
+  providentia.Video video = 5;
+  providentia.ObjectlistViz objlistviz = 6;
+  providentia.CarlaImage carlaimage = 7;
+}

@@ -11,9 +11,6 @@ void aggregate_signal_handler(int signal) {
 	Pylon::PylonTerminate();
 	common::println("terminated!");
 
-	common::print("Finalize eCAL...");
-	eCAL::Finalize();
-	common::println("finalized!");
 	std::_Exit(signal);
 }
 int main(int argc, char* argv[]) {
@@ -33,23 +30,17 @@ int main(int argc, char* argv[]) {
 		    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
 		ImageVisualizationNode img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
-		EcalImageDriverNode ecal_driver;
-
 		cameras += pre;
 		pre += img;
 
 		std::thread cameras_thread(&BaslerCamerasNode::operator(), &cameras);
 		std::thread pre_thread(&PreprocessingNode::operator(), &pre);
-		std::thread raw_img_thread(&ImageVisualizationNode::operator(), &img);
+		std::thread img_thread(&ImageVisualizationNode::operator(), &img);
 		std::this_thread::sleep_for(10s);
 	} catch (...) {
 		common::print("Terminate Pylon...");
 		Pylon::PylonTerminate();
 		common::println("terminated!");
-
-		common::print("Finalize eCAL...");
-		eCAL::Finalize();
-		common::println("finalized!");
 
 		rethrow_exception(std::current_exception());
 	}

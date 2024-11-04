@@ -12,3 +12,11 @@ target_include_directories(${PROJECT_NAME}_yas INTERFACE ${CMAKE_CURRENT_SOURCE_
 target_link_libraries(${PROJECT_NAME}_yas INTERFACE ${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME}_yas INTERFACE yas)
 target_compile_features(${PROJECT_NAME}_yas INTERFACE cxx_std_23)
+
+project(providentia_streaming_message)
+message(STATUS "Generating Protobuf Code for ${PROJECT_NAME}")
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/streaming_message.proto)
+add_library(${PROJECT_NAME} STATIC ${PROTO_SRCS} ${PROTO_HDRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Protobuf_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${Protobuf_LIBRARIES})
