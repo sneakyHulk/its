@@ -6,7 +6,7 @@
 #include "node.h"
 #include "opencv2/opencv.hpp"
 
-class BirdEyeVisualizationNode : public OutputNode<CompactObjects> {
+class BirdEyeVisualizationNode : public Runner<CompactObjects> {
 	cv::Mat _map;
 	Eigen::Matrix<double, 4, 4> _utm_to_image;
 
@@ -14,5 +14,5 @@ class BirdEyeVisualizationNode : public OutputNode<CompactObjects> {
 	explicit BirdEyeVisualizationNode(cv::Mat map, Eigen::Matrix<double, 4, 4> utm_to_image);
 
    private:
-	void output_function(CompactObjects const& data) final;
+	void run(CompactObjects const& data) final;
 };

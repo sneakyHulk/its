@@ -23,12 +23,12 @@ class BaslerCameras : public InputNode<Pylon::CGrabResultPtr> {
 	void init_cameras();
 };
 
-class BaslerSaveRAW : public OutputNode<Pylon::CGrabResultPtr> {
+class BaslerSaveRAW : public Runner<Pylon::CGrabResultPtr> {
 	std::filesystem::path const folder;
 	BaslerCameras const& cameras;
 
    public:
 	explicit BaslerSaveRAW(BaslerCameras const& cameras, std::filesystem::path folder = std::filesystem::path(CMAKE_SOURCE_DIR) / "result");
 
-	void output_function(Pylon::CGrabResultPtr const& data) final;
+	void run(Pylon::CGrabResultPtr const& data) final;
 };

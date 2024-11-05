@@ -16,7 +16,7 @@ Visualization2D::Visualization2D(Config const &config, std::filesystem::path &&m
 	cv::waitKey(100);
 }
 
-void Visualization2D::output_function(CompactObjects const &data) {
+void Visualization2D::run(CompactObjects const &data) {
 	CompactObjects display_objects = data;
 	for (auto &e : display_objects.objects) {
 		Eigen::Vector4d const position = utm_to_image * make_matrix<4, 1>(e.position[0], e.position[1], e.position[2], 1.);

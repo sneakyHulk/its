@@ -173,7 +173,7 @@ template <bool use_jpeg>
 }
 
 template <bool use_jpeg>
-void ImageStreamRTSP<use_jpeg>::output_function(std::shared_ptr<ImageData const> const &data) {
+void ImageStreamRTSP<use_jpeg>::run(std::shared_ptr<ImageData const> const &data) {
 	std::atomic_store(&_image_data, data);
 }
 

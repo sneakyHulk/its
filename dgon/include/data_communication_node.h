@@ -9,7 +9,7 @@
 #include "node.h"
 #include "yas.h"
 
-class DataStreamMQTT : public OutputNode<CompactObjects> {
+class DataStreamMQTT : public Runner<CompactObjects> {
 	mqtt::client cli;
 
    public:
@@ -26,7 +26,7 @@ class DataStreamMQTT : public OutputNode<CompactObjects> {
 		common::println("OK");
 	}
 
-	void output_function(CompactObjects const &data) final {
+	void run(CompactObjects const &data) final {
 		AfterReturnTimeMeasure after(data.timestamp);
 
 		yas::mem_ostream os;

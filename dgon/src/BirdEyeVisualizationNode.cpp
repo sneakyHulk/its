@@ -6,7 +6,7 @@
 // BirdEyeVisualizationNode::BirdEyeVisualizationNode(const Config &config, const std::filesystem::path &map_path) : config(config), drawing_fifo(5) { std::tie(map, utm_to_image) = draw_map(map_path, config); }
 BirdEyeVisualizationNode::BirdEyeVisualizationNode(cv::Mat map, Eigen::Matrix<double, 4, 4> utm_to_image) : _map(map), _utm_to_image(utm_to_image) {}
 
-void BirdEyeVisualizationNode::output_function(CompactObjects const &data) {
+void BirdEyeVisualizationNode::run(CompactObjects const &data) {
 	auto tmp = _map.clone();
 	for (auto const &object : data.objects) {
 		cv::Scalar color;

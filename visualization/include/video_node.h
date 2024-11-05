@@ -5,7 +5,7 @@
 #include "ImageData.h"
 #include "node.h"
 
-class VideoVisualization : public OutputNode<ImageData> {
+class VideoVisualization : public Runner<ImageData> {
 	static const int max_frames = 1000;
 	int current_frame = max_frames;
 	cv::VideoWriter video;
@@ -14,5 +14,5 @@ class VideoVisualization : public OutputNode<ImageData> {
 	VideoVisualization() = default;
 
    private:
-	void output_function(ImageData const& data) final;
+	void run(ImageData const& data) final;
 };

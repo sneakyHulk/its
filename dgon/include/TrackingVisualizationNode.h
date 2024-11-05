@@ -9,7 +9,7 @@ class TrackingVisualizationNode : public OutputNodePair<ImageData, ImageTrackerR
 
    public:
 	TrackingVisualizationNode(std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }) : _image_mask(image_mask) {}
-	bool output_function(ImageData const& data, ImageTrackerResults2 const& results) final {
+	bool run(ImageData const& data, ImageTrackerResults2 const& results) final {
 		if (!_image_mask(data)) return false;
 		if (data.source != results.source) return false;
 		if (data.timestamp != results.timestamp) return false;

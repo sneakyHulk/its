@@ -22,7 +22,7 @@ class [[maybe_unused]] ImageStreamUDP : public OutputPtrNode<ImageData> {
 	ImageStreamUDP(std::string const &cam_name) : cam_name(cam_name) {}
 
    private:
-	void output_function(std::shared_ptr<ImageData const> const &data) final { std::atomic_store(&_image_data, data); }
+	void run(std::shared_ptr<ImageData const> const &data) final { std::atomic_store(&_image_data, data); }
 };
 
 int main(int argc, char **argv) {

@@ -5,7 +5,7 @@
 #include "ImageData.h"
 #include "node.h"
 
-class ImageUndistortionNode : public InputOutputNode<ImageData, ImageData> {
+class ImageUndistortionNode : public Processor<ImageData, ImageData> {
    public:
 	struct UndistortionConfig {
 		std::vector<double> camera_matrix;
@@ -25,7 +25,7 @@ class ImageUndistortionNode : public InputOutputNode<ImageData, ImageData> {
 	explicit ImageUndistortionNode(std::map<std::string, UndistortionConfig>&& config);
 
    private:
-	ImageData function(ImageData const& data) final;
+	ImageData process(ImageData const& data) final;
 
 	std::map<std::string, UndistortionConfigInternal> _undistortion_config;
 };

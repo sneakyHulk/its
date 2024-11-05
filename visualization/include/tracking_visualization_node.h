@@ -13,10 +13,10 @@ class ImageTrackingVisualizationHelper : public OutputPtrNode<ImageData> {
 
 	std::vector<std::shared_ptr<ImageData const>> image_buffer;
 
-	void output_function(std::shared_ptr<ImageData const> const& data) final;
+	void run(std::shared_ptr<ImageData const> const& data) final;
 };
 
-class ImageTrackingVisualization : public OutputNode<ImageTrackerResults> {
+class ImageTrackingVisualization : public Runner<ImageTrackerResults> {
 	ImageTrackingVisualizationHelper const& helper;
 	std::string const cam_name;
 
@@ -24,11 +24,11 @@ class ImageTrackingVisualization : public OutputNode<ImageTrackerResults> {
 	explicit ImageTrackingVisualization(ImageTrackingVisualizationHelper const& helper, std::string cam_name);
 
    private:
-	void output_function(ImageTrackerResults const& data) final;
+	void run(ImageTrackerResults const& data) final;
 };
 
 class ImageTrackingVisualization2 : public OutputNodePair<ImageData, ImageTrackerResults> {
-	bool output_function(ImageData const& data, ImageTrackerResults const& results) final {
+	bool run(ImageData const& data, ImageTrackerResults const& results) final {
 		if (data.source != results.source) return false;
 		if (data.timestamp != results.timestamp) return false;
 

@@ -123,7 +123,7 @@ BaslerSaveRAW::BaslerSaveRAW(BaslerCameras const& cameras, std::filesystem::path
 		common::println("[BaslerSaveRAW]: Created directory ", folder / e, ".");
 	}
 }
-void BaslerSaveRAW::output_function(Pylon::CGrabResultPtr const& data) {
+void BaslerSaveRAW::run(Pylon::CGrabResultPtr const& data) {
 	std::ofstream raw_image(folder / cameras.index_to_cam_name[data->GetCameraContext()] /
 	                        (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data->GetTimeStamp())));
 

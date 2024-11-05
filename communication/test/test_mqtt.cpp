@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 
 
 
-class [[maybe_unused]] ImageStreamMQTT : public OutputNode<ImageData> {
+class [[maybe_unused]] ImageStreamMQTT : public Runner<ImageData> {
 	std::string const cam_name;
 	mqtt::client cli;
 
@@ -39,7 +39,7 @@ class [[maybe_unused]] ImageStreamMQTT : public OutputNode<ImageData> {
 		common::println("OK");
 	}
 
-	void output_function(ImageData const &data) final {
+	void run(ImageData const &data) final {
 		std::uint64_t now = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 		std::vector<std::uint8_t> jpeg_data;
 		cv::imencode(".jpeg", data.image, jpeg_data);

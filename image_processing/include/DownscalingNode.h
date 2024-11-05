@@ -6,11 +6,11 @@
 #include "node.h"
 
 template <int height, int width>
-class DownscalingNode : public InputOutputNode<ImageData, ImageData> {
+class DownscalingNode : public Processor<ImageData, ImageData> {
    public:
 	DownscalingNode() = default;
 
-	ImageData function(ImageData const& data) final {
+	ImageData process(ImageData const& data) final {
 		ImageData ret;
 		ret.source = data.source;
 		ret.timestamp = data.timestamp;

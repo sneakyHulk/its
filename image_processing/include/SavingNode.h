@@ -9,7 +9,7 @@
 #include "ImageDataRaw.h"
 #include "node.h"
 
-class SavingImageDataNode : public OutputNode<ImageData> {
+class SavingImageDataNode : public Runner<ImageData> {
    public:
 	struct FolderConfig {
 		std::filesystem::path folder;
@@ -22,7 +22,7 @@ class SavingImageDataNode : public OutputNode<ImageData> {
 	}
 
    private:
-	void output_function(ImageData const& data) final {
+	void run(ImageData const& data) final {
 		cv::imwrite(_camera_name_folder_map.at(data.source).folder /
 		                (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp) + ".png"),
 		    data.image);
@@ -31,7 +31,7 @@ class SavingImageDataNode : public OutputNode<ImageData> {
 	std::map<std::string, FolderConfig> _camera_name_folder_map;
 };
 
-class SavingImageDataRawNode : public OutputNode<ImageDataRaw> {
+class SavingImageDataRawNode : public Runner<ImageDataRaw> {
    public:
 	struct FolderConfig {
 		std::filesystem::path folder;
@@ -44,7 +44,7 @@ class SavingImageDataRawNode : public OutputNode<ImageDataRaw> {
 	}
 
    private:
-	void output_function(ImageDataRaw const& data) final {
+	void run(ImageDataRaw const& data) final {
 		std::ofstream raw_image(
 		    _camera_name_folder_map.at(data.source).folder / (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp)));
 

@@ -12,8 +12,8 @@ class GenerateCompactObjects : public InputNode<CompactObjects> {
 	}
 };
 
-class PrintCompactObjects : public OutputNode<CompactObjects> {
-	void output_function(CompactObjects const& data) final {
+class PrintCompactObjects : public Runner<CompactObjects> {
+	void run(CompactObjects const& data) final {
 		common::println(data.timestamp, " took ", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(data.timestamp))));
 	}
 };

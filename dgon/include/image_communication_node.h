@@ -37,5 +37,5 @@ class ImageStreamRTSP : public OutputPtrNode<ImageData> {
 	[[noreturn]] static void run_loop();
 
    private:
-	void output_function(std::shared_ptr<ImageData const> const &data) final;
+	void run(std::shared_ptr<ImageData const> const &data) final;
 };

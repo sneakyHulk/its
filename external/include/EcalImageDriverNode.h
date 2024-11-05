@@ -17,7 +17,7 @@
 #include "streaming_message.pb.h"
 
 // Yeah, the following code doesn't make much sense, but it is there for legacy reason and nobody wanted to change this except me and I didn't want to build upon this mess. Therefore, this class exists.
-class EcalImageDriverNode : public OutputNode<ImageDataRaw> {
+class EcalImageDriverNode : public Runner<ImageDataRaw> {
 	struct UndistortionConfigInternal {
 		cv::Mat camera_matrix;
 		cv::Mat distortion_values;
@@ -77,7 +77,7 @@ class EcalImageDriverNode : public OutputNode<ImageDataRaw> {
    private:
 	std::map<std::string, UndistortionConfigInternalPublisherConfig> _undistortion_config_internal_publisher_map;
 
-	void output_function(ImageDataRaw const& data) final {
+	void run(ImageDataRaw const& data) final {
 		if (eCAL::Ok()) {
 			cv::Mat const bayer_image(_undistortion_config_internal_publisher_map.at(data.source).height, _undistortion_config_internal_publisher_map.at(data.source).width, CV_8UC1, const_cast<std::uint8_t*>(data.image_raw.data()));
 

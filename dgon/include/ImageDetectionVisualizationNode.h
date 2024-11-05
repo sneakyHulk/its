@@ -16,7 +16,7 @@ class ImageDetectionVisualizationNode : public OutputNodePair<ImageData, Detecti
 
    public:
 	explicit ImageDetectionVisualizationNode(std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }) : _image_mask(std::move(image_mask)) {}
-	bool output_function(ImageData const& data, Detections2D const& detections) final {
+	bool run(ImageData const& data, Detections2D const& detections) final {
 		if (!_image_mask(data)) return false;
 		if (data.source != detections.source) return false;
 		if (data.timestamp != detections.timestamp) return false;

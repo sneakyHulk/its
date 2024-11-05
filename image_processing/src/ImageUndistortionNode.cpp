@@ -25,7 +25,7 @@ ImageUndistortionNode::ImageUndistortionNode(std::map<std::string, UndistortionC
 	}
 }
 
-ImageData ImageUndistortionNode::function(ImageData const& data) {
+ImageData ImageUndistortionNode::process(ImageData const& data) {
 	ImageData ret;
 	ret.timestamp = data.timestamp;
 	ret.source = data.source;

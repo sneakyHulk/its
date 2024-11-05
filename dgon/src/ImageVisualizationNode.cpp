@@ -2,7 +2,7 @@
 
 #include <utility>
 
-void ImageVisualizationNode::output_function(ImageData const &data) {
+void ImageVisualizationNode::run(ImageData const &data) {
 	// common::println(
 	//     "Time taken = ", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() -
 	//     data.timestamp)));

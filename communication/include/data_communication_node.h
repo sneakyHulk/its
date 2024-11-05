@@ -9,7 +9,7 @@
 #include "common_output.h"
 #include "node.h"
 
-class DataStreamMQTT : public OutputNode<CompactObjects> {
+class DataStreamMQTT : public Runner<CompactObjects> {
 	mqtt::client cli;
 
    public:
@@ -26,7 +26,7 @@ class DataStreamMQTT : public OutputNode<CompactObjects> {
 		common::println("OK");
 	}
 
-	void output_function(CompactObjects const &data) final {
+	void run(CompactObjects const &data) final {
 		std::uint64_t now = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 
 		yas::mem_ostream os;

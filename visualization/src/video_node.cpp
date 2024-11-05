@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-void VideoVisualization::output_function(ImageData const& data) {
+void VideoVisualization::run(ImageData const& data) {
 	if (++current_frame > max_frames) {
 		current_frame = 0;
 

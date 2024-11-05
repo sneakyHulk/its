@@ -41,7 +41,7 @@ class SimpleAreaBlocking : public InputOutputNode<Detections2D, BlockedAreas> {
 	}
 };
 
-class BlockedAreaVisualization : public OutputNode<BlockedAreas> {
+class BlockedAreaVisualization : public Runner<BlockedAreas> {
 	Config const& config;
 	cv::Mat map;
 	Eigen::Matrix<double, 4, 4> utm_to_image;
@@ -56,7 +56,7 @@ class BlockedAreaVisualization : public OutputNode<BlockedAreas> {
 	}
 
    private:
-	void output_function(BlockedAreas const& data) final {
+	void run(BlockedAreas const& data) final {
 		{
 			std::vector<std::vector<cv::Point>> polys;
 

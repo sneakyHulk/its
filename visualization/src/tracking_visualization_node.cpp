@@ -2,9 +2,9 @@
 
 #include <opencv2/opencv.hpp>
 
-void ImageTrackingVisualizationHelper::output_function(std::shared_ptr<ImageData const> const& data) { image_buffer.push_back(data); }
+void ImageTrackingVisualizationHelper::run(std::shared_ptr<ImageData const> const& data) { image_buffer.push_back(data); }
 ImageTrackingVisualization::ImageTrackingVisualization(ImageTrackingVisualizationHelper const& helper, std::string cam_name) : helper(helper), cam_name(std::move(cam_name)) {}
-void ImageTrackingVisualization::output_function(ImageTrackerResults const& data) {
+void ImageTrackingVisualization::run(ImageTrackerResults const& data) {
 	if (cam_name == data.source) {
 		for (auto const& e : helper.image_buffer) {
 			if (e->timestamp == data.timestamp) {

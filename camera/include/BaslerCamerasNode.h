@@ -16,7 +16,7 @@
 #include "common_exception.h"
 #include "node.h"
 
-class BaslerCamerasNode : public InputNode<ImageDataRaw> {
+class BaslerCamerasNode : public Pusher<ImageDataRaw> {
    public:
 	struct MacAddressConfig {
 		std::string address;
@@ -106,7 +106,7 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 		} catch (Pylon::GenericException const& e) {
 			common::println("[BaslerCamerasNode]: Error: ", e.GetDescription());
 
-			rethrow_exception(std::current_exception());
+			std::rethrow_exception(std::current_exception());
 		}
 	}
 
@@ -120,7 +120,7 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 	                                                                      boost::multi_index::member<CameraNameMacAddressIndexConfig, int, &CameraNameMacAddressIndexConfig::index>>>>
 	    _camera_name_mac_address_index_map;
 
-	ImageDataRaw input_function() final {
+	ImageDataRaw push() final {
 		auto& index_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::IndexTag>();
 		do {
 			try {

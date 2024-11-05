@@ -32,7 +32,7 @@ class OutputNodePair {
 		while (true) {
 			if (_input_queue1.try_pop(item1)) {
 				if (_input_queue2.try_pop(item2)) {
-					output_function(*item1, *item2);
+					run(*item1, *item2);
 				} else {
 					std::this_thread::yield();
 				}
@@ -41,7 +41,7 @@ class OutputNodePair {
 			}
 		}
 	}
-	virtual void output_function(Input1 const&, Input2 const&) = 0;
+	virtual void run(Input1 const&, Input2 const&) = 0;
 };
 
 template <typename Output>
@@ -90,7 +90,7 @@ class GenerateFloats : public InputNode<float> {
 };
 
 class IncomingIntFloat : public OutputNodePair<int, float> {
-	void output_function(int const& item1, float const& item2) { common::println(item1, " - ", item2); }
+	void run(int const& item1, float const& item2) { common::println(item1, " - ", item2); }
 };
 
 int main() {
