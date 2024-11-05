@@ -46,9 +46,14 @@ int main(int argc, char* argv[]) {
 		cameras += pre;
 		pre += save;
 
-		std::this_thread::sleep_for(10s);
+		cameras();
+		pre();
+		save();
+
+		std::this_thread::sleep_for(2s);
+
+		clean_up();
 	} catch (...) {
-		current_exception = std::current_exception();
-		std::exit(1);
+		clean_up();
 	}
 }

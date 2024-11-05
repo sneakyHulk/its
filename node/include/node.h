@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "common_exception.h"
 #include "common_output.h"
 
 extern std::function<void()> clean_up;
@@ -40,11 +41,13 @@ class Runner {
 		} catch (...) {
 			clean_up();
 		}
+
+		std::unreachable();
 	}
 
    protected:
 	Runner() { _input_queue.set_capacity(100); }
-	virtual ~Runner() = default;
+	virtual ~Runner() noexcept(false) {}
 
    public:
 	void operator()() { thread = std::thread(&Runner<Input>::thread_function, this); }
@@ -145,11 +148,13 @@ class Pusher {
 		} catch (...) {
 			clean_up();
 		}
+
+		std::unreachable();
 	}
 
    protected:
 	Pusher() = default;
-	virtual ~Pusher() = default;
+	virtual ~Pusher() noexcept(false) {}
 
    public:
 	void operator()() { thread = std::thread(&Pusher<Output>::thread_function, this); }
@@ -224,11 +229,13 @@ class Processor {
 		} catch (...) {
 			clean_up();
 		}
+
+		std::unreachable();
 	}
 
    protected:
 	Processor() = default;
-	virtual ~Processor() {}
+	virtual ~Processor() noexcept(false) {}
 
    public:
 	void operator()() { thread = std::thread(&Processor<Input, Output>::thread_function, this); }
