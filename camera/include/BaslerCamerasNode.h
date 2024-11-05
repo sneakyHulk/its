@@ -64,6 +64,15 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
 					common::println("[BaslerCamerasNode]: ", config->camera_name, " IEEE1588 already enabled!");
+
+					_cameras[config->index].GevIEEE1588DataSetLatch();
+					while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+						std::this_thread::sleep_for(1ms);
+					}
+
+					auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster()));
+
+					common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ".");
 				} else {
 					common::println("[BaslerCamerasNode]: ", config->camera_name, " Enable PTP clock synchronization...");
 					_cameras[config->index].GevIEEE1588.SetValue(true);
@@ -74,14 +83,13 @@ class BaslerCamerasNode : public InputNode<ImageDataRaw> {
 					do {
 						_cameras[config->index].GevIEEE1588DataSetLatch();
 
-						if (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+						while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
 							std::this_thread::sleep_for(1ms);
-							continue;
 						}
 
 						auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster()));
 						clock_offsets.push_back(current_offset);
-						common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()));
+						common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()), ".");
 
 						std::this_thread::sleep_for(1s);
 					} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
