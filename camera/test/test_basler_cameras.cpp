@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <stdexcept>
 
 #include "BaslerCamerasNode.h"
@@ -6,16 +7,25 @@
 #include "SavingNode.h"
 #include "common_exception.h"
 
-void aggregate_signal_handler(int signal) {
+std::exception_ptr current_exception = nullptr;
+
+void signal_handler(int signal) {
+	std::exit(1);
+}
+
+void clean_up() {
 	common::print("Terminate Pylon...");
 	Pylon::PylonTerminate();
 	common::println("done!");
 
-	std::_Exit(signal);
+	if (current_exception) rethrow_exception(std::current_exception());
 }
+
 int main(int argc, char* argv[]) {
-	std::signal(SIGINT, aggregate_signal_handler);
-	std::signal(SIGTERM, aggregate_signal_handler);
+	std::atexit(clean_up);
+
+	std::signal(SIGINT, signal_handler);
+	std::signal(SIGTERM, signal_handler);
 	try {
 		common::print("Initialize Pylon...");
 		Pylon::PylonInitialize();
@@ -40,14 +50,7 @@ int main(int argc, char* argv[]) {
 		std::thread save_thread(&SavingImageDataNode::operator(), &save);
 		std::this_thread::sleep_for(10s);
 	} catch (...) {
-		common::print("Terminate Pylon...");
-		Pylon::PylonTerminate();
-		common::println("done!");
-
-		rethrow_exception(std::current_exception());
+		current_exception = std::current_exception();
+		std::exit(1);
 	}
-
-	common::print("Terminate Pylon...");
-	Pylon::PylonTerminate();
-	common::println("done!");
 }

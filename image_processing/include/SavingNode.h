@@ -23,8 +23,8 @@ class SavingImageDataNode : public OutputNode<ImageData> {
 
    private:
 	void output_function(ImageData const& data) final {
-		cv::imwrite(
-		    _camera_name_folder_map.at(data.source).folder / (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp)),
+		cv::imwrite(_camera_name_folder_map.at(data.source).folder /
+		                (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp) + ".png"),
 		    data.image);
 	}
 

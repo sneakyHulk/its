@@ -10,6 +10,8 @@
 
 #include "common_output.h"
 
+extern std::exception_ptr current_exception;
+
 using namespace std::chrono_literals;
 
 template <typename Output>
@@ -31,11 +33,16 @@ class OutputNode {
 	OutputNode() { _input_queue.set_capacity(100); }
 	virtual ~OutputNode() = default;
 	[[noreturn]] virtual void operator()() {
-		while (true) {
-			std::shared_ptr<Input const> item;
-			_input_queue.pop(item);
+		try {
+			while (true) {
+				std::shared_ptr<Input const> item;
+				_input_queue.pop(item);
 
-			output_function(*item);
+				output_function(*item);
+			}
+		} catch (...) {
+			current_exception = std::current_exception();
+			std::exit(1);
 		}
 	}
 	virtual void output_function(Input const&) = 0;
@@ -47,10 +54,15 @@ class OutputPtrNode : public OutputNode<Input> {
 
    public:
 	[[noreturn]] virtual void operator()() {
-		while (true) {
-			std::shared_ptr<Input const> item;
-			OutputNode<Input>::_input_queue.pop(item);
-			output_function(item);
+		try {
+			while (true) {
+				std::shared_ptr<Input const> item;
+				OutputNode<Input>::_input_queue.pop(item);
+				output_function(item);
+			}
+		} catch (...) {
+			current_exception = std::current_exception();
+			std::exit(1);
 		}
 	}
 	virtual void output_function(std::shared_ptr<Input const> const&) = 0;
@@ -80,20 +92,25 @@ class OutputNodePair : public OutputNode<Input2> {
    public:
 	virtual ~OutputNodePair() = default;
 	[[noreturn]] void operator()() final {
-		while (true) {
-			std::shared_ptr<Input2 const> item2;
-			OutputNode<Input2>::_input_queue.pop(item2);
+		try {
+			while (true) {
+				std::shared_ptr<Input2 const> item2;
+				OutputNode<Input2>::_input_queue.pop(item2);
 
-			for (auto i = 0; i < _input_vector.size(); ++i) {
-				if (output_function(*_input_vector[i], *item2)) {
-					while (_flag.test_and_set())
-						;
+				for (auto i = 0; i < _input_vector.size(); ++i) {
+					if (output_function(*_input_vector[i], *item2)) {
+						while (_flag.test_and_set())
+							;
 
-					_input_vector.erase(_input_vector.begin(), _input_vector.begin() + i + 1);
+						_input_vector.erase(_input_vector.begin(), _input_vector.begin() + i + 1);
 
-					_flag.clear();
+						_flag.clear();
+					}
 				}
 			}
+		} catch (...) {
+			current_exception = std::current_exception();
+			std::exit(1);
 		}
 	}
 	virtual bool output_function(Input1 const&, Input2 const&) = 0;
@@ -107,10 +124,15 @@ class InputNode {
    public:
 	virtual ~InputNode() = default;
 	[[noreturn]] virtual void operator()() {
-		while (true) {
-			std::shared_ptr<Output const> output = std::make_shared<Output>(input_function());
+		try {
+			while (true) {
+				std::shared_ptr<Output const> output = std::make_shared<Output>(input_function());
 
-			for (auto const& connection : _output_connections) connection(output);
+				for (auto const& connection : _output_connections) connection(output);
+			}
+		} catch (...) {
+			current_exception = std::current_exception();
+			std::exit(1);
 		}
 	}
 
@@ -151,13 +173,18 @@ class InputOutputNode : public InputNode<Output>, public OutputNode<Input> {
 
    public:
 	[[noreturn]] void operator()() final {
-		while (true) {
-			std::shared_ptr<Input const> item;
-			OutputNode<Input>::_input_queue.pop(item);
+		try {
+			while (true) {
+				std::shared_ptr<Input const> item;
+				OutputNode<Input>::_input_queue.pop(item);
 
-			std::shared_ptr<Output const> output = std::make_shared<Output>(function(*item));
+				std::shared_ptr<Output const> output = std::make_shared<Output>(function(*item));
 
-			for (auto const& connection : InputNode<Output>::_output_connections) connection(output);
+				for (auto const& connection : InputNode<Output>::_output_connections) connection(output);
+			}
+		} catch (...) {
+			current_exception = std::current_exception();
+			std::exit(1);
 		}
 	}
 
