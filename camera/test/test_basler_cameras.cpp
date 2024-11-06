@@ -7,8 +7,6 @@
 #include "SavingNode.h"
 #include "common_exception.h"
 
-std::exception_ptr current_exception = nullptr;
-
 std::function<void()> clean_up;
 
 void signal_handler(int signal) {
