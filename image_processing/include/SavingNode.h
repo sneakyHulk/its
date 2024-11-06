@@ -24,7 +24,7 @@ class SavingImageDataNode : public Runner<ImageData> {
    private:
 	void run(ImageData const& data) final {
 		cv::imwrite(_camera_name_folder_map.at(data.source).folder /
-		                (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp) + ".png"),
+		                (std::to_string(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count()) + '_' + std::to_string(data.timestamp) + ".jpg"),
 		    data.image);
 	}
 
