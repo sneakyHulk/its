@@ -135,7 +135,12 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 					continue;
 				}
 
-				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab successful.");
+				_cameras[config->index].GevIEEE1588DataSetLatch();
+
+				while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing)
+					;
+
+				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab successful with offset in timestamp from master: ", std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster())));
 				ImageDataRaw data;
 				data.timestamp = ptrGrabResult->GetTimeStamp();
 				data.source = config->camera_name;
