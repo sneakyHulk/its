@@ -135,21 +135,26 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 					continue;
 				}
 
+				// Timestamp offset from master:
 				//_cameras[config->index].GevIEEE1588DataSetLatch.Execute();
 				// while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing)
 				//	;
 				// common::println("[BaslerCamerasNode]: offset in timestamp from master: ", std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster())));
 
-				_cameras[config->index].GevTimestampControlLatch.Execute();
-				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
-				std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(_cameras[config->index].GevTimestampValue.GetValue());
-				common::println("[BaslerCamerasNode]: Timestamp offset: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp);
+				// Timestamp offset from server:
+				// _cameras[config->index].GevTimestampControlLatch.Execute();
+				// std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+				// std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(_cameras[config->index].GevTimestampValue.GetValue());
+				// common::println("[BaslerCamerasNode]: Timestamp offset: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp);
 
 				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab successful.");
 				ImageDataRaw data;
 				data.timestamp = ptrGrabResult->GetTimeStamp();
 				data.source = config->camera_name;
 				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
+				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+				std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(data.timestamp);
+				common::println("[BaslerCamerasNode]: Grab duration: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp);
 
 				return data;
 
