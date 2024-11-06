@@ -59,10 +59,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				std::this_thread::sleep_for(1s);
 
 				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
-
 				_cameras[config->index].Open();
-				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
-				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
 
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
@@ -99,6 +96,9 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 
 					common::println("[BaslerCamerasNode]: ", config->camera_name, " Highest offset from master <= 15ms. Can start to grab images.");
 				}
+
+				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
+				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
 			}
 
 			common::print("[BaslerCamerasNode]: Starting grabbing...");

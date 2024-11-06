@@ -11,7 +11,13 @@ std::exception_ptr current_exception = nullptr;
 
 std::function<void()> clean_up;
 
-void signal_handler(int signal) { clean_up(); }
+void signal_handler(int signal) {
+	common::print("Terminate Pylon...");
+	Pylon::PylonTerminate();
+	common::println("done!");
+
+	std::_Exit(1);
+}
 
 int main(int argc, char* argv[]) {
 	clean_up = []() {
