@@ -61,6 +61,9 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				_cameras[config->index].Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
 
 				_cameras[config->index].Open();
+				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
+				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
+
 				// Enabling PTP Clock Synchronization
 				if (_cameras[config->index].GevIEEE1588.GetValue()) {
 					common::println("[BaslerCamerasNode]: ", config->camera_name, " IEEE1588 already enabled!");
@@ -121,13 +124,12 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 	    _camera_name_mac_address_index_map;
 
 	ImageDataRaw push() final {
-		static boost::circular_buffer<std::chrono::nanoseconds> fps_buffer(20, std::chrono::nanoseconds(0));
-
 		auto& index_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::IndexTag>();
 		do {
 			try {
 				Pylon::CGrabResultPtr ptrGrabResult;
 				_cameras.RetrieveResult(5000, ptrGrabResult, Pylon::TimeoutHandling_ThrowException);
+				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
 
 				auto const& config = index_indexing.find(ptrGrabResult->GetCameraContext());
 
@@ -154,12 +156,11 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				data.timestamp = ptrGrabResult->GetTimeStamp();
 				data.source = config->camera_name;
 				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
-				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+
+				static boost::circular_buffer<std::chrono::nanoseconds> fps_buffer(20, std::chrono::nanoseconds(0));
 				auto fps = 20. / std::chrono::duration<double>(current_server_timestamp - fps_buffer.front()).count();
 				fps_buffer.push_back(current_server_timestamp);
-				std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(data.timestamp);
-				common::println("[BaslerCamerasNode]: Grab duration: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp,
-				    ", with fps: ", fps, ".");
+				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab duration: ", current_server_timestamp - std::chrono::nanoseconds(data.timestamp), ", with fps: ", fps, ".");
 
 				return data;
 
