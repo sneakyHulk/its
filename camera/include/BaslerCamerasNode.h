@@ -98,7 +98,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				}
 
 				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
-				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
+				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(5.0);
 			}
 
 			common::print("[BaslerCamerasNode]: Starting grabbing...");
