@@ -98,7 +98,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				}
 
 				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
-				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(5.0);
+				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
 			}
 
 			common::print("[BaslerCamerasNode]: Starting grabbing...");
@@ -157,9 +157,10 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				data.source = config->camera_name;
 				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
 
-				static boost::circular_buffer<std::chrono::nanoseconds> fps_buffer(20, std::chrono::nanoseconds(0));
-				auto fps = 20. / std::chrono::duration<double>(current_server_timestamp - fps_buffer.front()).count();
-				fps_buffer.push_back(current_server_timestamp);
+				static std::vector<boost::circular_buffer<std::chrono::nanoseconds>> fps_buffers =
+				    std::vector<boost::circular_buffer<std::chrono::nanoseconds>>(_cameras.GetSize(), boost::circular_buffer<std::chrono::nanoseconds>(20, std::chrono::nanoseconds(0)));
+				auto fps = 20. / std::chrono::duration<double>(current_server_timestamp - fps_buffers[config->index].front()).count();
+				fps_buffers[config->index].push_back(current_server_timestamp);
 				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab duration: ", current_server_timestamp - std::chrono::nanoseconds(data.timestamp), ", with fps: ", fps, ".");
 
 				return data;
