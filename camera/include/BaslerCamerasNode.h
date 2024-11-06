@@ -100,7 +100,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 
 			common::print("[BaslerCamerasNode]: Starting grabbing...");
 
-			_cameras.StartGrabbing(Pylon::EGrabStrategy::GrabStrategy_LatestImageOnly);
+			_cameras.StartGrabbing(Pylon::EGrabStrategy::GrabStrategy_UpcomingImage);
 
 			common::println("done!");
 		} catch (Pylon::GenericException const& e) {
