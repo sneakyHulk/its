@@ -12,11 +12,8 @@ std::exception_ptr current_exception = nullptr;
 std::function<void()> clean_up;
 
 void signal_handler(int signal) {
-	common::print("Terminate Pylon...");
-	Pylon::PylonTerminate();
-	common::println("done!");
-
-	std::_Exit(1);
+	common::println("[signal_handler]: got signal '", signal, "'!");
+	clean_up();
 }
 
 int main(int argc, char* argv[]) {
@@ -56,7 +53,7 @@ int main(int argc, char* argv[]) {
 		pre();
 		save();
 
-		std::this_thread::sleep_for(100s);
+		std::this_thread::sleep_for(20s);
 
 		clean_up();
 	} catch (...) {
