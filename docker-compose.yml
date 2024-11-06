@@ -1,6 +1,7 @@
 services:
   ##### run cpu ########################################################################################################
   its-cpu:
+    init: true
     build:
       context: .
       dockerfile: Dockerfile
@@ -21,6 +22,7 @@ services:
     profiles: [ "its-cpu" ]
   ##### run cuda #######################################################################################################
   its-cuda:
+    init: true
     build:
       context: .
       dockerfile: Dockerfile
@@ -43,6 +45,7 @@ services:
     profiles: [ "its-cuda", "live" ]
   ##### run rocm #######################################################################################################
   its-rocm:
+    init: true
     build:
       context: .
       dockerfile: Dockerfile
@@ -73,6 +76,7 @@ services:
     profiles: [ "its-rocm" ]
   ##### MQTT ###########################################################################################################
   mqtt:
+    init: true
     image: eclipse-mosquitto:2
     container_name: mqtt
     volumes:
@@ -96,6 +100,7 @@ services:
     profiles: [ "hls-streaming", "streaming_home", "streaming_live" ]
   ##### https streaming site ###########################################################################################
   caddy: # only for DNS challenge
+    init: true
     build:
       context: caddy
       dockerfile: Dockerfile
@@ -117,6 +122,7 @@ services:
     profiles: [ "caddy", "streaming_home", "streaming_live" ]
   ##### dyndns #########################################################################################################
   dyndns:
+    init: true
     container_name: dyndns
     image: ghcr.io/sneakyhulk/cloudflare-dyndns:latest
     hostname: dyndns
@@ -126,6 +132,7 @@ services:
     profiles: [ "dyndns", "streaming_home" ]
   ##### webserver ######################################################################################################
   webserver:
+    init: true
     image: httpd:latest
     container_name: webserver
     volumes:
@@ -133,6 +140,7 @@ services:
     profiles: [ "webserver", "streaming_home", "streaming_live" ]
   ##### pylon test #####################################################################################################
   pypylon:
+    init: true
     build:
       context: .
       dockerfile: DockerfilePython
