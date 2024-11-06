@@ -2,7 +2,7 @@
 
 #include "CamerasSimulatorNode.h"
 
-ImageData CamerasSimulatorNode::input_function() {
+ImageData CamerasSimulatorNode::push() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());
 

@@ -9,27 +9,49 @@
 
 using namespace std::chrono_literals;
 
+std::function<void()> clean_up;
+
+void signal_handler(int signal) {
+	common::println("[signal_handler]: got signal '", signal, "'!");
+	clean_up();
+}
+
 int main() {
-	CamerasSimulatorNode cams = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
+	clean_up = []() {
+		std::exception_ptr current_exception = std::current_exception();
+		if (current_exception)
+			std::rethrow_exception(current_exception);
+		else
+			std::_Exit(1);
+	};
 
-	ImageVisualizationNode img([](ImageData const& data) { return data.source == "s110_n_cam_8"; });
+	try {
+		CamerasSimulatorNode cams = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
+		ImageVisualizationNode img([](ImageData const& data) { return data.source == "s110_n_cam_8"; });
 
-	cams += img;
+		cams += img;
 
-	std::thread cams_thread(&CamerasSimulatorNode::operator(), &cams);
-	std::thread img_thread(&ImageVisualizationNode::operator(), &img);
+		cams();
+		img();
 
-	RawDataCamerasSimulatorNode raw_cams = make_raw_data_cameras_simulator_node_arrived_recorded1({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams_raw" / "s110_s_cam_8"}});
-	PreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
-	    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-	ImageVisualizationNode raw_img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
+		std::this_thread::sleep_for(10s);
 
-	raw_cams += pre;
-	pre += raw_img;
+		RawDataCamerasSimulatorNode raw_cams = make_raw_data_cameras_simulator_node_arrived_recorded1({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams_raw" / "s110_s_cam_8"}});
+		PreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
+		    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		ImageVisualizationNode raw_img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
-	std::thread raw_cams_thread(&RawDataCamerasSimulatorNode::operator(), &raw_cams);
-	std::thread pre_thread(&PreprocessingNode::operator(), &pre);
-	std::thread raw_img_thread(&ImageVisualizationNode::operator(), &raw_img);
+		raw_cams += pre;
+		pre += raw_img;
 
-	std::this_thread::sleep_for(10s);
+		raw_cams();
+		pre();
+		raw_img();
+
+		std::this_thread::sleep_for(10s);
+
+		clean_up();
+	} catch (...) {
+		clean_up();
+	}
 }

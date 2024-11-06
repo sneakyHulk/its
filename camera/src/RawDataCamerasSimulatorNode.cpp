@@ -1,6 +1,6 @@
 #include "RawDataCamerasSimulatorNode.h"
 
-ImageDataRaw RawDataCamerasSimulatorNode::input_function() {
+ImageDataRaw RawDataCamerasSimulatorNode::push() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());
 

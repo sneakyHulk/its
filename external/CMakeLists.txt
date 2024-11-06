@@ -14,6 +14,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 project(test_ecal_image_driver_node)
 add_executable(${PROJECT_NAME} test/test_ecal_image_driver_node.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC cameras_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC cameras_simulator_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC external_nodes)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

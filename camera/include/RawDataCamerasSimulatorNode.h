@@ -11,7 +11,7 @@
 #include "ImageDataRaw.h"
 #include "node.h"
 
-class RawDataCamerasSimulatorNode : public InputNode<ImageDataRaw> {
+class RawDataCamerasSimulatorNode : public Pusher<ImageDataRaw> {
    public:
 	struct FilepathArrivedRecordedSourceConfig {
 		std::filesystem::path filepath;
@@ -23,7 +23,7 @@ class RawDataCamerasSimulatorNode : public InputNode<ImageDataRaw> {
 	explicit RawDataCamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}
 
    private:
-	ImageDataRaw input_function() final;
+	ImageDataRaw push() final;
 
 	struct sorting_function {
 		bool operator()(FilepathArrivedRecordedSourceConfig const& lhs, FilepathArrivedRecordedSourceConfig const& rhs) const { return lhs.arrived > rhs.arrived; }
