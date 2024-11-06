@@ -17,7 +17,7 @@ services:
     network_mode: host
     environment:
       - LIVE=${LIVE}
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-cpu" ]
   ##### run cuda #######################################################################################################
@@ -40,7 +40,7 @@ services:
     pid: host
     environment:
       - LIVE=${LIVE}
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target ${TARGET} -j 8 exec && ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-cuda", "live" ]
   ##### run rocm #######################################################################################################
@@ -71,7 +71,7 @@ services:
     pid: host
     environment:
       - LIVE=${LIVE}
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && ${TARGET_FOLDER}/${TARGET}"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
   ##### MQTT ###########################################################################################################
