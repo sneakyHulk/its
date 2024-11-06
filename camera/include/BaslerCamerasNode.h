@@ -121,6 +121,8 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 	    _camera_name_mac_address_index_map;
 
 	ImageDataRaw push() final {
+		static boost::circular_buffer<std::chrono::nanoseconds> fps_buffer(20, std::chrono::nanoseconds(0));
+
 		auto& index_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::IndexTag>();
 		do {
 			try {
@@ -153,8 +155,11 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				data.source = config->camera_name;
 				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
 				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+				auto fps = (current_server_timestamp - fps_buffer.front()) / 20;
+				fps_buffer.push_back(current_server_timestamp);
 				std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(data.timestamp);
-				common::println("[BaslerCamerasNode]: Grab duration: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp);
+				common::println("[BaslerCamerasNode]: Grab duration: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp,
+				    ", with fps: ", fps, ".");
 
 				return data;
 
