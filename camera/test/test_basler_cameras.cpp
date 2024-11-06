@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 		pre();
 		save();
 
-		std::this_thread::sleep_for(2s);
+		std::this_thread::sleep_for(100s);
 
 		clean_up();
 	} catch (...) {
