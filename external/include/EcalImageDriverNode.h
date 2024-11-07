@@ -70,6 +70,7 @@ class EcalImageDriverNode : public Runner<ImageDataRaw> {
 			    _undistortion_config_internal_publisher_map[camera_name].undistortion_config.undistortion_map1, _undistortion_config_internal_publisher_map[camera_name].undistortion_config.undistortion_map2);
 
 			_undistortion_config_internal_publisher_map[camera_name].publisher.SetLayerMode(eCAL::TLayer::tlayer_shm, eCAL::TLayer::smode_on);
+			auto test = std::string("rgb_") + camera_name + "_pload_" + std::to_string(0);
 			_undistortion_config_internal_publisher_map[camera_name].publisher.Create(std::string("rgb_") + camera_name + "_pload_" + std::to_string(0));
 		}
 	}
@@ -83,6 +84,7 @@ class EcalImageDriverNode : public Runner<ImageDataRaw> {
 
 			cv::Mat image_mat_rgb;
 			cv::demosaicing(bayer_image, image_mat_rgb, cv::ColorConversionCodes::COLOR_BayerRG2RGB);
+
 			cv::remap(image_mat_rgb, image_mat_rgb, _undistortion_config_internal_publisher_map[data.source].undistortion_config.undistortion_map1,
 			    _undistortion_config_internal_publisher_map[data.source].undistortion_config.undistortion_map2, cv::INTER_LINEAR);
 
@@ -91,7 +93,7 @@ class EcalImageDriverNode : public Runner<ImageDataRaw> {
 			image_message_rgb.mutable_image()->set_data((const void*)image_mat_rgb.data, image_mat_rgb.total() * image_mat_rgb.elemSize());
 			image_message_rgb.mutable_image()->set_encoding(providentia::Image::RGB24);
 			std::string image_str = image_message_rgb.mutable_image()->data();
-			_undistortion_config_internal_publisher_map[data.source].publisher.Send(image_str, int64_t(image_message_rgb.timestamp()));
+			_undistortion_config_internal_publisher_map[data.source].publisher.Send(image_str, static_cast<int64_t>(image_message_rgb.timestamp()));
 		}
 	}
 };

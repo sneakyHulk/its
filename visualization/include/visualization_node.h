@@ -21,7 +21,7 @@ class Visualization2D : public Runner<CompactObjects> {
 	void run(CompactObjects const& data) final;
 };
 
-class BirdEyeVisualization : public InputOutputNode<GlobalTrackerResults, ImageData> {
+class BirdEyeVisualization : public Processor<GlobalTrackerResults, ImageData> {
 	Config const& config;
 	cv::Mat map;
 	Eigen::Matrix<double, 4, 4> utm_to_image;
@@ -31,5 +31,5 @@ class BirdEyeVisualization : public InputOutputNode<GlobalTrackerResults, ImageD
 	explicit BirdEyeVisualization(Config const& config, std::filesystem::path && map_path = std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path("data/visualization/2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr"));
 
    private:
-	ImageData function(GlobalTrackerResults const& data) final;
+	ImageData process(GlobalTrackerResults const& data) final;
 };

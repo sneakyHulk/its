@@ -50,7 +50,7 @@ void Visualization2D::run(CompactObjects const &data) {
 
 BirdEyeVisualization::BirdEyeVisualization(const Config &config, std::filesystem::path &&map_path) : config(config), drawing_fifo(5) { std::tie(map, utm_to_image) = draw_map(std::move(map_path), config); }
 
-ImageData BirdEyeVisualization::function(const GlobalTrackerResults &data) {
+ImageData BirdEyeVisualization::process(const GlobalTrackerResults &data) {
 	auto tmp = map.clone();
 	for (auto const &object : data.objects) {
 		cv::Scalar color;

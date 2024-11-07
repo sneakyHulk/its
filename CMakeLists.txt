@@ -13,16 +13,16 @@ find_package(TBB REQUIRED)
 
 ### libtorch
 set(TORCH_CUDA_ARCH_LIST "8.0 8.6 8.9 9.0") # new CUDA arch is 9.0a, therefore the CAFFE2 regex failed, uff
+set(CMAKE_CUDA_ARCHITECTURES "native")
 find_package(Torch REQUIRED PATHS ~/src/libtorch)
 
 ### Eigen
 find_package(Eigen3 REQUIRED)
 
 ### Pylon
-if (DEFINED ENV{LIVE})
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
-    message("Pylon found!")
-endif ()
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
+message("Pylon found!")
 
 ### eCAL
 find_package(eCAL REQUIRED)
