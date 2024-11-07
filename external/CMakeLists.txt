@@ -1,5 +1,5 @@
 project(external_nodes)
-add_library(${PROJECT_NAME} SHARED src/EcalImageDriverNode.cpp)
+add_library(${PROJECT_NAME} SHARED src/EcalImageDriverNode.cpp src/EcalReaderNode.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
