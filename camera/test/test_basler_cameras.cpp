@@ -39,9 +39,14 @@ int main(int argc, char* argv[]) {
 		//     {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
 		// ImageVisualizationNode img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
-		BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
-		PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		SavingImageDataNode save({{"s60_n_cam_16_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_16_k"}}, {"s60_n_cam_50_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_50_k"}}});
+		// BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
+		// PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		// SavingImageDataNode save({{"s60_n_cam_16_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_16_k"}}, {"s60_n_cam_50_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_50_k"}}});
+
+		BaslerCamerasNode cameras({{"car_cam_16", {"0030534C1B61", "169.254.98.27"}}});
+		PreprocessingNode pre({{"car_cam_16", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		SavingImageDataNode save({{"car_cam_16", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "car_cam_16"}}});
+
 
 		cameras += pre;
 		pre += save;
