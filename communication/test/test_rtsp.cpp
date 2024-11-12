@@ -2,7 +2,6 @@
 #include <thread>
 
 #include "BaslerCamerasNode.h"
-#include "CamerasSimulatorNode.h"
 #include "PreprocessingNode.h"
 #include "image_communication_node.h"
 
