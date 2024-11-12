@@ -106,7 +106,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 
 			std::this_thread::sleep_for(1s);
 
-		} while (*std::ranges::max_element(clock_offsets) > 5ms);
+		} while (*std::ranges::max_element(clock_offsets) > 15ms);
 	}
 
 	explicit BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& camera_name_mac_address) {
