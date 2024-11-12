@@ -35,14 +35,17 @@ int main(int argc, char **argv) {
 
 		BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
 		PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		ImageStreamRTSP transmitter;
+		ImageStreamRTSP transmitter1([](ImageData const &data) { return data.source == "s60_n_cam_16_k"; });
+		ImageStreamRTSP transmitter2([](ImageData const &data) { return data.source == "s60_n_cam_50_k"; });
 
 		cameras += pre;
-		pre += transmitter;
+		pre += transmitter1;
+		pre += transmitter2;
 
 		cameras();
 		pre();
-		transmitter();
+		transmitter1();
+		transmitter2();
 
 		std::this_thread::sleep_for(200s);
 
