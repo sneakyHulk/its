@@ -106,7 +106,7 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 
 			std::this_thread::sleep_for(1s);
 
-		} while (*std::ranges::max_element(clock_offsets) > 1us);
+		} while (*std::ranges::max_element(clock_offsets) > 5ms);
 
 		/*
 		camera.GevIEEE1588DataSetLatch.Execute();
