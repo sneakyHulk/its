@@ -31,6 +31,168 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 		int index;
 	};
 
+	void enable_ptp(Pylon::CBaslerUniversalInstantCamera& camera, CameraNameMacAddressIndexConfig const& config, std::chrono::nanoseconds max_time_offset) const {
+	start:
+		if (camera.GevIEEE1588.GetValue()) {
+			common::println("[BaslerCamerasNode]: ", config.camera_name, " PTP already enabled!");
+		} else {
+			common::print("[BaslerCamerasNode]: ", config.camera_name, " Enable PTP clock synchronization...");
+			camera.GevIEEE1588.SetValue(true);
+			common::println("done!");
+		}
+
+		auto status = Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Disabled;
+		do {
+			camera.GevIEEE1588DataSetLatch.Execute();
+
+			status = camera.GevIEEE1588StatusLatched();
+			while (status == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+				std::this_thread::yield();
+				status = camera.GevIEEE1588StatusLatched();
+			}
+
+			std::chrono::nanoseconds current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+
+			camera.GevTimestampControlLatch.Execute();
+			std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+			std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(camera.GevTimestampValue.GetValue());
+
+			common::print("[BaslerCamerasNode]: ", config.camera_name, " ptp status '");
+			switch (status) {
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Disabled: common::print("GevIEEE1588StatusLatched_Disabled"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Master: common::print("GevIEEE1588StatusLatched_Master"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Faulty: common::print("GevIEEE1588StatusLatched_Faulty"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing: common::print("GevIEEE1588StatusLatched_Initializing"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Listening: common::print("GevIEEE1588StatusLatched_Listening"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Passive: common::print("GevIEEE1588StatusLatched_Passive"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave: common::print("GevIEEE1588StatusLatched_Slave"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Uncalibrated: common::print("GevIEEE1588StatusLatched_Uncalibrated"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Undefined: common::print("GevIEEE1588StatusLatched_Undefined"); break;
+				case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_PreMaster: common::print("GevIEEE1588StatusLatched_PreMaster"); break;
+			}
+			common::println("' with offset from master '", current_offset, "' and offset from server '",
+			    current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp, ".");
+
+			if (status == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Master) {
+				common::print("[BaslerCamerasNode]: ", config.camera_name, " Re ");
+				camera.GevIEEE1588.SetValue(false);
+				std::this_thread::yield();
+				goto start;
+			}
+
+			std::this_thread::sleep_for(1s);
+
+		} while (status != Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave);
+
+		boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
+		do {
+			camera.GevIEEE1588DataSetLatch.Execute();
+
+			status = camera.GevIEEE1588StatusLatched();
+			while (status == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+				std::this_thread::yield();
+				status = camera.GevIEEE1588StatusLatched();
+			}
+
+			std::chrono::nanoseconds current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+			clock_offsets.push_back(current_offset);
+
+			std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+			camera.GevTimestampControlLatch.Execute();
+			std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(camera.GevTimestampValue.GetValue());
+
+			common::println("[BaslerCamerasNode]: ", config.camera_name, " offset from master '", current_offset, "', max offset over last ", clock_offsets.size(), "s is '", *std::ranges::max_element(clock_offsets),
+			    "'. Offset from server is ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp - current_camera_timestamp, ".");
+
+			std::this_thread::sleep_for(1s);
+
+		} while (*std::ranges::max_element(clock_offsets) > 1us);
+
+		/*
+		camera.GevIEEE1588DataSetLatch.Execute();
+		auto status = camera.GevIEEE1588StatusLatched();
+		while (status != Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave) {
+		}
+
+		if (camera.GevIEEE1588.GetValue()) {
+		    common::println("[BaslerCamerasNode]: ", config.camera_name, " PTP already enabled!");
+		} else {
+		    common::print("[BaslerCamerasNode]: ", config.camera_name, " Enable PTP clock synchronization...");
+		    camera.GevIEEE1588.SetValue(true);
+		    common::println("done!");
+		}
+
+		camera.GevIEEE1588DataSetLatch.Execute();
+		auto status = camera.GevIEEE1588StatusLatched();
+		while ()
+
+		    if (camera.GevIEEE1588.GetValue()) {
+		        while (status == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+		            std::this_thread::sleep_for(1ms);
+		            status = camera.GevIEEE1588StatusLatched();
+		        }
+
+		        switch (status) {
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Disabled: common::print("GevIEEE1588StatusLatched_Disabled"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Master: common::print("GevIEEE1588StatusLatched_Master"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Faulty: common::print("GevIEEE1588StatusLatched_Faulty"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing: common::print("GevIEEE1588StatusLatched_Initializing"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Listening: common::print("GevIEEE1588StatusLatched_Listening"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Passive: common::print("GevIEEE1588StatusLatched_Passive"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave: common::print("GevIEEE1588StatusLatched_Slave"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Uncalibrated: common::print("GevIEEE1588StatusLatched_Uncalibrated"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Undefined: common::print("GevIEEE1588StatusLatched_Undefined"); break;
+		            case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_PreMaster: common::print("GevIEEE1588StatusLatched_PreMaster"); break;
+		        }
+		        common::println();
+
+		        auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config.index].GevIEEE1588OffsetFromMaster()));
+
+		        common::println("[BaslerCamerasNode]: ", config.camera_name, " Offset from master approx. ", current_offset, ".");
+		    } else {
+		        common::println("[BaslerCamerasNode]: ", config.camera_name, " Enable PTP clock synchronization...");
+		        camera.GevIEEE1588.SetValue(true);
+
+		        // Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
+		        common::println("[BaslerCamerasNode]: ", config.camera_name, " Waiting for PTP network devices to be sufficiently synchronized...");
+		        do {
+		            camera.GevIEEE1588DataSetLatch.Execute();
+		            auto status = camera.GevIEEE1588StatusLatched();
+		            while (status == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
+		                std::this_thread::sleep_for(1ms);
+		                status = camera.GevIEEE1588StatusLatched();
+		            }
+
+		            switch (status) {
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Disabled: common::print("GevIEEE1588StatusLatched_Disabled"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Master: common::print("GevIEEE1588StatusLatched_Master"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Faulty: common::print("GevIEEE1588StatusLatched_Faulty"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing: common::print("GevIEEE1588StatusLatched_Initializing"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Listening: common::print("GevIEEE1588StatusLatched_Listening"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Passive: common::print("GevIEEE1588StatusLatched_Passive"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave: common::print("GevIEEE1588StatusLatched_Slave"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Uncalibrated: common::print("GevIEEE1588StatusLatched_Uncalibrated"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Undefined: common::print("GevIEEE1588StatusLatched_Undefined"); break;
+		                case Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_PreMaster: common::print("GevIEEE1588StatusLatched_PreMaster"); break;
+		            }
+		            common::println();
+
+		            auto current_offset = std::chrono::nanoseconds(std::abs(camera.GevIEEE1588OffsetFromMaster()));
+		            clock_offsets.push_back(current_offset);
+		            common::println("[BaslerCamerasNode]: ", config.camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()), ".");
+
+		            std::this_thread::sleep_for(1s);
+		        } while ();
+
+		        common::println("[BaslerCamerasNode]: ", config.camera_name, " Highest offset from master <= 1ms. Can start to grab images.");
+
+		        break;
+		    }
+	}
+	while ()
+		;*/
+	}
+
 	explicit BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& camera_name_mac_address) {
 		auto index = 0;
 		for (auto const& [cam_name, mac_address] : camera_name_mac_address) {
@@ -62,43 +224,10 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 				_cameras[config->index].Open();
 
 				// Enabling PTP Clock Synchronization
-				if (_cameras[config->index].GevIEEE1588.GetValue()) {
-					common::println("[BaslerCamerasNode]: ", config->camera_name, " IEEE1588 already enabled!");
-
-					_cameras[config->index].GevIEEE1588DataSetLatch.Execute();
-					while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
-						std::this_thread::sleep_for(1ms);
-					}
-
-					auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster()));
-
-					common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ".");
-				} else {
-					common::println("[BaslerCamerasNode]: ", config->camera_name, " Enable PTP clock synchronization...");
-					_cameras[config->index].GevIEEE1588.SetValue(true);
-
-					// Wait until all PTP network devices are sufficiently synchronized. https://docs.baslerweb.com/precision-time-protocol#checking-the-status-of-the-ptp-clock-synchronization
-					common::println("[BaslerCamerasNode]: ", config->camera_name, " Waiting for PTP network devices to be sufficiently synchronized...");
-					boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
-					do {
-						_cameras[config->index].GevIEEE1588DataSetLatch.Execute();
-
-						while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing) {
-							std::this_thread::sleep_for(1ms);
-						}
-
-						auto current_offset = std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster()));
-						clock_offsets.push_back(current_offset);
-						common::println("[BaslerCamerasNode]: ", config->camera_name, " Offset from master approx. ", current_offset, ", max offset is ", *std::max_element(clock_offsets.begin(), clock_offsets.end()), ".");
-
-						std::this_thread::sleep_for(1s);
-					} while (*std::max_element(clock_offsets.begin(), clock_offsets.end()) > 15ms);
-
-					common::println("[BaslerCamerasNode]: ", config->camera_name, " Highest offset from master <= 15ms. Can start to grab images.");
-				}
+				enable_ptp(_cameras[config->index], *config, std::chrono::milliseconds(10));
 
 				_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
-				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(25.0);
+				_cameras[config->index].AcquisitionFrameRateAbs.SetValue(50.0);
 			}
 
 			common::print("[BaslerCamerasNode]: Starting grabbing...");
@@ -138,40 +267,34 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw> {
 					continue;
 				}
 
+				ImageDataRaw data;
+				data.timestamp = ptrGrabResult->GetTimeStamp();
+				data.source = config->camera_name;
+				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
+
+				std::chrono::nanoseconds image_creation_timestamp = std::chrono::nanoseconds(ptrGrabResult->GetTimeStamp());
+				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
+				//_cameras[config->index].GevTimestampControlLatch.Execute();
+				// std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(_cameras[config->index].GevTimestampValue.GetValue());
+
 				// Timestamp offset from master:
 				// _cameras[config->index].GevIEEE1588DataSetLatch.Execute();
 				// while (_cameras[config->index].GevIEEE1588StatusLatched() == Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Initializing)
 				// 	;
-				// common::println("[BaslerCamerasNode]: timestamp offset from master: ", std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster())));
-
-				// Timestamp offset from server:
-				// _cameras[config->index].GevTimestampControlLatch.Execute();
-				// std::chrono::nanoseconds current_camera_timestamp = std::chrono::nanoseconds(_cameras[config->index].GevTimestampValue.GetValue());
-				// common::println("[BaslerCamerasNode]: timestamp offset from server: ", current_server_timestamp < current_camera_timestamp ? current_camera_timestamp - current_server_timestamp : current_server_timestamp -
-				// current_camera_timestamp);
-
-				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab successful at ", ptrGrabResult->GetTimeStamp(), ".");
-				ImageDataRaw data;
-
-				_cameras[config->index].GevTimestampControlLatch.Execute();
-				std::chrono::nanoseconds current_server_timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch();
-
-				data.timestamp = current_server_timestamp.count() - _cameras[config->index].GevTimestampValue.GetValue() + ptrGrabResult->GetTimeStamp();
-				data.source = config->camera_name;
-				data.image_raw = std::vector<std::uint8_t>(static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t*>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
+				// common::println("[BaslerCamerasNode]: offset in timestamp from master: ", std::chrono::nanoseconds(std::abs(_cameras[config->index].GevIEEE1588OffsetFromMaster())), " offset from server ",
+				//     current_server_timestamp - std::chrono::nanoseconds(ptrGrabResult->GetTimeStamp()));
 
 				static std::vector<boost::circular_buffer<std::chrono::nanoseconds>> fps_buffers =
 				    std::vector<boost::circular_buffer<std::chrono::nanoseconds>>(_cameras.GetSize(), boost::circular_buffer<std::chrono::nanoseconds>(20, std::chrono::nanoseconds(0)));
 				auto fps = 20. / std::chrono::duration<double>(current_server_timestamp - fps_buffers[config->index].front()).count();
 				fps_buffers[config->index].push_back(current_server_timestamp);
-				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab duration: ", current_server_timestamp - std::chrono::nanoseconds(data.timestamp), ", with fps: ", fps, ".");
+
+				common::println("[BaslerCamerasNode]: ", config->camera_name, " grab successful at ", image_creation_timestamp, " with grab duration ", current_server_timestamp - image_creation_timestamp, " and fps ", fps, ".");
 
 				return data;
 
 			} catch (Pylon::TimeoutException const& e) {
 				common::println("[BaslerCamerasNode]: ", e.GetDescription());
-
-				continue;
 			}
 		} while (true);
 	}

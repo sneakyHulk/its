@@ -43,9 +43,9 @@ int main(int argc, char* argv[]) {
 		// PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
 		// SavingImageDataNode save({{"s60_n_cam_16_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_16_k"}}, {"s60_n_cam_50_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_50_k"}}});
 
-		BaslerCamerasNode cameras({{"home_cam_16", BaslerCamerasNode::MacAddressConfig{"0030534C1B61"}}});
-		PreprocessingNode pre({{"home_cam_16", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		SavingImageDataNode save({{"home_cam_16", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "home_cam_16"}}});
+		BaslerCamerasNode cameras({{"car_cam_16", BaslerCamerasNode::MacAddressConfig{"0030534C1B61"}}});
+		PreprocessingNode pre({{"car_cam_16", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		SavingImageDataNode save({{"car_cam_16", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "car_cam_16"}}});
 
 		cameras += pre;
 		pre += save;
