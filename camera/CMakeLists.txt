@@ -37,7 +37,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 
 
 project(camera_nodes)
-add_library(${PROJECT_NAME} SHARED src/camera_simulator_node.cpp src/camera_node.cpp src/camera_node_multicast.cpp src/RawDataCamerasSimulatorNode.cpp src/CamerasSimulatorNode.cpp)
+add_library(${PROJECT_NAME} SHARED src/camera_simulator_node.cpp src/camera_node.cpp src/RawDataCamerasSimulatorNode.cpp src/CamerasSimulatorNode.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Pylon_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})

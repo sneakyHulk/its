@@ -56,6 +56,47 @@ class Runner {
 	virtual void run(Input const&) = 0;
 };
 
+template <typename Input>
+class RunnerPtr {
+	template <typename T>
+	friend class Pusher;
+
+	template <typename T1, typename T2>
+	friend class Processor;
+
+	tbb::concurrent_bounded_queue<std::shared_ptr<Input const>> _input_queue;
+
+	void input(std::shared_ptr<Input const>&& input) {
+		if (!_input_queue.try_push(std::forward<decltype(input)>(input))) common::println(typeid(*this).name(), " skipped!");
+	}
+
+	std::thread thread;
+	[[noreturn]] void thread_function() {
+		try {
+			while (true) {
+				std::shared_ptr<Input const> item;
+				_input_queue.pop(item);
+
+				run(item);
+			}
+		} catch (...) {
+			clean_up();
+		}
+
+		std::unreachable();
+	}
+
+   protected:
+	RunnerPtr() { _input_queue.set_capacity(100); }
+	virtual ~RunnerPtr() noexcept(false) {}
+
+   public:
+	void operator()() { thread = std::thread(&RunnerPtr<Input>::thread_function, this); }
+
+   private:
+	virtual void run(std::shared_ptr<Input const> const&) = 0;
+};
+
 // template <typename Input>
 // class OutputPtrNode : public OutputNode<Input> {
 //	void output_function(Input const&) final { throw std::logic_error("unreachable code"); }
@@ -163,6 +204,10 @@ class Pusher {
 		_output_connections.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.input(std::forward<decltype(data)>(data)); });
 	}
 
+	void operator+=(RunnerPtr<Output>& node) {
+		_output_connections.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.input(std::forward<decltype(data)>(data)); });
+	}
+
 	template <typename dummy>
 	void operator+=(Processor<Output, dummy>& node) {
 		_output_connections.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.input(std::forward<decltype(data)>(data)); });
@@ -241,6 +286,10 @@ class Processor {
 	void operator()() { thread = std::thread(&Processor<Input, Output>::thread_function, this); }
 
 	void operator+=(Runner<Output>& node) {
+		_output_connections.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.input(std::forward<decltype(data)>(data)); });
+	}
+
+	void operator+=(RunnerPtr<Output>& node) {
 		_output_connections.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.input(std::forward<decltype(data)>(data)); });
 	}
 

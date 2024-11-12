@@ -1,21 +1,54 @@
+#include <csignal>
 #include <thread>
 
-#include "camera_simulator_node.h"
+#include "BaslerCamerasNode.h"
+#include "CamerasSimulatorNode.h"
+#include "PreprocessingNode.h"
 #include "image_communication_node.h"
 
+std::function<void()> clean_up;
+
+void signal_handler(int signal) {
+	common::println("[signal_handler]: got signal '", signal, "'!");
+	clean_up();
+}
+
 int main(int argc, char **argv) {
-	CameraSimulator cam_n("s110_n_cam_8");
-	CameraSimulator cam_o("s110_o_cam_8");
-	ImageStreamRTSP transmitter;
-	ImageStreamRTSP transmitter2;
+	clean_up = []() {
+		common::print("Terminate Pylon...");
+		Pylon::PylonTerminate();
+		common::println("done!");
 
-	cam_n += transmitter;
-	cam_o += transmitter2;
+		std::exception_ptr current_exception = std::current_exception();
+		if (current_exception)
+			std::rethrow_exception(current_exception);
+		else
+			std::_Exit(1);
+	};
 
-	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
-	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
-	std::thread transmitter_thread(&ImageStreamRTSP::operator(), &transmitter);
-	std::thread transmitter2_thread(&ImageStreamRTSP::operator(), &transmitter2);
+	std::signal(SIGINT, signal_handler);
+	std::signal(SIGTERM, signal_handler);
 
-	ImageStreamRTSP::run_loop();
+	try {
+		common::print("Initialize Pylon...");
+		Pylon::PylonInitialize();
+		common::println("done!");
+
+		BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
+		PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		ImageStreamRTSP transmitter;
+
+		cameras += pre;
+		pre += transmitter;
+
+		cameras();
+		pre();
+		transmitter();
+
+		std::this_thread::sleep_for(200s);
+
+		clean_up();
+	} catch (...) {
+		clean_up();
+	}
 }
