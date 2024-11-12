@@ -21,7 +21,7 @@ find_package(Eigen3 REQUIRED)
 
 ### Pylon
 
-find_package(pylon 8.0.1 REQUIRED)
+find_package(pylon REQUIRED)
 
 ### eCAL
 find_package(eCAL REQUIRED)
