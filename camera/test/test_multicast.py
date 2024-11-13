@@ -1,6 +1,8 @@
 import os
 import numpy
 import time
+import cv2
+import numpy as np
 from pypylon import pylon, genicam
 import sys
 
@@ -36,7 +38,7 @@ try:
             raise EnvironmentError("device is no GigE device")
     cameras.StartGrabbing()
 
-    for i in range(1000):
+    for i in range(1000000):
         if not cameras.IsGrabbing():
             break
 
@@ -56,10 +58,14 @@ try:
 
         # Now, the image data can be processed.
         print("GrabSucceeded: ", grabResult.GrabSucceeded())
-        print("SizeX: ", grabResult.GetWidth())
-        print("SizeY: ", grabResult.GetHeight())
-        img = grabResult.GetArray()
-        print("Gray value of first pixel: ", img[0, 0])
+        if grabResult.GrabSucceeded():
+            print("SizeX: ", grabResult.GetWidth())
+            print("SizeY: ", grabResult.GetHeight())
+            img = grabResult.GetArray()
+            cv2.imshow("GrabSucceeded", img)
+            cv2.waitKey(1)
+
+            print("Gray value of first pixel: ", img[0, 0])
 
 except genicam.GenericException as e:
     # Error handling

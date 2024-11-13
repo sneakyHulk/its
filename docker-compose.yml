@@ -96,6 +96,10 @@ services:
       - caddy:ro
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
+      #- ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
+      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
+      # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
     profiles: [ "hls-streaming", "streaming_home", "streaming_live" ]
   ##### https streaming site ###########################################################################################
