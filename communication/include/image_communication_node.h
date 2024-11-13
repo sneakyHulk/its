@@ -4,6 +4,7 @@
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
 
+#include <thread>
 #include <vector>
 
 #include "ImageData.h"
@@ -14,7 +15,7 @@ struct StreamContext {
 	std::shared_ptr<ImageData const> *image;
 };
 
-class ImageStreamRTSP : public OutputPtrNode<ImageData> {
+class ImageStreamRTSP : public RunnerPtr<ImageData> {
 	static constexpr bool use_jpeg = false;
 	static const char *port;
 
@@ -23,17 +24,20 @@ class ImageStreamRTSP : public OutputPtrNode<ImageData> {
 	static GMainLoop *_loop;
 
 	static std::vector<ImageStreamRTSP *> all_streams;
+	inline static std::thread _gstreamer_thread;
 
 	std::shared_ptr<ImageData const> _image_data = nullptr;
 	GstRTSPMediaFactory *_factory;
+	std::function<bool(ImageData const &)> _image_mask;
 
    private:
 	static void need_data(GstElement *appsrc, guint unused, StreamContext *context);
 	static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, ImageStreamRTSP *current_class);
+	[[noreturn]] void run_loop();
 
    public:
-	ImageStreamRTSP();
-	[[noreturn]] static void run_loop();
+	explicit ImageStreamRTSP(std::function<bool(const ImageData &)> &&image_mask = [](ImageData const &) { return true; });
+	void operator()();
 
    private:
 	void run(std::shared_ptr<ImageData const> const &data) final;

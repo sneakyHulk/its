@@ -96,7 +96,7 @@ void ImageStreamRTSP::media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia
 	gst_object_unref(element);
 }
 
-ImageStreamRTSP::ImageStreamRTSP() {
+ImageStreamRTSP::ImageStreamRTSP(std::function<bool(const ImageData &)> &&image_mask) : _image_mask(std::move(image_mask)) {
 	all_streams.push_back(this);
 	/* make a media factory for a test stream. The default media factory can use gst-launch syntax to create pipelines.
 	 * any launch line works as long as it contains elements named pay%d. Each element with pay%d names will be a stream */
@@ -146,6 +146,16 @@ ImageStreamRTSP::ImageStreamRTSP() {
 	common::println("[ImageStreamRTSP]: Streams unready!");
 }
 
-void ImageStreamRTSP::run(std::shared_ptr<ImageData const> const &data) { std::atomic_store(&_image_data, data); }
+void ImageStreamRTSP::run(std::shared_ptr<ImageData const> const &data) {
+	if (_image_mask(*data)) std::atomic_store(&_image_data, data);
+}
 
-const char *ImageStreamRTSP::port = "8554";
+void ImageStreamRTSP::operator()() {
+	RunnerPtr<ImageData>::operator()();
+
+	if (this == all_streams.front()) {
+		ImageStreamRTSP::_gstreamer_thread = std::thread(&ImageStreamRTSP::run_loop, this);
+	}
+}
+
+const char *ImageStreamRTSP::port = "2346";

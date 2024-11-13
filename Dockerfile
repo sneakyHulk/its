@@ -114,7 +114,7 @@ RUN if [ "$src" = "cpu" ]; then \
 
 ARG BUILDPLATFORM
 
-# Install Pylon
+# Install Pylon pylon 8.0.1: https://downloads-ctf.baslerweb.com/dg51pdwahxgw/2xjc1trdu02JMUFlzz8fR6/1a2fa4d4c54fdc1230ace817a6f2f37a/pylon-8.0.1-16188_linux-x86_64_debs.tar.gz
 RUN if [ -z "$LIVE" ]; then \
       if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
         wget --quiet https://www2.baslerweb.com/media/downloads/software/pylon_software/pylon-7.5.0.15658-linux-x86_64_debs.tar.gz -O pylon.tar.gz \

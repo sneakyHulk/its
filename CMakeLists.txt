@@ -21,8 +21,7 @@ find_package(Eigen3 REQUIRED)
 
 ### Pylon
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
-message("Pylon found!")
+find_package(pylon REQUIRED)
 
 ### eCAL
 find_package(eCAL REQUIRED)

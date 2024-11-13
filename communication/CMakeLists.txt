@@ -22,7 +22,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 
 add_executable(test_${PROJECT_NAME}_rtsp test/test_rtsp.cpp)
 target_link_libraries(test_${PROJECT_NAME}_rtsp PUBLIC ${PROJECT_NAME})
-target_link_libraries(test_${PROJECT_NAME}_rtsp PUBLIC camera_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp PUBLIC cameras_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp PUBLIC image_processing_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp PUBLIC communication_nodes)
 target_compile_features(test_${PROJECT_NAME}_rtsp PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_rtsp PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
