@@ -1,3 +1,5 @@
+#pragma once
+
 #include <pylon/BaslerUniversalInstantCamera.h>
 #include <pylon/GrabResultPtr.h>
 #include <pylon/PylonIncludes.h>
