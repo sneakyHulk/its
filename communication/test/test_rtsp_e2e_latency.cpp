@@ -2,11 +2,11 @@
 #include <gst/app/gstappsrc.h>
 #include <gst/gst.h>
 
+#include <bitset>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <thread>
-#include <bitset>
 
 #include "common_exception.h"
 #include "common_output.h"
@@ -135,11 +135,11 @@ int main(int argc, char *argv[]) {
 
 		// Get width and height from sample caps (NOT element caps)
 		GstCaps *caps = gst_sample_get_caps(sample);
-		assert(caps != nullptr);
-		GstStructure *s = gst_caps_get_structure(caps, 0);
+		auto structure = gst_caps_get_structure(GST_CAPS(caps), 0);
 		int width, height;
-		assert(gst_structure_get_int(s, "width", &width));
-		assert(gst_structure_get_int(s, "height", &height));
+
+		gst_structure_get_int(structure, "width", &width);
+		gst_structure_get_int(structure, "height", &height);
 		std::cout << "Sample: W = " << width << ", H = " << height << std::endl;
 
 		GstBuffer *buffer = gst_sample_get_buffer(sample);
@@ -153,6 +153,7 @@ int main(int argc, char *argv[]) {
 
 		cv::Mat yuv_img(height + height / 2, width, CV_8UC1, m.data);
 		cv::Mat bgr_img(height, width, CV_8UC3);
+
 		cv::cvtColor(yuv_img, bgr_img, cv::COLOR_YUV2BGR_I420);
 
 		std::uint64_t timestamp = get_image_based_timestamp(bgr_img);
