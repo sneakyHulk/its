@@ -71,9 +71,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Configure the source element
-	const char *rtsp_url = "rtsp://127.0.0.1:2346/s110_n_cam_8";
+	const char *rtsp_url = "rtsp://80.155.138.138:2346/s60_n_cam_16_k";
 	g_object_set(source, "location", rtsp_url, NULL);
-	g_object_set(source, "latency", 50, NULL);
+	g_object_set(source, "latency", 10, NULL);
 
 	// Configure the appsink element
 	g_object_set(sink, "max-buffers", 2, NULL);
