@@ -35,27 +35,27 @@ int main(int argc, char **argv) {
 		Pylon::PylonInitialize();
 		common::println("done!");
 
-		// BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
-		// PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		// ImageStreamRTSP transmitter1([](ImageData const &data) { return data.source == "s60_n_cam_16_k"; });
-		// ImageStreamRTSP transmitter2([](ImageData const &data) { return data.source == "s60_n_cam_50_k"; });
-		//
-		// cameras += pre;
-		// pre += transmitter1;
-		// pre += transmitter2;
-		//
-		// cameras();
-		// pre();
-		// transmitter1();
-		// transmitter2();
+		BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
+		PreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		ImageStreamRTSP transmitter1([](ImageData const &data) { return data.source == "s60_n_cam_16_k"; });
+		ImageStreamRTSP transmitter2([](ImageData const &data) { return data.source == "s60_n_cam_50_k"; });
 
-		CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
-		ImageStreamRTSP transmitter;
-
-		cameras += transmitter;
+		cameras += pre;
+		pre += transmitter1;
+		pre += transmitter2;
 
 		cameras();
-		transmitter();
+		pre();
+		transmitter1();
+		transmitter2();
+
+		// CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
+		// ImageStreamRTSP transmitter;
+		//
+		// cameras += transmitter;
+		//
+		// cameras();
+		// transmitter();
 
 		std::this_thread::sleep_for(200s);
 
