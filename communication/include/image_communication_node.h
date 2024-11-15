@@ -16,7 +16,7 @@ struct StreamContext {
 };
 
 class ImageStreamRTSP : public RunnerPtr<ImageData> {
-	static constexpr bool use_jpeg = false;
+	static constexpr bool use_jpeg = true;
 	static const char *port;
 
 	static GstRTSPServer *_server;
@@ -34,6 +34,7 @@ class ImageStreamRTSP : public RunnerPtr<ImageData> {
 	static void need_data(GstElement *appsrc, guint unused, StreamContext *context);
 	static void media_configure(GstRTSPMediaFactory *factory, GstRTSPMedia *media, ImageStreamRTSP *current_class);
 	[[noreturn]] void run_loop();
+	static void add_image_based_timestamp(cv::Mat const &image, std::uint64_t timestamp);
 
    public:
 	explicit ImageStreamRTSP(std::function<bool(const ImageData &)> &&image_mask = [](ImageData const &) { return true; });

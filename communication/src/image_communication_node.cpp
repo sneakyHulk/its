@@ -3,6 +3,7 @@
 #include <chrono>
 #include <opencv2/opencv.hpp>
 #include <thread>
+#include <bitset>
 
 #include "common_output.h"
 
@@ -19,8 +20,23 @@ GMainLoop *ImageStreamRTSP::_loop = g_main_loop_new(NULL, FALSE);
 
 std::vector<ImageStreamRTSP *> ImageStreamRTSP::all_streams;
 
+constexpr bool get(std::size_t index, std::uint64_t value) { return (value >> index) & 1ULL; }
+void ImageStreamRTSP::add_image_based_timestamp(cv::Mat const &image, std::uint64_t timestamp) {
+	auto width = image.cols / 64;
+	auto height = std::min(width, image.rows);
+
+	for (auto i = 0; i < 64; ++i) {
+		if (get(i, timestamp))
+			cv::rectangle(image, cv::Point(i * width, 0), cv::Point(i * width + width, height), cv::Scalar_<int>(255, 255, 255), -1);
+		else
+			cv::rectangle(image, cv::Point(i * width, 0), cv::Point(i * width + width, height), cv::Scalar_<int>(0, 0, 0), -1);
+	}
+}
+
 void ImageStreamRTSP::need_data(GstElement *appsrc, guint unused, StreamContext *context) {
 	std::shared_ptr<ImageData const> img = std::atomic_load(context->image);
+
+	add_image_based_timestamp(img->image, img->timestamp);
 
 	std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(img->timestamp)));
 	std::string wall_time = std::ctime(&time);
