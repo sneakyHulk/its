@@ -1,6 +1,6 @@
 project(communication_nodes)
 
-add_library(${PROJECT_NAME} SHARED src/image_communication_node.cpp src/data_communication_node.cpp)
+add_library(${PROJECT_NAME} SHARED src/image_communication_node.cpp src/data_communication_node.cpp src/ImageInputRTSP.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC common)

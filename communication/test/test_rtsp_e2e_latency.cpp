@@ -1,3 +1,5 @@
+#define use_jpeg 1
+
 #include <gst/app/gstappsink.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/gst.h>
@@ -60,25 +62,34 @@ int main(int argc, char *argv[]) {
 
 	GstElement *pipeline = gst_pipeline_new("rtsp-pipeline");
 	GstElement *source = gst_element_factory_make("rtspsrc", "source");
+#if use_jpeg == 1
+	GstElement *depay = gst_element_factory_make("rtpjpegdepay", "depay");
+	GstElement *decode = gst_element_factory_make("jpegdec", "decode");
+#else
 	GstElement *depay = gst_element_factory_make("rtph264depay", "depay");
 	GstElement *parse = gst_element_factory_make("h264parse", "parse");
 	GstElement *decode = gst_element_factory_make("avdec_h264", "decode");
+	// GstElement *decode = gst_element_factory_make("openh264dec", "decode");
+#endif
 	GstElement *sink = gst_element_factory_make("appsink", "mysink");
 
-	if (!pipeline || !source || !depay || !parse || !decode || !sink) {
-		std::cerr << "Failed to create elements" << std::endl;
-		return -1;
+	if (!pipeline || !source || !depay ||
+#if !use_jpeg == 1
+	    !parse ||
+#endif
+	    !decode || !sink) {
+		throw common::Exception("Failed to create elements");
 	}
 
 	// Configure the source element
 	const char *rtsp_url = "rtsp://80.155.138.138:2346/s60_n_cam_16_k";
-	g_object_set(source, "location", rtsp_url, NULL);
-	g_object_set(source, "latency", 10, NULL);
+	g_object_set(G_OBJECT(source), "location", rtsp_url, NULL);
+	g_object_set(G_OBJECT(source), "latency", 20, NULL);
 
 	// Configure the appsink element
-	g_object_set(sink, "max-buffers", 2, NULL);
-	g_object_set(sink, "sync", TRUE, NULL);
-	g_object_set(sink, "emit-signals", TRUE, NULL);
+	g_object_set(G_OBJECT(sink), "max-buffers", 2, NULL);
+	g_object_set(G_OBJECT(sink), "sync", TRUE, NULL);
+	g_object_set(G_OBJECT(sink), "emit-signals", TRUE, NULL);
 
 	GstCaps *caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "I420", NULL);
 	g_object_set(sink, "caps", caps, NULL);
@@ -88,24 +99,34 @@ int main(int argc, char *argv[]) {
 	// g_signal_connect(sink, "new-sample", G_CALLBACK(new_sample), NULL);
 
 	// Assemble the pipeline
-	gst_bin_add_many(GST_BIN(pipeline), source, depay, parse, decode, sink, NULL);
+	gst_bin_add_many(GST_BIN(pipeline), source, depay,
+#if !use_jpeg == 1
+	    parse,
+#endif
+	    decode, sink, NULL);
 
 	// Link elements (rtspsrc requires special linking)
-	if (!gst_element_link_many(depay, parse, decode, sink, NULL)) {
-		std::cerr << "Failed to link elements" << std::endl;
+	if (!gst_element_link_many(depay,
+#if !use_jpeg == 1
+	        parse,
+#endif
+	        decode, sink, NULL)) {
 		gst_object_unref(pipeline);
-		return -1;
+
+		throw common::Exception("Failed to link elements");
 	}
 
 	// Link the dynamic pad for rtspsrc
-	g_signal_connect(source, "pad-added", G_CALLBACK(+[](GstElement *src, GstPad *new_pad, GstElement *data) {
+	g_signal_connect(source, "pad-added", G_CALLBACK(+[](GstElement *element, GstPad *pad, GstElement *data) {
 		GstPad *sink_pad = gst_element_get_static_pad(data, "sink");
 		if (gst_pad_is_linked(sink_pad)) {
 			gst_object_unref(sink_pad);
 			return;
 		}
-		if (gst_pad_link(new_pad, sink_pad) != GST_PAD_LINK_OK) {
-			std::cerr << "Failed to link rtspsrc pad to depay" << std::endl;
+		if (gst_pad_link(pad, sink_pad) != GST_PAD_LINK_OK) {
+			gst_object_unref(sink_pad);
+
+			throw common::Exception("Failed to link rtspsrc pad to depay");
 		}
 		gst_object_unref(sink_pad);
 	}),
@@ -114,9 +135,9 @@ int main(int argc, char *argv[]) {
 	// Start playing
 	GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
 	if (ret == GST_STATE_CHANGE_FAILURE) {
-		std::cerr << "Failed to set pipeline to PLAYING" << std::endl;
 		gst_object_unref(pipeline);
-		return -1;
+
+		throw common::Exception("Failed to set pipeline to PLAYING");
 	}
 
 	for (;;) {
