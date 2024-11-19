@@ -11,6 +11,7 @@
 #include <boost/multi_index_container.hpp>
 #include <csignal>
 #include <vector>
+#include <chrono>
 
 #include "BaslerCameraBase.h"
 #include "ImageDataRaw.h"

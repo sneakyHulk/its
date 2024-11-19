@@ -91,4 +91,12 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 
-
+project(test_gpio_hardware_trigger)
+add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC common)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC PkgConfig::gpiod)
+target_link_libraries(${PROJECT_NAME} PUBLIC pylon::pylon)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

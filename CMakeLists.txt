@@ -38,6 +38,9 @@ pkg_search_module(gstreamer-app REQUIRED IMPORTED_TARGET gstreamer-app-1.0>=1.4)
 pkg_search_module(gstreamer-video REQUIRED IMPORTED_TARGET gstreamer-video-1.0>=1.4)
 pkg_search_module(gstreamer-rtsp-server REQUIRED IMPORTED_TARGET gstreamer-rtsp-server-1.0>=1.4)
 
+### gpiod
+pkg_check_modules(gpiod REQUIRED IMPORTED_TARGET libgpiod)
+
 if (STREAMING_TEST)
     ### RTP
     find_package(PkgConfig REQUIRED)
