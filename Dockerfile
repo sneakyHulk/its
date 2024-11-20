@@ -113,7 +113,7 @@ RUN if [ "$src" = "cpu" ]; then \
     fi
 
 ARG BUILDPLATFORM
-
+# Install arm version: https://downloads-ctf.baslerweb.com/dg51pdwahxgw/3WTEu607sfl0dKNg69cNws/88cf3da4418aee38f2179e757ed9e2c7/pylon-8.0.1-16188_linux-aarch64_debs.tar.gz
 # Install Pylon pylon 8.0.1: https://downloads-ctf.baslerweb.com/dg51pdwahxgw/2xjc1trdu02JMUFlzz8fR6/1a2fa4d4c54fdc1230ace817a6f2f37a/pylon-8.0.1-16188_linux-x86_64_debs.tar.gz
 RUN if [ -z "$LIVE" ]; then \
       if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \

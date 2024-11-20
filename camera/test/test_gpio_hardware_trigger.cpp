@@ -16,7 +16,7 @@
 std::function<void()> clean_up;
 
 int main(int argc, char **argv) {
-	struct gpiod_chip *chip = gpiod_chip_open_by_name("gpiochip0");
+	struct gpiod_chip *chip = gpiod_chip_open_by_name("gpiochip4");
 	if (!chip) {
 		throw common::Exception("Open chip failed.");
 	}
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	std::signal(SIGINT, [](int sig) { clean_up(); });
 	std::signal(SIGTERM, [](int sig) { clean_up(); });
 
-	struct gpiod_line *line = gpiod_chip_get_line(chip, 24);  // GPIO Pin #24
+	struct gpiod_line *line = gpiod_chip_get_line(chip, 23);  // GPIO Pin #23
 	if (!line) {
 		gpiod_chip_close(chip);
 
@@ -76,16 +76,28 @@ int main(int argc, char **argv) {
 
 			if (device.GetMacAddress() != "0030534C1B61") continue;
 
+			common::println("Attaching...");
 			camera.Attach(Pylon::CTlFactory::GetInstance().CreateDevice(device));
+
+			common::println("Opening...");
 			camera.Open();
 
+			common::println("TriggerSelector...");
 			camera.TriggerSelector.SetValue(Basler_UniversalCameraParams::TriggerSelector_FrameStart);
+
+			common::println("TriggerMode...");
 			// Enable triggered image acquisition for the Frame Start trigger
 			camera.TriggerMode.SetValue(Basler_UniversalCameraParams::TriggerMode_On);
+
+			common::println("TriggerSource...");
 			// Set the trigger source to Line 1
 			camera.TriggerSource.SetValue(Basler_UniversalCameraParams::TriggerSource_Line1);
+
+			common::println("TriggerActivation...");
 			// Set the trigger activation mode to rising edge
 			camera.TriggerActivation.SetValue(Basler_UniversalCameraParams::TriggerActivation_RisingEdge);
+
+			camera.StartGrabbing();
 
 			while (true) {
 				gpiod_line_set_value(line, 1);
@@ -93,7 +105,7 @@ int main(int argc, char **argv) {
 				gpiod_line_set_value(line, 0);
 
 				Pylon::CGrabResultPtr ptrGrabResult;
-				camera.RetrieveResult(1000, ptrGrabResult);
+				camera.RetrieveResult(5000, ptrGrabResult);
 
 				if (!ptrGrabResult->GrabSucceeded()) {
 					common::println(ptrGrabResult->GetErrorDescription());
@@ -106,13 +118,15 @@ int main(int argc, char **argv) {
 				cv::Mat const image(1200, 1920, CV_8UC1, image_data.data());
 
 				cv::imshow("image", image);
-				cv::waitKey(0);
+				cv::waitKey(10);
 			}
 		}
 	} catch (Pylon::GenericException const &e) {
+		common::println(e.GetDescription());
+
 		clean_up();
 
-		std::rethrow_exception(std::current_exception());
+		throw;
 	}
 
 	/* Blink 20 times */

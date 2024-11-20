@@ -24,7 +24,7 @@ find_package(Eigen3 REQUIRED)
 find_package(pylon REQUIRED)
 
 ### eCAL
-find_package(eCAL REQUIRED)
+find_package(eCAL)
 
 ### Protobuf
 find_package(Protobuf REQUIRED)
@@ -203,7 +203,7 @@ endif ()
 
 add_subdirectory(msg)
 add_subdirectory(node)
-add_subdirectory(external)
+#add_subdirectory(external)
 add_subdirectory(utils)
 add_subdirectory(yolo)
 add_subdirectory(transformation)
