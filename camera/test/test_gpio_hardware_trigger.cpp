@@ -73,7 +73,6 @@ int main(int argc, char **argv) {
 	try {
 		Pylon::CBaslerUniversalInstantCamera camera;
 		for (auto &device : device_list) {
-
 			if (device.GetMacAddress() != "0030534C1B61") continue;
 
 			common::println("Attaching...");
@@ -101,6 +100,7 @@ int main(int argc, char **argv) {
 
 			while (true) {
 				gpiod_line_set_value(line, 1);
+				auto t1 = std::chrono::system_clock::now();
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				gpiod_line_set_value(line, 0);
 
@@ -114,6 +114,9 @@ int main(int argc, char **argv) {
 				}
 
 				std::vector<std::uint8_t> image_data(static_cast<const std::uint8_t *>(ptrGrabResult->GetBuffer()), static_cast<const std::uint8_t *>(ptrGrabResult->GetBuffer()) + ptrGrabResult->GetBufferSize());
+				auto t2 = std::chrono::system_clock::now();
+
+				common::println("Retrieved image: ", std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1), ", which is ", std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1));
 
 				cv::Mat const image(1200, 1920, CV_8UC1, image_data.data());
 
