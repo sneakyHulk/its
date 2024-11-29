@@ -1,9 +1,11 @@
 #include "image_communication_node.h"
 
+#include <gst/video/video.h>
+
+#include <bitset>
 #include <chrono>
 #include <opencv2/opencv.hpp>
 #include <thread>
-#include <bitset>
 
 #include "common_output.h"
 

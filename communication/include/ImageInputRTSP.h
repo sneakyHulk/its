@@ -13,4 +13,6 @@
 #include "common_output.h"
 #include "node.h"
 
-class ImageInputRTSP : public
+class ImageInputRTSP {
+
+};
