@@ -23,7 +23,7 @@ static GstRTPHeaderExtensionFlags gst_rtp_header_extension_random_number_get_sup
 	return static_cast<GstRTPHeaderExtensionFlags>(GST_RTP_HEADER_EXTENSION_ONE_BYTE | GST_RTP_HEADER_EXTENSION_TWO_BYTE);  // because sizeof(guint64) < 16
 }
 static gsize gst_rtp_header_extension_random_number_get_max_size(GstRTPHeaderExtension *ext, const GstBuffer *buffer) {
-	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
+	GstRTPHeaderExtensionRandomNumber *self;  // = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
 	return sizeof(self->random_number);
 }
 
@@ -100,8 +100,8 @@ static void gst_rtp_header_extension_random_number_class_init(GstRTPHeaderExtens
 	gobject_class->set_property = gst_rtp_header_extension_random_number_set_property;
 	gobject_class->get_property = gst_rtp_header_extension_random_number_get_property;
 
-	g_object_class_install_property(gobject_class, PROP_RANDOM_NUMBER,
-	    g_param_spec_uint64("random_number", "RandomNumber", "A random number", 0, G_MAXUINT64, DEFAULT_RANDOM_NUMBER, G_PARAM_READWRITE));  // static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)
+	g_object_class_install_property(
+	    gobject_class, PROP_RANDOM_NUMBER, g_param_spec_uint64("random-number", "Random Number", "A random number", 0, G_MAXUINT64, DEFAULT_RANDOM_NUMBER, static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
 	rtp_hdr_class->get_supported_flags = gst_rtp_header_extension_random_number_get_supported_flags;
 	rtp_hdr_class->get_max_size = gst_rtp_header_extension_random_number_get_max_size;
@@ -114,6 +114,4 @@ static void gst_rtp_header_extension_random_number_class_init(GstRTPHeaderExtens
 
 constexpr auto test = GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI;
 
-static void gst_rtp_header_extension_random_number_init(GstRTPHeaderExtensionRandomNumber *self) {
-	self->random_number = 37ULL;
-}
+static void gst_rtp_header_extension_random_number_init(GstRTPHeaderExtensionRandomNumber *self) { self->random_number = 37ULL; }

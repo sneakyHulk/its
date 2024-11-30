@@ -3,13 +3,6 @@
 #include <gst/gst.h>
 #include <gst/rtp/gstrtphdrext.h>
 
-// G_BEGIN_DECLS
-
-// struct _GstRTPHeaderExtensionRandomNumber {
-//	GstRTPHeaderExtension parent;
-//	guint64 random_number;
-// };
-
 typedef struct _GstRTPHeaderExtensionRandomNumber {
 	GstRTPHeaderExtension parent;
 	guint64 random_number;
@@ -29,9 +22,3 @@ typedef struct _GstRTPHeaderExtensionRandomNumberClass {
 
 GType gst_rtp_header_extension_random_number_get_type(void);
 GST_ELEMENT_REGISTER_DECLARE(rtp_header_extension_random_number)
-
-//#define GST_TYPE_RTP_HEADER_EXTENSION_RANDOM_NUMBER (gst_rtp_header_extension_random_number_get_type())
-// G_DECLARE_FINAL_TYPE(GstRTPHeaderExtensionRandomNumber, gst_rtp_header_extension_random_number, GST, RTP_HEADER_EXTENSION_RANDOM_NUMBER, GstRTPHeaderExtension);
-//  GST_ELEMENT_REGISTER_DECLARE(rtphdrextrandomnumber);
-
-// G_END_DECLS
