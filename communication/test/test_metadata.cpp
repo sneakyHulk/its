@@ -7,205 +7,205 @@
 #include <string>
 #include <thread>
 
-GMainLoop *loopVideoCapture;
-GMainLoop *loopVideoStream;
-
-GstElement *Stream_pipeline, *Stream_appsrc, *Stream_conv, *Stream_videosink, *Stream_videoenc, *Stream_mux, *Stream_payloader, *Stream_filter;
-GstCaps *convertCaps;
-
-static cv::VideoCapture images("/home/lukas/Downloads/4865386-uhd_4096_2160_25fps.mp4");
-
-#define AUTO_VIDEO_SINK 0
-#define OLD_ALGO 0
-#define APPSRC_WIDTH static_cast<int>(images.get(cv::CAP_PROP_FRAME_WIDTH))
-#define APPSRC_HEIGHT static_cast<int>(images.get(cv::CAP_PROP_FRAME_HEIGHT))
-#define APPSRC_FRAMERATE 30
-std::mutex mtx;
-
-struct FrameData {
-	char *data;
-	unsigned int size;
-};
-
-FrameData frameData;
-
-void fill_appsrc(const unsigned char *DataPtr, gsize size) { memcpy(frameData.data, DataPtr, size); }
-
-static void cb_need_data(GstElement *appsrc, guint unused_size, gpointer user_data) {
-	static gboolean white = FALSE;
-	static GstClockTime timestamp = 0;
-
-	guint size, depth, height, width, step, channels;
-	GstFlowReturn ret;
-	cv::Mat frame;
-	images >> frame;
-	GstMapInfo map;
-	mtx.lock();
-
-	FrameData *frameData = (FrameData *)user_data;
-	GstBuffer *buffer = NULL;  // gst_buffer_new_allocate (NULL, size, NULL);
-	//
-	//      g_print("frame_size: %d \n",size);
-	//      g_print("timestamp: %ld \n",timestamp);
-
-	cv::putText(frame, std::to_string(timestamp), cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 5.0, cv::Scalar_<int>(0, 0, 0), 5);
-
-	buffer = gst_buffer_new_allocate(NULL, frame.total() * frame.elemSize(), NULL);
-	gst_buffer_map(buffer, &map, GST_MAP_WRITE);
-	memcpy((guchar *)map.data, frame.data, frame.total() * frame.elemSize());
-
-	GST_BUFFER_PTS(buffer) = timestamp;
-	GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, APPSRC_FRAMERATE);
-
-	timestamp += GST_BUFFER_DURATION(buffer);
-	// gst_app_src_push_buffer ((GstAppSrc *)appsrc, buffer);
-
-	g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
-	mtx.unlock();
-}
-
-void VideoStream(void) {
-	gst_init(nullptr, nullptr);
-	loopVideoStream = g_main_loop_new(NULL, FALSE);
-
-	Stream_pipeline = gst_pipeline_new("pipeline");
-	Stream_appsrc = gst_element_factory_make("appsrc", "source");
-	Stream_conv = gst_element_factory_make("videoconvert", "conv");
-
-#if (AUTO_VIDEO_SINK == 1)
-	Stream_videosink = gst_element_factory_make("autovideosink", "videosink");
-
-	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_videosink, NULL);
-	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_videosink, NULL);
-
-#else
-
-	Stream_videosink = gst_element_factory_make("udpsink", "videosink");
-	g_object_set(G_OBJECT(Stream_videosink), "host", "127.0.0.1", "port", 5000, NULL);
-	Stream_videoenc = gst_element_factory_make("x265enc", "videoenc");
-	g_object_set(G_OBJECT(Stream_videoenc), "option-string", "repeat-headers=yes", NULL);
-	g_object_set(G_OBJECT(Stream_videoenc), "bitrate", 200, NULL);
-
-#if (OLD_ALGO == 1)
-	Stream_payloader = gst_element_factory_make("rtpmp4vpay", "payloader");
-	g_object_set(G_OBJECT(Stream_payloader), "config-interval", 60, NULL);
-
-	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
-	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
-
-#else
-
-	Stream_filter = gst_element_factory_make("capsfilter", "converter-caps");
-	Stream_payloader = gst_element_factory_make("rtph265pay", "rtp-payloader");
-
-	convertCaps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "I420", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "framerate", GST_TYPE_FRACTION, APPSRC_FRAMERATE, 1, NULL);
-
-	g_object_set(G_OBJECT(Stream_filter), "caps", convertCaps, NULL);
-
-	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_filter, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
-	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_filter, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
-#endif
-
-#endif
-
-	g_object_set(G_OBJECT(Stream_appsrc), "caps",
-	    gst_caps_new_simple(
-	        "video/x-raw", "format", G_TYPE_STRING, "RGB", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "pixel-aspect-ratio", GST_TYPE_FRACTION, 1, 1, "framerate", GST_TYPE_FRACTION, APPSRC_FRAMERATE, 1, NULL),
-	    NULL);
-
-	g_object_set(G_OBJECT(Stream_appsrc), "stream-type", 0, "is-live", TRUE, "block", FALSE, "format", GST_FORMAT_TIME, NULL);
-
-	g_signal_connect(Stream_appsrc, "need-data", G_CALLBACK(cb_need_data), &frameData);
-
-	gst_element_set_state(Stream_pipeline, GST_STATE_PLAYING);
-	g_main_loop_run(loopVideoStream);
-
-	gst_element_set_state(Stream_pipeline, GST_STATE_NULL);
-	gst_object_unref(Stream_pipeline);
-}
-
-GstFlowReturn NewFrame(GstElement *sink, void *data) {
-	GstSample *sample = nullptr;
-	GstBuffer *buffer = nullptr;
-	GstMapInfo map;
-	g_signal_emit_by_name(sink, "pull-sample", &sample);
-
-	if (!sample) {
-		g_printerr("Error: Could not obtain sample.\n");
-		return GST_FLOW_ERROR;
-	}
-	//  printf("NewFrame\n");
-
-	buffer = gst_sample_get_buffer(sample);
-	gst_buffer_map(buffer, &map, GST_MAP_READ);
-
-	mtx.lock();
-	fill_appsrc(map.data, map.size);
-	mtx.unlock();
-
-	gst_buffer_unmap(buffer, &map);
-	gst_sample_unref(sample);
-
-	return GST_FLOW_OK;
-}
-
-void VideoCapture(void) {
-	GstElement *pipeline, *source, *videorate, *testsrccaps, *jpegencode, *mjpegcaps, *decodemjpef, *convertmjpeg, *rgbcaps, *convertrgb, *sink;
-
-	gst_init(nullptr, nullptr);
-
-	pipeline = gst_pipeline_new("new-pipeline");
-	source = gst_element_factory_make("videotestsrc", "source");
-	videorate = gst_element_factory_make("videorate", "video-rate");
-	testsrccaps = gst_element_factory_make("capsfilter", "test-src-caps");
-	jpegencode = gst_element_factory_make("jpegenc", "jpeg-encoder");
-	mjpegcaps = gst_element_factory_make("capsfilter", "mjpegcaps");
-	decodemjpef = gst_element_factory_make("jpegdec", "decodemjpef");
-	convertmjpeg = gst_element_factory_make("videoconvert", "convertmjpeg");
-	rgbcaps = gst_element_factory_make("capsfilter", "rgbcaps");
-	convertrgb = gst_element_factory_make("videoconvert", "convertrgb");
-	sink = gst_element_factory_make("appsink", "sink");
-
-	//  g_object_set(source, "device", "/dev/video0", NULL);
-
-	g_object_set(G_OBJECT(testsrccaps), "caps", gst_caps_new_simple("video/x-raw", "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
-
-	g_object_set(G_OBJECT(mjpegcaps), "caps", gst_caps_new_simple("image/jpeg", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
-
-	g_object_set(G_OBJECT(rgbcaps), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "RGB", "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
-
-	g_object_set(sink, "emit-signals", TRUE, "sync", TRUE, NULL);
-	g_signal_connect(sink, "new-sample", G_CALLBACK(NewFrame), nullptr);
-
-	gst_bin_add_many(GST_BIN(pipeline), source, testsrccaps, videorate, mjpegcaps, jpegencode, decodemjpef, convertmjpeg, rgbcaps, convertrgb, sink, NULL);
-	if (!gst_element_link_many(source, testsrccaps, videorate, jpegencode, mjpegcaps, decodemjpef, convertmjpeg, rgbcaps, convertrgb, sink, NULL)) {
-		g_printerr("Error: Elements could not be linked.\n");
-	}
-
-	gst_element_set_state(pipeline, GST_STATE_PLAYING);
-	loopVideoCapture = g_main_loop_new(NULL, FALSE);
-	g_main_loop_run(loopVideoCapture);
-
-	gst_element_set_state(pipeline, GST_STATE_NULL);
-	gst_object_unref(pipeline);
-}
-
-int main(void) {
-	frameData.size = APPSRC_WIDTH * APPSRC_HEIGHT * 4;
-	frameData.data = new char[frameData.size];
-
-	std::thread ThreadStreame(VideoStream);
-	std::thread ThreadCapture(VideoCapture);
-
-	while (1)
-		;
-	g_main_loop_quit(loopVideoCapture);
-	g_main_loop_quit(loopVideoStream);
-	ThreadStreame.join();
-	ThreadCapture.join();
-
-	return true;
-}
+// GMainLoop *loopVideoCapture;
+// GMainLoop *loopVideoStream;
+//
+// GstElement *Stream_pipeline, *Stream_appsrc, *Stream_conv, *Stream_videosink, *Stream_videoenc, *Stream_mux, *Stream_payloader, *Stream_filter;
+// GstCaps *convertCaps;
+//
+// static cv::VideoCapture images("/home/lukas/Downloads/4865386-uhd_4096_2160_25fps.mp4");
+//
+// #define AUTO_VIDEO_SINK 0
+// #define OLD_ALGO 0
+// #define APPSRC_WIDTH static_cast<int>(images.get(cv::CAP_PROP_FRAME_WIDTH))
+// #define APPSRC_HEIGHT static_cast<int>(images.get(cv::CAP_PROP_FRAME_HEIGHT))
+// #define APPSRC_FRAMERATE 30
+// std::mutex mtx;
+//
+// struct FrameData {
+// 	char *data;
+// 	unsigned int size;
+// };
+//
+// FrameData frameData;
+//
+// void fill_appsrc(const unsigned char *DataPtr, gsize size) { memcpy(frameData.data, DataPtr, size); }
+//
+// static void cb_need_data(GstElement *appsrc, guint unused_size, gpointer user_data) {
+// 	static gboolean white = FALSE;
+// 	static GstClockTime timestamp = 0;
+//
+// 	guint size, depth, height, width, step, channels;
+// 	GstFlowReturn ret;
+// 	cv::Mat frame;
+// 	images >> frame;
+// 	GstMapInfo map;
+// 	mtx.lock();
+//
+// 	FrameData *frameData = (FrameData *)user_data;
+// 	GstBuffer *buffer = NULL;  // gst_buffer_new_allocate (NULL, size, NULL);
+// 	//
+// 	//      g_print("frame_size: %d \n",size);
+// 	//      g_print("timestamp: %ld \n",timestamp);
+//
+// 	cv::putText(frame, std::to_string(timestamp), cv::Point2d(500, 500), cv::FONT_HERSHEY_DUPLEX, 5.0, cv::Scalar_<int>(0, 0, 0), 5);
+//
+// 	buffer = gst_buffer_new_allocate(NULL, frame.total() * frame.elemSize(), NULL);
+// 	gst_buffer_map(buffer, &map, GST_MAP_WRITE);
+// 	memcpy((guchar *)map.data, frame.data, frame.total() * frame.elemSize());
+//
+// 	GST_BUFFER_PTS(buffer) = timestamp;
+// 	GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, APPSRC_FRAMERATE);
+//
+// 	timestamp += GST_BUFFER_DURATION(buffer);
+// 	// gst_app_src_push_buffer ((GstAppSrc *)appsrc, buffer);
+//
+// 	g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
+// 	mtx.unlock();
+// }
+//
+// void VideoStream(void) {
+// 	gst_init(nullptr, nullptr);
+// 	loopVideoStream = g_main_loop_new(NULL, FALSE);
+//
+// 	Stream_pipeline = gst_pipeline_new("pipeline");
+// 	Stream_appsrc = gst_element_factory_make("appsrc", "source");
+// 	Stream_conv = gst_element_factory_make("videoconvert", "conv");
+//
+// #if (AUTO_VIDEO_SINK == 1)
+// 	Stream_videosink = gst_element_factory_make("autovideosink", "videosink");
+//
+// 	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_videosink, NULL);
+// 	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_videosink, NULL);
+//
+// #else
+//
+// 	Stream_videosink = gst_element_factory_make("udpsink", "videosink");
+// 	g_object_set(G_OBJECT(Stream_videosink), "host", "127.0.0.1", "port", 5000, NULL);
+// 	Stream_videoenc = gst_element_factory_make("x265enc", "videoenc");
+// 	g_object_set(G_OBJECT(Stream_videoenc), "option-string", "repeat-headers=yes", NULL);
+// 	g_object_set(G_OBJECT(Stream_videoenc), "bitrate", 200, NULL);
+//
+// #if (OLD_ALGO == 1)
+// 	Stream_payloader = gst_element_factory_make("rtpmp4vpay", "payloader");
+// 	g_object_set(G_OBJECT(Stream_payloader), "config-interval", 60, NULL);
+//
+// 	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
+// 	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
+//
+// #else
+//
+// 	Stream_filter = gst_element_factory_make("capsfilter", "converter-caps");
+// 	Stream_payloader = gst_element_factory_make("rtph265pay", "rtp-payloader");
+//
+// 	convertCaps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "I420", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "framerate", GST_TYPE_FRACTION, APPSRC_FRAMERATE, 1, NULL);
+//
+// 	g_object_set(G_OBJECT(Stream_filter), "caps", convertCaps, NULL);
+//
+// 	gst_bin_add_many(GST_BIN(Stream_pipeline), Stream_appsrc, Stream_conv, Stream_filter, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
+// 	gst_element_link_many(Stream_appsrc, Stream_conv, Stream_filter, Stream_videoenc, Stream_payloader, Stream_videosink, NULL);
+// #endif
+//
+// #endif
+//
+// 	g_object_set(G_OBJECT(Stream_appsrc), "caps",
+// 	    gst_caps_new_simple(
+// 	        "video/x-raw", "format", G_TYPE_STRING, "RGB", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "pixel-aspect-ratio", GST_TYPE_FRACTION, 1, 1, "framerate", GST_TYPE_FRACTION, APPSRC_FRAMERATE, 1, NULL),
+// 	    NULL);
+//
+// 	g_object_set(G_OBJECT(Stream_appsrc), "stream-type", 0, "is-live", TRUE, "block", FALSE, "format", GST_FORMAT_TIME, NULL);
+//
+// 	g_signal_connect(Stream_appsrc, "need-data", G_CALLBACK(cb_need_data), &frameData);
+//
+// 	gst_element_set_state(Stream_pipeline, GST_STATE_PLAYING);
+// 	g_main_loop_run(loopVideoStream);
+//
+// 	gst_element_set_state(Stream_pipeline, GST_STATE_NULL);
+// 	gst_object_unref(Stream_pipeline);
+// }
+//
+// GstFlowReturn NewFrame(GstElement *sink, void *data) {
+// 	GstSample *sample = nullptr;
+// 	GstBuffer *buffer = nullptr;
+// 	GstMapInfo map;
+// 	g_signal_emit_by_name(sink, "pull-sample", &sample);
+//
+// 	if (!sample) {
+// 		g_printerr("Error: Could not obtain sample.\n");
+// 		return GST_FLOW_ERROR;
+// 	}
+// 	//  printf("NewFrame\n");
+//
+// 	buffer = gst_sample_get_buffer(sample);
+// 	gst_buffer_map(buffer, &map, GST_MAP_READ);
+//
+// 	mtx.lock();
+// 	fill_appsrc(map.data, map.size);
+// 	mtx.unlock();
+//
+// 	gst_buffer_unmap(buffer, &map);
+// 	gst_sample_unref(sample);
+//
+// 	return GST_FLOW_OK;
+// }
+//
+// void VideoCapture(void) {
+// 	GstElement *pipeline, *source, *videorate, *testsrccaps, *jpegencode, *mjpegcaps, *decodemjpef, *convertmjpeg, *rgbcaps, *convertrgb, *sink;
+//
+// 	gst_init(nullptr, nullptr);
+//
+// 	pipeline = gst_pipeline_new("new-pipeline");
+// 	source = gst_element_factory_make("videotestsrc", "source");
+// 	videorate = gst_element_factory_make("videorate", "video-rate");
+// 	testsrccaps = gst_element_factory_make("capsfilter", "test-src-caps");
+// 	jpegencode = gst_element_factory_make("jpegenc", "jpeg-encoder");
+// 	mjpegcaps = gst_element_factory_make("capsfilter", "mjpegcaps");
+// 	decodemjpef = gst_element_factory_make("jpegdec", "decodemjpef");
+// 	convertmjpeg = gst_element_factory_make("videoconvert", "convertmjpeg");
+// 	rgbcaps = gst_element_factory_make("capsfilter", "rgbcaps");
+// 	convertrgb = gst_element_factory_make("videoconvert", "convertrgb");
+// 	sink = gst_element_factory_make("appsink", "sink");
+//
+// 	//  g_object_set(source, "device", "/dev/video0", NULL);
+//
+// 	g_object_set(G_OBJECT(testsrccaps), "caps", gst_caps_new_simple("video/x-raw", "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
+//
+// 	g_object_set(G_OBJECT(mjpegcaps), "caps", gst_caps_new_simple("image/jpeg", "width", G_TYPE_INT, APPSRC_WIDTH, "height", G_TYPE_INT, APPSRC_HEIGHT, "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
+//
+// 	g_object_set(G_OBJECT(rgbcaps), "caps", gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "RGB", "framerate", GST_TYPE_FRACTION, 30, 1, NULL), NULL);
+//
+// 	g_object_set(sink, "emit-signals", TRUE, "sync", TRUE, NULL);
+// 	g_signal_connect(sink, "new-sample", G_CALLBACK(NewFrame), nullptr);
+//
+// 	gst_bin_add_many(GST_BIN(pipeline), source, testsrccaps, videorate, mjpegcaps, jpegencode, decodemjpef, convertmjpeg, rgbcaps, convertrgb, sink, NULL);
+// 	if (!gst_element_link_many(source, testsrccaps, videorate, jpegencode, mjpegcaps, decodemjpef, convertmjpeg, rgbcaps, convertrgb, sink, NULL)) {
+// 		g_printerr("Error: Elements could not be linked.\n");
+// 	}
+//
+// 	gst_element_set_state(pipeline, GST_STATE_PLAYING);
+// 	loopVideoCapture = g_main_loop_new(NULL, FALSE);
+// 	g_main_loop_run(loopVideoCapture);
+//
+// 	gst_element_set_state(pipeline, GST_STATE_NULL);
+// 	gst_object_unref(pipeline);
+// }
+//
+// int main(void) {
+// 	frameData.size = APPSRC_WIDTH * APPSRC_HEIGHT * 4;
+// 	frameData.data = new char[frameData.size];
+//
+// 	std::thread ThreadStreame(VideoStream);
+// 	std::thread ThreadCapture(VideoCapture);
+//
+// 	while (1)
+// 		;
+// 	g_main_loop_quit(loopVideoCapture);
+// 	g_main_loop_quit(loopVideoStream);
+// 	ThreadStreame.join();
+// 	ThreadCapture.join();
+//
+// 	return true;
+// }
 
 /*#include <gst/app/gstappsrc.h>
 #include <gst/gst.h>
@@ -644,147 +644,158 @@ int main(int argc, char *argv[]) {
 // 	return 0;
 // }
 
-/*#include <gst/gst.h>
+#include <gst/gst.h>
+
 #include <iostream>
 
 // Define the FrameMeta structure
-typedef struct _FrameMeta {
-    GstMeta meta;
-    guint64 frame_number;
-    guint64 timestamp;
-} FrameMeta;
+typedef struct _GstRandomNumberMeta GstRandomNumberMeta;
 
-const GstMetaInfo *frame_meta_get_info(void);
+struct _GstRandomNumberMeta {
+	GstMeta parent;
 
-#define FRAME_META_API_TYPE (frame_meta_api_get_type())
-#define FRAME_META_INFO (frame_meta_get_info())
+	/*< public >*/
+	GstCaps *reference;
+	guint64 random_number;
+};
+
+GType gst_random_number_meta_api_get_type(void);
+#define GST_RANDOM_NUMBER_META_API_TYPE (gst_random_number_meta_api_get_type())
+
+const GstMetaInfo *gst_random_number_meta_get_info(void);
+#define GST_RANDOM_NUMBER_META_INFO (gst_random_number_meta_get_info())
+
+
 
 GType frame_meta_api_get_type(void) {
-    static GType type = 0;
-    if (g_once_init_enter(&type)) {
-        static const gchar *tags[] = { "frame-meta", NULL };
-        GType _type = gst_meta_api_type_register("FrameMetaAPI", tags);
-        g_once_init_leave(&type, _type);
-    }
-    return type;
+	static GType type = 0;
+	if (g_once_init_enter(&type)) {
+		static const gchar *tags[] = {"frame-meta", NULL};
+		GType _type = gst_meta_api_type_register("FrameMetaAPI", tags);
+		g_once_init_leave(&type, _type);
+	}
+	return type;
 }
 
 static gboolean frame_meta_init(GstMeta *meta, gpointer params, GstBuffer *buffer) {
-    FrameMeta *frame_meta = (FrameMeta *)meta;
-    frame_meta->frame_number = 0; // Initialize frame number
-    frame_meta->timestamp = 0;   // Initialize timestamp
-    return TRUE;
+	FrameMeta *frame_meta = (FrameMeta *)meta;
+	frame_meta->frame_number = 0;  // Initialize frame number
+	frame_meta->timestamp = 0;     // Initialize timestamp
+	return TRUE;
 }
 
 const GstMetaInfo *frame_meta_get_info(void) {
-    static const GstMetaInfo *info = NULL;
-    if (g_once_init_enter(&info)) {
-        const GstMetaInfo *_info = gst_meta_register(
-            FRAME_META_API_TYPE,
-            "FrameMeta",
-            sizeof(FrameMeta),
-            frame_meta_init,  // Init function
-            NULL,             // Free function
-            NULL              // Transform function
-        );
-        g_once_init_leave(&info, _info);
-    }
-    return info;
+	static const GstMetaInfo *info = NULL;
+	if (g_once_init_enter(&info)) {
+		const GstMetaInfo *_info = gst_meta_register(FRAME_META_API_TYPE, "FrameMeta", sizeof(FrameMeta),
+		    frame_meta_init,  // Init function
+		    NULL,             // Free function
+		    NULL              // Transform function
+		);
+		g_once_init_leave(&info, _info);
+	}
+	return info;
 }
 
 void add_frame_metadata(GstBuffer *buffer, guint64 frame_number, guint64 timestamp) {
-    FrameMeta *meta = (FrameMeta *)gst_buffer_add_meta(buffer, FRAME_META_INFO, NULL);
-    if (meta) {
-        meta->frame_number = frame_number;
-        meta->timestamp = timestamp;
-    }
+	FrameMeta *meta = (FrameMeta *)gst_buffer_add_meta(buffer, FRAME_META_INFO, NULL);
+	if (meta) {
+		meta->frame_number = frame_number;
+		meta->timestamp = timestamp;
+	}
 }
 
 // Probe callback to add metadata to each frame
 static GstPadProbeReturn add_metadata_to_frame(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    static guint64 frame_count = 0;
+	static guint64 frame_count = 0;
 
-    if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER) {
-        GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
-        if (!buffer) {
-            return GST_PAD_PROBE_OK;
-        }
+	if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER) {
+		GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
+		if (!buffer) {
+			return GST_PAD_PROBE_OK;
+		}
 
-        // Add metadata
-        guint64 timestamp = GST_BUFFER_PTS(buffer); // Use PTS as the timestamp
-        add_frame_metadata(buffer, frame_count++, timestamp);
-    }
+		// Add metadata
+		guint64 timestamp = GST_BUFFER_PTS(buffer);  // Use PTS as the timestamp
+		add_frame_metadata(buffer, frame_count++, timestamp);
+	}
 
-    return GST_PAD_PROBE_OK;
+	return GST_PAD_PROBE_OK;
 }
 
 // Probe callback to extract metadata
 static GstPadProbeReturn extract_metadata_from_frame(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER) {
-        GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
-        if (!buffer) {
-            return GST_PAD_PROBE_OK;
-        }
+	if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER) {
+		GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
+		if (!buffer) {
+			return GST_PAD_PROBE_OK;
+		}
 
-        // Extract metadata
-        FrameMeta *meta = (FrameMeta *)gst_buffer_get_meta(buffer, FRAME_META_API_TYPE);
-        if (meta) {
-            std::cout << "Frame Number: " << meta->frame_number
-                      << ", Timestamp: " << meta->timestamp << std::endl;
-        }
-    }
+		// Extract metadata
+		FrameMeta *meta = (FrameMeta *)gst_buffer_get_meta(buffer, FRAME_META_API_TYPE);
+		if (meta) {
+			std::cout << "Frame Number: " << meta->frame_number << ", Timestamp: " << meta->timestamp << std::endl;
+		}
+	}
 
-    return GST_PAD_PROBE_OK;
+	return GST_PAD_PROBE_OK;
 }
 
 int main(int argc, char *argv[]) {
-    gst_init(&argc, &argv);
+	gst_init(&argc, &argv);
 
-    // Create pipeline elements
-    GstElement *pipeline = gst_pipeline_new("test-pipeline");
-    GstElement *source = gst_element_factory_make("videotestsrc", "source");
-    GstElement *videoconvert = gst_element_factory_make("videoconvert", "videoconvert");
-    GstElement *sink = gst_element_factory_make("fakesink", "sink");
+	// Create pipeline elements
+	GstElement *pipeline = gst_pipeline_new("test-pipeline");
+	GstElement *source = gst_element_factory_make("videotestsrc", "source");
+	GstElement *converter = gst_element_factory_make("videoconvert", "videoconvert");
+	GstElement *filter = gst_element_factory_make("capsfilter", "filter");
+	GstElement *encoder = gst_element_factory_make("x265enc", "encoder");
+	GstElement *decoder = gst_element_factory_make("avdec_h265", "decoder");
+	GstElement *sink = gst_element_factory_make("autovideosink", "sink");
 
-    if (!pipeline || !source || !videoconvert || !sink) {
-        g_printerr("Failed to create elements.\n");
-        return -1;
-    }
+	//GstElement *encoder = gst_element_factory_make("x264enc", "encoder");
+	GstElement *payloader = gst_element_factory_make("rtph264pay", "payloader");
 
-    // Set the fakesink to silent mode to avoid verbose output
-    g_object_set(sink, "sync", TRUE, "silent", TRUE, NULL);
+	if (!pipeline || !source || !converter || !filter || !encoder || !decoder || !payloader || !sink) {
+		g_printerr("Failed to create elements.\n");
+		return -1;
+	}
 
-    // Build the pipeline
-    gst_bin_add_many(GST_BIN(pipeline), source, videoconvert, sink, NULL);
-    if (!gst_element_link_many(source, videoconvert, sink, NULL)) {
-        g_printerr("Failed to link elements.\n");
-        return -1;
-    }
+	GstCaps *caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "I420", "width", G_TYPE_INT, 640, "height", G_TYPE_INT, 480, "framerate", GST_TYPE_FRACTION, 30, 1, NULL);
+	g_object_set(G_OBJECT(filter), "caps", caps, NULL);
+	gst_caps_unref(caps);
 
-    // Add probe to the source pad to add metadata
-    GstPad *src_pad = gst_element_get_static_pad(source, "src");
-    gst_pad_add_probe(src_pad, GST_PAD_PROBE_TYPE_BUFFER, add_metadata_to_frame, NULL, NULL);
-    gst_object_unref(src_pad);
+	// Build the pipeline
+	gst_bin_add_many(GST_BIN(pipeline), source, converter, filter, sink, NULL);
+	if (!gst_element_link_many(source, converter, filter ,sink, NULL)) {
+		g_printerr("Failed to link elements.\n");
+		return -1;
+	}
 
-    // Add probe to the sink pad to extract metadata
-    GstPad *sink_pad = gst_element_get_static_pad(sink, "sink");
-    gst_pad_add_probe(sink_pad, GST_PAD_PROBE_TYPE_BUFFER, extract_metadata_from_frame, NULL, NULL);
-    gst_object_unref(sink_pad);
+	// Add probe to the source pad to add metadata
+	GstPad *src_pad = gst_element_get_static_pad(source, "src");
+	gst_pad_add_probe(src_pad, GST_PAD_PROBE_TYPE_BUFFER, add_metadata_to_frame, NULL, NULL);
+	gst_object_unref(src_pad);
 
-    // Start the pipeline
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
+	// Add probe to the sink pad to extract metadata
+	GstPad *sink_pad = gst_element_get_static_pad(sink, "sink");
+	gst_pad_add_probe(sink_pad, GST_PAD_PROBE_TYPE_BUFFER, extract_metadata_from_frame, NULL, NULL);
+	gst_object_unref(sink_pad);
 
-    // Run the main loop
-    GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    g_main_loop_run(loop);
+	// Start the pipeline
+	gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    // Clean up
-    gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_object_unref(pipeline);
-    g_main_loop_unref(loop);
+	// Run the main loop
+	GMainLoop *loop = g_main_loop_new(NULL, FALSE);
+	g_main_loop_run(loop);
 
-    return 0;
-}*/
+	// Clean up
+	gst_element_set_state(pipeline, GST_STATE_NULL);
+	gst_object_unref(pipeline);
+	g_main_loop_unref(loop);
+
+	return 0;
+}
 
 /*
 #include <gst/gst.h>

@@ -1,13 +1,165 @@
 #include <gst/app/gstappsrc.h>
 #include <gst/gst.h>
+#include <gst/rtp/gstrtpbuffer.h>
+#include <gst/rtp/gstrtphdrext.h>
+#include <gst/rtp/rtp.h>
 #include <gst/rtsp-server/rtsp-server.h>
 #include <gst/video/video.h>
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
+#include <random>
 #include <thread>
 
+#include "gst_rtp_header_extension_random_number.h"
+#include "random_number_meta.h"
+
 using namespace std::chrono_literals;
+
+// G_BEGIN_DECLS
+// #define GST_TYPE_RTP_HEADER_EXTENSION_RANDOM_NUMBER (gst_rtp_header_extension_random_number_get_type())
+// G_DECLARE_FINAL_TYPE(GstRTPHeaderExtensionRandomNumber, gst_rtp_header_extension_random_number, GST, RTP_HEADER_EXTENSION_RANDOM_NUMBER, GstRTPHeaderExtension);
+// GST_ELEMENT_REGISTER_DECLARE(rtphdrextrandomnumber);
+// G_END_DECLS
+//
+// #ifndef PACKAGE
+// #define PACKAGE "rtphdrextrandomnumber"
+// #endif
+//
+// #ifndef VERSION
+// #define VERSION "1.0.0.0"
+// #endif
+//
+// #ifndef GST_PACKAGE_NAME
+// #define GST_PACKAGE_NAME "GStreamer"
+// #endif
+//
+// #ifndef GST_PACKAGE_ORIGIN
+// #define GST_PACKAGE_ORIGIN "http://somewhere.net/"
+// #endif
+//
+// #define RANDOM_NUMBER_HDR_EXT_URI GST_RTP_HDREXT_BASE "urn:custom:rtp-header-extension:random-number:1.0"
+//
+// enum {
+//	PROP_0,
+//	PROP_RANDOM_NUMBER,
+// };
+//
+// struct _GstRTPHeaderExtensionRandomNumber {
+//	GstRTPHeaderExtension parent;
+//	guint64 random_number;
+// };
+//
+// G_DEFINE_TYPE_WITH_CODE(
+//     GstRTPHeaderExtensionRandomNumber, gst_rtp_header_extension_random_number, GST_TYPE_RTP_HEADER_EXTENSION, GST_DEBUG_CATEGORY_INIT(GST_CAT_DEFAULT, "rtphdrextrandomnumber", 0, "RTP Custom Random Number Header Extension"););
+// GST_ELEMENT_REGISTER_DEFINE(rtphdrextrandomnumber, "rtphdrextrandomnumber", GST_RANK_MARGINAL, GST_TYPE_RTP_HEADER_EXTENSION_RANDOM_NUMBER);
+//
+// static GstRTPHeaderExtensionFlags gst_rtp_header_extension_random_number_get_supported_flags(GstRTPHeaderExtension *ext) {
+//	return static_cast<GstRTPHeaderExtensionFlags>(GST_RTP_HEADER_EXTENSION_ONE_BYTE | GST_RTP_HEADER_EXTENSION_TWO_BYTE);  // because sizeof(guint64) < 16
+// }
+// static gsize gst_rtp_header_extension_random_number_get_max_size(GstRTPHeaderExtension *ext, const GstBuffer *buffer) {
+//	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
+//	return sizeof(self->random_number);
+// }
+//
+// static gssize gst_rtp_header_extension_random_number_write(GstRTPHeaderExtension *ext, const GstBuffer *input_meta, GstRTPHeaderExtensionFlags write_flags, GstBuffer *output, guint8 *data, gsize size) {
+//	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
+//
+//	g_return_val_if_fail(size >= gst_rtp_header_extension_random_number_get_max_size(ext, nullptr), -1);
+//	g_return_val_if_fail(write_flags & gst_rtp_header_extension_random_number_get_supported_flags(ext), -1);
+//
+//	GST_OBJECT_LOCK(ext);
+//
+//	GST_LOG_OBJECT(self, "writing random number \'%lu\'", self->random_number);
+//	GST_WRITE_UINT64_BE(data, self->random_number);
+//
+//	GST_OBJECT_UNLOCK(ext);
+//
+//	return sizeof(self->random_number);
+// }
+//
+// static gboolean gst_rtp_header_extension_random_number_read(GstRTPHeaderExtension *ext, GstRTPHeaderExtensionFlags read_flags, const guint8 *data, gsize size, GstBuffer *buffer) {
+//	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
+//	gboolean notify = FALSE;
+//
+//	if (!data || size == 0) return TRUE;
+//
+//	if (read_flags & GST_RTP_HEADER_EXTENSION_ONE_BYTE && (size < 1 || size > 16)) {
+//		GST_ERROR_OBJECT(ext, "one-byte header extensions must be between 1 and 16 bytes inculusive");
+//		return FALSE;
+//	}
+//
+//	GST_OBJECT_LOCK(self);
+//	self->random_number = GST_READ_UINT64_BE(data);
+//	GST_LOG_OBJECT(self, "reading random number \'%lu\'", self->random_number);
+//	GST_OBJECT_UNLOCK(self);
+//
+//	g_object_notify((GObject *)self, "random_number");
+//
+//	return TRUE;
+// }
+//
+// static void gst_rtp_header_extension_random_number_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec) {
+//	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(object);
+//
+//	switch (prop_id) {
+//		case PROP_RANDOM_NUMBER:
+//			GST_OBJECT_LOCK(self);
+//			g_value_set_uint64(value, self->random_number);
+//			GST_OBJECT_UNLOCK(self);
+//			break;
+//		default: G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec); break;
+//	}
+// }
+//
+// static void gst_rtp_header_extension_random_number_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec) {
+//	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(object);
+//
+//	switch (prop_id) {
+//		case PROP_RANDOM_NUMBER:
+//			GST_OBJECT_LOCK(self);
+//			self->random_number = g_value_get_uint64(value);
+//			GST_OBJECT_UNLOCK(self);
+//			break;
+//		default: G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec); break;
+//	}
+// }
+//
+// static void gst_rtp_header_extension_random_number_class_init(GstRTPHeaderExtensionRandomNumberClass *klass) {
+//	GstRTPHeaderExtensionClass *rtp_hdr_class;
+//	GstElementClass *gstelement_class;
+//	GObjectClass *gobject_class;
+//
+//	rtp_hdr_class = (GstRTPHeaderExtensionClass *)klass;
+//	gobject_class = (GObjectClass *)klass;
+//	gstelement_class = (GstElementClass *)klass;
+//
+//	gobject_class->set_property = gst_rtp_header_extension_random_number_set_property;
+//	gobject_class->get_property = gst_rtp_header_extension_random_number_get_property;
+//
+//	g_object_class_install_property(gobject_class, PROP_RANDOM_NUMBER, g_param_spec_uint64("random_number", "Random number", "A random number", 0, G_MAXUINT64, 37ULL, static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+//
+//	rtp_hdr_class->get_supported_flags = gst_rtp_header_extension_random_number_get_supported_flags;
+//	rtp_hdr_class->get_max_size = gst_rtp_header_extension_random_number_get_max_size;
+//	rtp_hdr_class->write = gst_rtp_header_extension_random_number_write;
+//	rtp_hdr_class->read = gst_rtp_header_extension_random_number_read;
+//
+//	gst_element_class_set_static_metadata(gstelement_class, "RTP Custom Header Extension Random Number", GST_RTP_HDREXT_ELEMENT_CLASS,
+//	    "Extends RTP packets to add or retrieve a 64-bit random number"
+//	    "random number",
+//	    "Lukas Heyn <lukas.heyn@gmail.com>");
+//	gst_rtp_header_extension_class_set_uri(rtp_hdr_class, GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
+// }
+//
+// static void gst_rtp_header_extension_random_number_init(GstRTPHeaderExtensionRandomNumber *self) {
+//	// self->random_number = 37ULL;
+// }
+//
+// static gboolean plugin_init(GstPlugin *plugin) { return GST_ELEMENT_REGISTER(rtphdrextrandomnumber, plugin); }
+//
+// GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR, rtphdrextrandomnumber, "Random number RTP Header Extension", plugin_init, VERSION, "LGPL", GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);
+
+static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("timestamp/x-recording-stream");
 
 constexpr bool get(std::size_t index, std::uint64_t value) { return (value >> index) & 1ULL; }
 void add_image_based_timestamp(cv::Mat const &image, std::uint64_t timestamp) {
@@ -22,8 +174,30 @@ void add_image_based_timestamp(cv::Mat const &image, std::uint64_t timestamp) {
 	}
 }
 
+static GstPadProbeReturn extract_metadata_from_frame(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+	if (GST_PAD_PROBE_INFO_TYPE(info) & GST_PAD_PROBE_TYPE_BUFFER) {
+		GstBuffer *buffer = GST_PAD_PROBE_INFO_BUFFER(info);
+		if (!buffer) {
+			return GST_PAD_PROBE_OK;
+		}
+
+		GstRandomNumberMeta *meta;
+		meta = gst_buffer_get_random_number_meta(buffer, gst_static_caps_get(&recording_timestamp_caps));
+		if (meta) {
+			std::cout << "RANDOM Number: " << meta->random_number << std::endl;
+		}
+	}
+
+	return GST_PAD_PROBE_OK;
+}
+
 int main(int argc, char *argv[]) {
 	gst_init(&argc, &argv);
+
+	gst_rtp_header_extension_random_number_register_static();
+
+	// GST_PLUGIN_STATIC_REGISTER(rtphdrextrandomnumber);
+	// gstrtphdrextrandomnumber_register_static();
 
 	cv::VideoCapture images("/home/lukas/Downloads/4865386-uhd_4096_2160_25fps.mp4");
 
@@ -33,17 +207,17 @@ int main(int argc, char *argv[]) {
 	GstElement *filter = gst_element_factory_make("capsfilter", "filter");
 	GstElement *encoder = gst_element_factory_make("x264enc", "encoder");
 	GstElement *payloader = gst_element_factory_make("rtph264pay", "payloader");
-	// GstElement *sink = gst_element_factory_make("udpsink", "sink");
-	// GstElement *sink = gst_element_factory_make("rtspserver", "sink");
 
-	if (!pipeline || !source || !videoconvert || !filter || !encoder || !payloader) {
+	GstElement *sink = gst_element_factory_make("udpsink", "sink");
+
+	if (!pipeline || !source || !videoconvert || !filter || !encoder || !payloader || !sink) {
 		std::cerr << "Failed to create GStreamer elements" << std::endl;
 		return -1;
 	}
 
 	GstCaps *caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, static_cast<int>(images.get(cv::CAP_PROP_FRAME_WIDTH)), "height", G_TYPE_INT,
 	    static_cast<int>(images.get(cv::CAP_PROP_FRAME_HEIGHT)), "framerate", GST_TYPE_FRACTION, 30, 1, NULL);
-	g_object_set(G_OBJECT(source), "caps", caps, "format", GST_FORMAT_TIME, "leaky-type", GST_APP_LEAKY_TYPE_DOWNSTREAM, "stream-type", GST_APP_STREAM_TYPE_STREAM, "is-live", TRUE, NULL);
+	g_object_set(G_OBJECT(source), "caps", caps, "format", GST_FORMAT_BUFFERS, "leaky-type", GST_APP_LEAKY_TYPE_DOWNSTREAM, "stream-type", GST_APP_STREAM_TYPE_STREAM, NULL);
 	gst_caps_unref(caps);
 
 	GstCaps *filter_caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "I420", "width", G_TYPE_INT, static_cast<int>(images.get(cv::CAP_PROP_FRAME_WIDTH)), "height", G_TYPE_INT,
@@ -96,11 +270,21 @@ int main(int argc, char *argv[]) {
 
 	g_object_set(G_OBJECT(payloader), "pt", 96, NULL);
 
-	// g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5000, "sync", FALSE, NULL);
+	GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number", "random_number"));
 
-	gst_bin_add_many(GST_BIN(pipeline), source, videoconvert, filter, encoder, payloader, NULL);
+	// auto ext = gst_rtp_header_extension_create_from_uri(GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
+	gst_rtp_header_extension_set_id(random_number, 1);
+	g_signal_emit_by_name(payloader, "add-extension", random_number);
 
-	if (!gst_element_link_many(source, videoconvert, filter, encoder, payloader, NULL)) {
+	g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5005, "sync", FALSE, NULL);
+
+	GstPad *sink_pad = gst_element_get_static_pad(payloader, "src");
+	gst_pad_add_probe(sink_pad, GST_PAD_PROBE_TYPE_BUFFER, extract_metadata_from_frame, NULL, NULL);
+	gst_object_unref(sink_pad);
+
+	gst_bin_add_many(GST_BIN(pipeline), source, videoconvert, filter, encoder, payloader, sink, NULL);
+
+	if (!gst_element_link_many(source, videoconvert, filter, encoder, payloader, sink, NULL)) {
 		std::cerr << "Failed to link elements" << std::endl;
 		gst_object_unref(pipeline);
 		return -1;
@@ -115,7 +299,8 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	while (true) {
+	guint64 timestamp = 0;
+	for (guint64 frame_count = 0, timestamp = 0;;) {
 		images = cv::VideoCapture("/home/lukas/Downloads/4865386-uhd_4096_2160_25fps.mp4");
 		for (int i = 0; i < static_cast<int>(images.get(cv::CAP_PROP_FRAME_COUNT)); std::cout << "Frame: " << ++i << std::endl) {
 			cv::Mat frame;
@@ -127,15 +312,52 @@ int main(int argc, char *argv[]) {
 
 			std::cout << " read" << std::flush;
 
+			// std::vector<uint8_t> sei;
+			//// NAL unit start code and type for SEI
+			// sei.push_back(0x00);
+			// sei.push_back(0x00);
+			// sei.push_back(0x00);
+			// sei.push_back(0x01);  // NAL unit start code
+			// sei.push_back(0x06);  // NAL unit type for SEI
+			//
+			//// Payload type (user-defined) and size
+			// sei.push_back(5);  // Payload type (example: 5 for user data unregistered)
+			// sei.push_back(8);  // Payload size (frame count and timestamp, 8 bytes total)
+			//
+			//// Add frame count (4 bytes)
+			// sei.push_back((frame_count >> 24) & 0xFF);
+			// sei.push_back((frame_count >> 16) & 0xFF);
+			// sei.push_back((frame_count >> 8) & 0xFF);
+			// sei.push_back(frame_count & 0xFF);
+			//
+			//// Add timestamp (4 bytes, assuming lower 32 bits for simplicity)
+			// sei.push_back((timestamp >> 24) & 0xFF);
+			// sei.push_back((timestamp >> 16) & 0xFF);
+			// sei.push_back((timestamp >> 8) & 0xFF);
+			// sei.push_back(timestamp & 0xFF);
+			//
+			//++timestamp;
+			//++frame_count;
+			//
+			// RBSP (trailing bits) and padding
+			// sei.push_back(0x80);  // RBSP stop bit
+
 			GstBuffer *buffer = gst_buffer_new_allocate(NULL, frame.total() * frame.elemSize(), NULL);
-			// GST_BUFFER_PTS(buffer) = GST_CLOCK_TIME_NONE;
-			// GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 10);
+			// GstBuffer *buffer = gst_buffer_new_allocate(NULL, frame.total() * frame.elemSize() + sei.size(), NULL);
+
+			// buffer->pts = 1000;
+
+			gst_buffer_add_random_number_meta(buffer, gst_static_caps_get(&recording_timestamp_caps), timestamp++);
+
+			//  GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, 10);
 
 			std::cout << " pts" << std::flush;
 
 			GstMapInfo map;
 			if (gst_buffer_map(buffer, &map, GST_MAP_WRITE)) {
-				memcpy(map.data, frame.data, frame.total() * frame.elemSize());
+				std::memcpy(map.data, frame.data, frame.total() * frame.elemSize());
+				// std::memcpy(map.data + frame.total() * frame.elemSize(), sei.data(), sei.size());
+
 				gst_buffer_unmap(buffer, &map);
 			}
 

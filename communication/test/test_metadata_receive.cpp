@@ -1,9 +1,11 @@
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
 
+#include <chrono>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <chrono>
+
+#include "gst_rtp_header_extension_random_number.h"
 
 constexpr void set1(std::size_t index, std::uint64_t &value) { value |= 1ULL << index; }
 constexpr void set0(std::size_t index, std::uint64_t &value) { value &= ~(1ULL << index); }
@@ -30,6 +32,8 @@ std::uint64_t get_image_based_timestamp(cv::Mat const &image) {
 int main(int argc, char *argv[]) {
 	gst_init(&argc, &argv);
 
+	gst_rtp_header_extension_random_number_register_static();
+
 	cv::Mat latestFrame;
 
 	// Create pipeline and elements
@@ -48,11 +52,16 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	g_object_set(source, "port", 5000, NULL);
+	g_object_set(source, "port", 5005, NULL);
 
 	GstCaps *caps = gst_caps_new_simple("application/x-rtp", "media", G_TYPE_STRING, "video", "encoding-name", G_TYPE_STRING, "H264", "payload", G_TYPE_INT, 96, NULL);
 	g_object_set(G_OBJECT(capsfilter), "caps", caps, NULL);
 	gst_caps_unref(caps);
+
+	GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number", "random_number"));
+	// auto ext = gst_rtp_header_extension_create_from_uri(GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
+	gst_rtp_header_extension_set_id(random_number, 1);
+	g_signal_emit_by_name(depayloader, "add-extension", random_number);
 
 	GstCaps *filter_caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", NULL);
 	g_object_set(G_OBJECT(filter), "caps", filter_caps, NULL);
@@ -100,7 +109,7 @@ int main(int argc, char *argv[]) {
 				cv::Mat bgr_img(height, width, CV_8UC3, map.data);
 
 				auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - get_image_based_timestamp(bgr_img);
-				std::cout << std::chrono::nanoseconds(timestamp) << std::endl;
+				std::cout << std::chrono::nanoseconds(timestamp) << " test: " << GST_BUFFER_PTS(buffer) << std::endl;
 
 				cv::imshow("image", bgr_img);
 				cv::waitKey(1);

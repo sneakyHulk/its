@@ -199,6 +199,7 @@ int main(int argc, char *argv[]) {
 		}
 	});
 
+	guint64 frameCount = 0;
 	// Run the main loop
 	for (;;) {
 		if (!*appsrc) continue;
@@ -226,6 +227,9 @@ int main(int argc, char *argv[]) {
 		GST_BUFFER_PTS(buffer) = timestamp;
 		GST_BUFFER_DURATION(buffer) = gst_util_uint64_scale_int(1, GST_SECOND, fps);
 		timestamp += GST_BUFFER_DURATION(buffer);
+
+		GstStructure *metadata = gst_structure_new("frame-metadata", "frame-count", G_TYPE_UINT64, frameCount++, "timestamp", G_TYPE_UINT64, timestamp, NULL);
+		GstMeta *meta = gst_buffer_add_meta(buffer, gst_meta_get_info("GstStructureMeta"), metadata);
 
 		// Push buffer to appsrc
 		if (GstFlowReturn ret2 = gst_app_src_push_buffer(GST_APP_SRC(*appsrc), buffer); ret2 != GST_FLOW_OK) {
