@@ -23,8 +23,8 @@ static GstRTPHeaderExtensionFlags gst_rtp_header_extension_random_number_get_sup
 	return static_cast<GstRTPHeaderExtensionFlags>(GST_RTP_HEADER_EXTENSION_ONE_BYTE | GST_RTP_HEADER_EXTENSION_TWO_BYTE);  // because sizeof(guint64) < 16
 }
 static gsize gst_rtp_header_extension_random_number_get_max_size(GstRTPHeaderExtension *ext, const GstBuffer *buffer) {
-	GstRTPHeaderExtensionRandomNumber *self;  // = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
-	return sizeof(self->random_number);
+	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
+	return sizeof(guint64);
 }
 
 static gssize gst_rtp_header_extension_random_number_write(GstRTPHeaderExtension *ext, const GstBuffer *input_meta, GstRTPHeaderExtensionFlags write_flags, GstBuffer *output, guint8 *data, gsize size) {
@@ -35,33 +35,44 @@ static gssize gst_rtp_header_extension_random_number_write(GstRTPHeaderExtension
 
 	GST_OBJECT_LOCK(ext);
 
-	std::cout << "writing random number " << self->random_number << std::endl;
-	GST_LOG_OBJECT(self, "writing random number \'%lu\'", self->random_number);
-	GST_WRITE_UINT64_BE(data, self->random_number);
+	auto random_number = self->random_number;
+	GST_LOG_OBJECT(self, "writing random number \'%lu\'", random_number);
 
 	GST_OBJECT_UNLOCK(ext);
 
-	return sizeof(self->random_number);
+	std::cout << "writing random number " << random_number << std::endl;
+
+	GST_WRITE_UINT64_BE(data, random_number);
+
+	return sizeof(guint64);
 }
 
 static gboolean gst_rtp_header_extension_random_number_read(GstRTPHeaderExtension *ext, GstRTPHeaderExtensionFlags read_flags, const guint8 *data, gsize size, GstBuffer *buffer) {
 	GstRTPHeaderExtensionRandomNumber *self = GST_RTP_HEADER_EXTENSION_RANDOM_NUMBER(ext);
 	gboolean notify = FALSE;
 
-	if (!data || size == 0) return TRUE;
+	if (size < sizeof(guint64)) return FALSE;
 
-	if (read_flags & GST_RTP_HEADER_EXTENSION_ONE_BYTE && (size < 1 || size > 16)) {
-		GST_ERROR_OBJECT(ext, "one-byte header extensions must be between 1 and 16 bytes inculusive");
-		return FALSE;
-	}
+	// if (!data || size == 0) return TRUE;
+	//
+	// if (read_flags & GST_RTP_HEADER_EXTENSION_ONE_BYTE && (size < 1 || size > 16)) {
+	// 	GST_ERROR_OBJECT(ext, "one-byte header extensions must be between 1 and 16 bytes inculusive");
+	// 	return FALSE;
+	// }
+
+	auto random_number = GST_READ_UINT64_BE(data);
 
 	GST_OBJECT_LOCK(self);
-	self->random_number = GST_READ_UINT64_BE(data);
-	GST_LOG_OBJECT(self, "reading random number \'%lu\'", self->random_number);
-	std::cout << "reading random number " << self->random_number << std::endl;
+
+	GST_LOG_OBJECT(self, "reading random number \'%lu\'", random_number);
+	if (self->random_number != random_number) notify = TRUE;
+	self->random_number = random_number;
+
 	GST_OBJECT_UNLOCK(self);
 
-	g_object_notify((GObject *)self, "random_number");
+	if (notify) g_object_notify((GObject *)self, "random-number");
+
+	std::cout << "reading random number " << random_number << std::endl;
 
 	return TRUE;
 }
@@ -111,7 +122,5 @@ static void gst_rtp_header_extension_random_number_class_init(GstRTPHeaderExtens
 	gst_element_class_set_static_metadata(gstelement_class, "RTP Custom Header Extension Random Number", GST_RTP_HDREXT_ELEMENT_CLASS, "Extends RTP packets to add or retrieve a 64-bit random number", "Lukas Heyn <lukas.heyn@gmail.com>");
 	gst_rtp_header_extension_class_set_uri(rtp_hdr_class, GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
 }
-
-constexpr auto test = GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI;
 
 static void gst_rtp_header_extension_random_number_init(GstRTPHeaderExtensionRandomNumber *self) { self->random_number = 37ULL; }

@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "gst_rtp_header_extension_random_number.h"
+#include "gst_rtp_header_extension_random_number_stream.h"
 #include "random_number_meta.h"
 
 using namespace std::chrono_literals;
@@ -159,7 +160,7 @@ using namespace std::chrono_literals;
 //
 // GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR, rtphdrextrandomnumber, "Random number RTP Header Extension", plugin_init, VERSION, "LGPL", GST_PACKAGE_NAME, GST_PACKAGE_ORIGIN);
 
-static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("timestamp/x-recording-stream");
+static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("random-number/x-stream");
 
 constexpr bool get(std::size_t index, std::uint64_t value) { return (value >> index) & 1ULL; }
 void add_image_based_timestamp(cv::Mat const &image, std::uint64_t timestamp) {
@@ -195,9 +196,7 @@ int main(int argc, char *argv[]) {
 	gst_init(&argc, &argv);
 
 	gst_rtp_header_extension_random_number_register_static();
-
-	// GST_PLUGIN_STATIC_REGISTER(rtphdrextrandomnumber);
-	// gstrtphdrextrandomnumber_register_static();
+	gst_rtp_header_extension_random_number_stream_register_static();
 
 	cv::VideoCapture images("/home/lukas/Downloads/4865386-uhd_4096_2160_25fps.mp4");
 
@@ -270,11 +269,10 @@ int main(int argc, char *argv[]) {
 
 	g_object_set(G_OBJECT(payloader), "pt", 96, NULL);
 
-	GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number", "random_number"));
-
-	// auto ext = gst_rtp_header_extension_create_from_uri(GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
-	gst_rtp_header_extension_set_id(random_number, 1);
-	g_signal_emit_by_name(payloader, "add-extension", random_number);
+	// GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number", "random_number"));
+	GstRTPHeaderExtension *random_number_stream = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number_stream", "random_number_stream"));
+	gst_rtp_header_extension_set_id(random_number_stream, 1);
+	g_signal_emit_by_name(payloader, "add-extension", random_number_stream);
 
 	g_object_set(G_OBJECT(sink), "host", "127.0.0.1", "port", 5005, "sync", FALSE, NULL);
 

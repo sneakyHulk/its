@@ -6,6 +6,10 @@
 #include <opencv2/opencv.hpp>
 
 #include "gst_rtp_header_extension_random_number.h"
+#include "gst_rtp_header_extension_random_number_stream.h"
+#include "random_number_meta.h"
+
+static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("random-number/x-stream");
 
 constexpr void set1(std::size_t index, std::uint64_t &value) { value |= 1ULL << index; }
 constexpr void set0(std::size_t index, std::uint64_t &value) { value &= ~(1ULL << index); }
@@ -33,6 +37,7 @@ int main(int argc, char *argv[]) {
 	gst_init(&argc, &argv);
 
 	gst_rtp_header_extension_random_number_register_static();
+	gst_rtp_header_extension_random_number_stream_register_static();
 
 	cv::Mat latestFrame;
 
@@ -58,7 +63,7 @@ int main(int argc, char *argv[]) {
 	g_object_set(G_OBJECT(capsfilter), "caps", caps, NULL);
 	gst_caps_unref(caps);
 
-	GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number", "random_number"));
+	GstRTPHeaderExtension *random_number = reinterpret_cast<GstRTPHeaderExtension *>(gst_element_factory_make("rtp_header_extension_random_number_stream", "random_number_stream"));
 	// auto ext = gst_rtp_header_extension_create_from_uri(GST_RTP_HDREXT_BASE RANDOM_NUMBER_HDR_EXT_URI);
 	gst_rtp_header_extension_set_id(random_number, 1);
 	g_signal_emit_by_name(depayloader, "add-extension", random_number);
@@ -109,7 +114,7 @@ int main(int argc, char *argv[]) {
 				cv::Mat bgr_img(height, width, CV_8UC3, map.data);
 
 				auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - get_image_based_timestamp(bgr_img);
-				std::cout << std::chrono::nanoseconds(timestamp) << " test: " << GST_BUFFER_PTS(buffer) << std::endl;
+				std::cout << std::chrono::nanoseconds(timestamp) << std::endl;
 
 				cv::imshow("image", bgr_img);
 				cv::waitKey(1);
@@ -117,6 +122,12 @@ int main(int argc, char *argv[]) {
 				gst_buffer_unmap(buffer, &map);
 			} else {
 				std::cerr << "Error with mapping the gstreamer buffer" << std::endl;
+			}
+
+			GstRandomNumberMeta *meta;
+			meta = gst_buffer_get_random_number_meta(buffer, gst_static_caps_get(&recording_timestamp_caps));
+			if (meta) {
+				std::cout << "RANDOM Number: " << meta->random_number << std::endl;
 			}
 
 			gst_sample_unref(sample);

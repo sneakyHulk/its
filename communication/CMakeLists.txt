@@ -40,7 +40,7 @@ target_link_libraries(test_${PROJECT_NAME}_rtsp_minimal PUBLIC cameras_simulator
 target_compile_features(test_${PROJECT_NAME}_rtsp_minimal PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_rtsp_minimal PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-add_executable(test_${PROJECT_NAME}_raw test/test_raw_pipeline.cpp src/rtp_header_extension_random_number.cpp src/random_number_meta.cpp)
+add_executable(test_${PROJECT_NAME}_raw test/test_raw_pipeline.cpp src/rtp_header_extension_random_number.cpp src/random_number_meta.cpp src/rtp_header_extension_random_number_stream.cpp)
 target_link_libraries(test_${PROJECT_NAME}_raw PUBLIC ${PROJECT_NAME})
 target_link_libraries(test_${PROJECT_NAME}_raw PUBLIC cameras_nodes)
 target_link_libraries(test_${PROJECT_NAME}_raw PUBLIC image_processing_nodes)
@@ -67,7 +67,7 @@ target_link_libraries(test_${PROJECT_NAME}_rtsp_metadata PUBLIC cameras_simulato
 target_compile_features(test_${PROJECT_NAME}_rtsp_metadata PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_rtsp_metadata PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-add_executable(test_${PROJECT_NAME}_rtsp_metadata_receive test/test_metadata_receive.cpp src/rtp_header_extension_random_number.cpp src/random_number_meta.cpp)
+add_executable(test_${PROJECT_NAME}_rtsp_metadata_receive test/test_metadata_receive.cpp src/rtp_header_extension_random_number.cpp src/random_number_meta.cpp src/rtp_header_extension_random_number_stream.cpp)
 target_link_libraries(test_${PROJECT_NAME}_rtsp_metadata_receive PUBLIC ${PROJECT_NAME})
 target_link_libraries(test_${PROJECT_NAME}_rtsp_metadata_receive PUBLIC cameras_nodes)
 target_link_libraries(test_${PROJECT_NAME}_rtsp_metadata_receive PUBLIC image_processing_nodes)
