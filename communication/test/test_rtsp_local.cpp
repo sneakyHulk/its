@@ -4,6 +4,7 @@
 #include "BaslerCamerasNode.h"
 #include "CamerasSimulatorNode.h"
 #include "PreprocessingNode.h"
+#include "StreamingImageNode.h"
 #include "image_communication_node.h"
 
 std::function<void()> clean_up;
@@ -15,6 +16,8 @@ void signal_handler(int signal) {
 
 // gst-launch-1.0 rtspsrc location=rtsp://80.155.138.138:2346/s60_n_cam_16_k latency=100 ! queue ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! autovideosink
 int main(int argc, char **argv) {
+	gst_init(&argc, &argv);
+
 	clean_up = []() {
 		common::print("Terminate Pylon...");
 		Pylon::PylonTerminate();
@@ -36,9 +39,9 @@ int main(int argc, char **argv) {
 		common::println("done!");
 
 		CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
-		ImageStreamRTSP transmitter;
+		StreamingImageNode transmitter;
 
-		cameras += transmitter;
+		cameras.asynchronously_connect(transmitter);
 
 		cameras();
 		transmitter();

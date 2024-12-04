@@ -105,11 +105,15 @@ add_subdirectory(thirdparty/boost)
 ### bytetrack
 add_subdirectory(thirdparty/bytetrack)
 
+### g3log
+set(ADD_G3LOG_UNIT_TEST OFF CACHE INTERNAL "")
+add_subdirectory(thirdparty/g3log)
+
 ### common
 add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)
 target_link_libraries(common INTERFACE)
-target_compile_features(common INTERFACE cxx_std_23)
+target_compile_features(common INTERFACE cxx_std_20)
 
 ### mqtt
 # git submodule add https://github.com/eclipse/paho.mqtt.cpp.git thirdparty/mqtt

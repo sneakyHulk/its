@@ -1,5 +1,7 @@
 #include "RawDataCamerasSimulatorNode.h"
 
+using namespace std::chrono_literals;
+
 ImageDataRaw RawDataCamerasSimulatorNode::push() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());

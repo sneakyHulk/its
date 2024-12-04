@@ -232,3 +232,6 @@
 [submodule "thirdparty/boost/multi_index"]
 	path = thirdparty/boost/multi_index
 	url = https://github.com/boostorg/multi_index.git
+[submodule "thirdparty/g3log"]
+	path = thirdparty/g3log
+	url = https://github.com/KjellKod/g3log
