@@ -38,12 +38,12 @@ int main(int argc, char **argv) {
 		Pylon::PylonInitialize();
 		common::println("done!");
 
-		//CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
+		CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
 		StreamingImageNode transmitter;
 
-		//cameras.asynchronously_connect(transmitter);
+		cameras.asynchronously_connect(transmitter);
 
-		//cameras();
+		cameras();
 		transmitter();
 
 		std::this_thread::sleep_for(200s);

@@ -11,7 +11,7 @@ project(communication_nodes)
 #target_link_libraries(random_number_rtp_header_extension PUBLIC PkgConfig::gstreamer-rtp)
 #target_compile_features(random_number_rtp_header_extension PRIVATE cxx_std_23)
 
-add_library(${PROJECT_NAME} SHARED src/image_communication_node.cpp src/data_communication_node.cpp src/StreamingImageNode.cpp)
+add_library(${PROJECT_NAME} SHARED src/image_communication_node.cpp src/data_communication_node.cpp src/StreamingImageNode.cpp src/StreamingNodeBase.cpp src/rtp_header_extension_timestamp_frame_stream.cpp src/timestamp_frame_meta.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
