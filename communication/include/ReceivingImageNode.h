@@ -223,24 +223,8 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 				continue;
 			}
 
-			ImageData ret{cv::Mat(height, width, CV_8UC3, 200), 0, "test"};
-
-			auto test = cv::Mat(1200, 1920, CV_8UC3, 200);
-
-			cv::imshow("test", test);
-			cv::waitKey(0);
-
-			// ret.source = "test";
-			// ret.image.create(height, width, CV_8UC3);
-			//
-			// auto test = cv::Mat(height, width, CV_8UC3, 200);
-
-			common::println_loc("rows: ", ret.image.rows, "cols: ", ret.image.cols);
-
-			// std::memcpy(ret.image.data, map.data, map.size);
-
-			// cv::imshow("display_name", ret.image);
-			// cv::waitKey(100);
+			ImageData ret{cv::Mat(height, width, CV_8UC3), 0, "test"};
+			std::memcpy(ret.image.data, map.data, map.size);
 
 			// cv::Mat yuv_img(height + height / 2, width, CV_8UC1, map.data);
 			// cv::cvtColor(yuv_img, ret.image, cv::COLOR_YUV2BGR_I420);

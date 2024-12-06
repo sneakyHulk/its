@@ -12,11 +12,9 @@ void ImageVisualizationNode::run(ImageData const &data) {
 
 	if (!_image_mask(data)) return;
 
-	common::println_loc("display2!");
-	cv::imshow("display_name", data.image);
-	common::println_loc("display3!");
-	cv::waitKey(100);
-	common::println_loc("display4!");
+	// frezzes because of other thread:
+	// cv::imshow(display_name, data.image);
+	// cv::waitKey(100);
 }
 ImageVisualizationNode::ImageVisualizationNode(std::function<bool(const ImageData &)> image_mask, std::source_location const location) : _image_mask(std::move(image_mask)) {
 	display_name = common::stringprint("ImageVisualization of ", std::filesystem::path(location.file_name()).stem().string(), '(', location.line(), ':', location.column(), ")");
