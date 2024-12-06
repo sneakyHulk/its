@@ -8,6 +8,9 @@ option(STREAMING_TEST "Enable testing various streaming technology" OFF)
 ### OpenCV
 find_package(OpenCV REQUIRED)
 
+message(${OpenCV_INCLUDE_DIRS})
+message(${OpenCV_LIBS})
+
 ### Intel Threading Blocks
 find_package(TBB REQUIRED)
 

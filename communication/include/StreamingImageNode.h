@@ -52,12 +52,13 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		// Create a factory for the media stream
 		factory = gst_rtsp_media_factory_new();
 		// The pipeline description using appsrc (rtp payloader has to be named pay0)
-		gst_rtsp_media_factory_set_launch(factory, "( appsrc name=bgrsrc is-live=true format=time ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
+		gst_rtsp_media_factory_set_launch(factory, "( appsrc name=bgrsrc ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
 		gst_rtsp_media_factory_set_shared(factory, true);
 
 		// Attach the factory to the /test endpoint
 		GstRTSPMountPoints *mounts = gst_rtsp_server_get_mount_points(server);
 		gst_rtsp_mount_points_add_factory(mounts, "/test", factory);
+		common::println_loc("RTSP server is running at rtsp://127.0.0.1:8554/test");
 		g_object_unref(mounts);
 	}
 	~StreamingImageNode() {
@@ -73,7 +74,9 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 
    private:
 	static void media_configure(GstRTSPMediaFactory *, GstRTSPMedia *media, UserData *user_data) {
-		user_data->playing.store(false);
+		if (user_data->playing.exchange(false)) {
+			common::println_warn_loc("Stream should have ended before configuring a new media -> exchanged to end the stream.");  // because factory is shared
+		}
 
 		common::println_loc("configure media for streaming!");
 		GstElement *pipeline = gst_rtsp_media_get_element(media);
@@ -82,12 +85,14 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		GstElement *header_extension_timestamp_frame = gst_element_factory_make("rtp_header_extension_timestamp_frame_stream", "timestamp_frame_stream");
 		GstBus *bus = gst_element_get_bus(pipeline);
 
+		//gst_util_set_object_arg(G_OBJECT(source), "format", "time");
 		gst_rtp_header_extension_set_id(GST_RTP_HEADER_EXTENSION(header_extension_timestamp_frame), 1);
 		g_signal_emit_by_name(payloader, "add-extension", header_extension_timestamp_frame);
 
 		GstCaps *caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, user_data->width, "height", G_TYPE_INT, user_data->height, "framerate", GST_TYPE_FRACTION, 30, 1, NULL);
 		gst_app_src_set_caps(GST_APP_SRC(source), caps);
 		gst_caps_unref(caps);
+		//g_object_set(G_OBJECT(source), "format", GST_FORMAT_BUFFERS, "leaky-type", GST_APP_LEAKY_TYPE_DOWNSTREAM, "stream-type", GST_APP_STREAM_TYPE_STREAM, NULL);
 
 		gst_element_set_state(pipeline, GST_STATE_PLAYING);
 		gst_object_unref(pipeline);

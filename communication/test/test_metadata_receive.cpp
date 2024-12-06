@@ -86,6 +86,8 @@ int main(int argc, char *argv[]) {
 		gst_object_unref(pipeline);
 		return -1;
 	}
+
+
 	GstMapInfo map;
 	GstBuffer *buffer;
 	for (;;) {
@@ -96,7 +98,6 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Pull the sample (synchronous, wait)
-
 		if (GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(sink)); sample != nullptr) {
 			// Get width and height from sample caps (NOT element caps)
 			GstCaps *caps = gst_sample_get_caps(sample);

@@ -96,6 +96,17 @@ target_link_libraries(test_${PROJECT_NAME}_rtsp_local PUBLIC cameras_simulator_n
 target_compile_features(test_${PROJECT_NAME}_rtsp_local PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_rtsp_local PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+add_executable(test_${PROJECT_NAME}_rtsp_local_receive test/test_rtsp_local_receive.cpp)
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC ${PROJECT_NAME})
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC cameras_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC image_processing_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC communication_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC cameras_simulator_nodes)
+target_link_libraries(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC image_visualization_nodes)
+target_compile_features(test_${PROJECT_NAME}_rtsp_local_receive PRIVATE cxx_std_23)
+target_compile_definitions(test_${PROJECT_NAME}_rtsp_local_receive PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+
 add_executable(test_${PROJECT_NAME}_rtsp_e2e_latency test/test_rtsp_e2e_latency.cpp)
 target_link_libraries(test_${PROJECT_NAME}_rtsp_e2e_latency PUBLIC ${PROJECT_NAME})
 target_link_libraries(test_${PROJECT_NAME}_rtsp_e2e_latency PUBLIC cameras_nodes)

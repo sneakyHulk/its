@@ -7,17 +7,20 @@
 
 #include "common_output.h"
 #include "gst_rtp_header_extension_timestamp_frame_stream.h"
+using namespace std::chrono_literals;
 
 StreamingNodeBase::StreamingNodeBase() {
 	if (static bool first = true; std::exchange(first, false)) {
 		gst_rtp_header_extension_timestamp_frame_stream_register_static();
+
 		// Start the server
 		loop_thread = std::thread([]() {
-			GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-			common::println_loc("RTSP server is running at rtsp://127.0.0.1:8554/test");
-			g_main_loop_run(loop);
+			for (;; std::this_thread::yield()) g_main_context_iteration(NULL, true);
 
-			g_main_loop_unref(loop);
+			// GMainLoop *loop = g_main_loop_new(NULL, FALSE);
+			// g_main_loop_run(loop);
+			//
+			// g_main_loop_unref(loop);
 		});
 	}
 }
