@@ -11,14 +11,14 @@ using namespace std::chrono_literals;
 int main(int argc, char **argv) {
 	// gtk_init(&argc, &argv);
 	gst_init(&argc, &argv);
+	auto app = Gtk::Application::create(std::string("sneakyHulk.its.") + std::filesystem::path(argv[0]).stem().string());
 
 	ReceivingImageNode receiver;
-	ImageVisualizationNode vis;
+	ImageVisualizationNode vis(app);
 
-	receiver.asynchronously_connect(vis);
+	receiver.synchronously_connect(vis);
 
 	receiver();
-	vis();
 
-	std::this_thread::sleep_for(200s);
+	return app->run();
 }
