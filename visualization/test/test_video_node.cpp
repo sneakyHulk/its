@@ -1,12 +1,12 @@
-#include "camera_simulator_node.h"
+#include "CamerasSimulatorNode.h"
 #include "video_node.h"
 
 int main(int argc, char* argv[]) {
-	CameraSimulator cam_n("s110_n_cam_8");
+	CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
 	VideoVisualization vid;
 
-	cam_n += vid;
+	cameras.asynchronously_connect(vid);
 
-	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
+	cameras();
 	vid();
 }

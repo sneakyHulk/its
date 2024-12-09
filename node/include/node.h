@@ -25,6 +25,8 @@ class Processor;
 
 template <typename Input>
 class Runner;
+template <typename Input>
+class RunnerSynchronous;
 
 template <typename Output>
 class Pusher : public Node {
@@ -33,6 +35,8 @@ class Pusher : public Node {
 
 	template <typename T>
 	friend class Runner;
+	template <typename T>
+	friend class RunnerSynchronous;
 
 	std::thread thread;
 
@@ -53,6 +57,10 @@ class Pusher : public Node {
 	}
 
 	void synchronously_connect(Runner<Output>& node) {
+		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
+		synchronous_functions_once.push_back([&node](Output const& data) -> void { node.synchronous_call_once(std::forward<decltype(data)>(data)); });
+	}
+	void synchronously_connect(RunnerSynchronous<Output>& node) {
 		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
 		synchronous_functions_once.push_back([&node](Output const& data) -> void { node.synchronous_call_once(std::forward<decltype(data)>(data)); });
 	}
@@ -138,6 +146,24 @@ class Runner : public Node {
 	virtual void run(Input const& data) = 0;
 	virtual void run_once(Input const& data) { run(std::forward<decltype(data)>(data)); }
 };
+
+template <typename Input>
+class RunnerSynchronous : public Node {
+	template <typename T>
+	friend class Pusher;
+
+	template <typename T1, typename T2>
+	friend class Processor;
+
+   public:
+   private:
+	void synchronous_call(Input const& input) { run(input); }
+	void synchronous_call_once(Input const& input) { run_once(input); }
+
+	virtual void run(Input const& data) = 0;
+	virtual void run_once(Input const& data) { run(std::forward<decltype(data)>(data)); }
+};
+
 template <typename Input, typename Output>
 class Processor : public Node {
 	template <typename T>

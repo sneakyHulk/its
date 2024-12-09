@@ -6,6 +6,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC node)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC PkgConfig::gtkmm-4.0)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
@@ -45,8 +46,15 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOUR
 
 project(test_video_node)
 add_executable(${PROJECT_NAME} test/test_video_node.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC camera_nodes)
-target_link_libraries(${PROJECT_NAME} PUBLIC visualization_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC cameras_simulator_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC image_visualization_nodes)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+project(test_image_visualization_node)
+add_executable(${PROJECT_NAME} test/test_image_visualization_node.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC cameras_simulator_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC image_visualization_nodes)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
