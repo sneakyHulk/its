@@ -32,12 +32,7 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	GstBus *bus;
 
    public:
-	ReceivingImageNode() {}
-
-	~ReceivingImageNode() { gst_object_unref(pipeline); }
-
-   private:
-	ImageData push_once() final {
+	ReceivingImageNode() {
 		// Create pipeline and elements
 		pipeline = gst_pipeline_new("receiver-pipeline");
 
@@ -50,8 +45,7 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 		videoconvert = gst_element_factory_make("videoconvert", "converter");
 		filter2 = gst_element_factory_make("capsfilter", "filter2");
 		sink = gst_element_factory_make("appsink", "sink");
-		// sink = gst_element_factory_make("autovideosink", "sink");
-		bus = gst_element_get_bus(pipeline);
+		bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
 
 		if (!pipeline || !source || !depayloader || !header_extension_timestamp_frame || !parser || !decoder || !filter1 || !videoconvert || !filter2 || !sink) {
 			common::println_critical_loc("Failed to create elements.");
@@ -104,10 +98,39 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 		if (GstState state; gst_element_get_state(source, &state, nullptr, GST_CLOCK_TIME_NONE) != GST_STATE_CHANGE_SUCCESS || state != GST_STATE_PLAYING) {
 			common::println_critical_loc("Pipeline is not in PLAYING state");
 		}
+	}
 
-		std::this_thread::sleep_for(10s);
+	~ReceivingImageNode() { gst_object_unref(pipeline); }
 
-		return push();
+   private:
+	ImageData push_once() final { return push(); }
+
+	void reconnect() {
+		// Start the pipeline
+		if (GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_NULL); ret == GST_STATE_CHANGE_FAILURE) {
+			common::println_critical_loc("Failed to set pipeline to PAUSED state.\n");
+		}
+
+		{
+			GstState state;
+			int ret = gst_element_get_state(source, &state, nullptr, GST_CLOCK_TIME_NONE);
+
+			if (ret != GST_STATE_CHANGE_SUCCESS && ret != GST_STATE_CHANGE_NO_PREROLL) {
+				common::println_critical_loc("Pipeline is not in PAUSED state");
+			}
+
+			if (state != GST_STATE_NULL) {
+				common::println_critical_loc("Pipeline is not in PAUSED state");
+			}
+		}
+
+		if (GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING); ret == GST_STATE_CHANGE_FAILURE) {
+			common::println_critical_loc("Failed to set pipeline to PLAYING state.\n");
+		}
+
+		if (GstState state; gst_element_get_state(source, &state, nullptr, GST_CLOCK_TIME_NONE) != GST_STATE_CHANGE_SUCCESS || state != GST_STATE_PLAYING) {
+			common::println_critical_loc("Pipeline is not in PLAYING state");
+		}
 	}
 
 	ImageData push() final {
@@ -123,7 +146,79 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 						GError *err;
 						gchar *err_info;
 						gst_message_parse_error(msg, &err, &err_info);
-						common::println_error_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+
+						if (err->domain == GST_CORE_ERROR) {
+							switch (err->code) {
+								case GST_CORE_ERROR_FAILED:
+								case GST_CORE_ERROR_TOO_LAZY:
+								case GST_CORE_ERROR_NOT_IMPLEMENTED:
+								case GST_CORE_ERROR_STATE_CHANGE:
+								case GST_CORE_ERROR_PAD:
+								case GST_CORE_ERROR_THREAD:
+								case GST_CORE_ERROR_NEGOTIATION:
+								case GST_CORE_ERROR_EVENT:
+								case GST_CORE_ERROR_SEEK:
+								case GST_CORE_ERROR_CAPS:
+								case GST_CORE_ERROR_TAG:
+								case GST_CORE_ERROR_MISSING_PLUGIN:
+								case GST_CORE_ERROR_CLOCK:
+								case GST_CORE_ERROR_DISABLED:
+								case GST_CORE_ERROR_NUM_ERRORS:
+								default: common::println_critical_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+							}
+						} else if (err->domain == GST_LIBRARY_ERROR) {
+							switch (err->code) {
+								case GST_LIBRARY_ERROR_FAILED:
+								case GST_LIBRARY_ERROR_TOO_LAZY:
+								case GST_LIBRARY_ERROR_INIT:
+								case GST_LIBRARY_ERROR_SHUTDOWN:
+								case GST_LIBRARY_ERROR_SETTINGS:
+								case GST_LIBRARY_ERROR_ENCODE:
+								case GST_LIBRARY_ERROR_NUM_ERRORS:
+								default: common::println_critical_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+							}
+						} else if (err->domain == GST_RESOURCE_ERROR) {
+							switch (err->code) {
+								case GST_RESOURCE_ERROR_READ:
+								case GST_RESOURCE_ERROR_WRITE:
+								case GST_RESOURCE_ERROR_OPEN_READ:
+								case GST_RESOURCE_ERROR_OPEN_WRITE:
+								case GST_RESOURCE_ERROR_OPEN_READ_WRITE: reconnect(); break;
+								case GST_RESOURCE_ERROR_FAILED:
+								case GST_RESOURCE_ERROR_TOO_LAZY:
+								case GST_RESOURCE_ERROR_NOT_FOUND:
+								case GST_RESOURCE_ERROR_BUSY:
+								case GST_RESOURCE_ERROR_CLOSE:
+								case GST_RESOURCE_ERROR_SEEK:
+								case GST_RESOURCE_ERROR_SYNC:
+								case GST_RESOURCE_ERROR_SETTINGS:
+								case GST_RESOURCE_ERROR_NO_SPACE_LEFT:
+								case GST_RESOURCE_ERROR_NOT_AUTHORIZED:
+								case GST_RESOURCE_ERROR_NUM_ERRORS:
+								default: common::println_critical_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+							}
+						} else if (err->domain == GST_STREAM_ERROR) {
+							switch (err->code) {
+								case GST_STREAM_ERROR_FAILED:
+								case GST_STREAM_ERROR_TOO_LAZY:
+								case GST_STREAM_ERROR_NOT_IMPLEMENTED:
+								case GST_STREAM_ERROR_TYPE_NOT_FOUND:
+								case GST_STREAM_ERROR_WRONG_TYPE:
+								case GST_STREAM_ERROR_CODEC_NOT_FOUND:
+								case GST_STREAM_ERROR_DECODE:
+								case GST_STREAM_ERROR_ENCODE:
+								case GST_STREAM_ERROR_DEMUX:
+								case GST_STREAM_ERROR_MUX:
+								case GST_STREAM_ERROR_FORMAT:
+								case GST_STREAM_ERROR_DECRYPT:
+								case GST_STREAM_ERROR_DECRYPT_NOKEY:
+								case GST_STREAM_ERROR_NUM_ERRORS:
+								default: common::println_critical_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+							}
+						} else {
+							common::println_critical_loc("GST_MESSAGE_ERROR: Error received from element ", GST_OBJECT_NAME(msg->src), ": ", err->message, "\n Debugging information: ", err_info);
+						}
+
 						g_clear_error(&err);
 						g_free(err_info);
 						break;

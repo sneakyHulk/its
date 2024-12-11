@@ -18,5 +18,5 @@ int main(int argc, char **argv) {
 	cameras();
 	transmitter();
 
-	std::this_thread::sleep_for(200s);
+	for (;; std::this_thread::yield()) g_main_context_iteration(NULL, true);
 }
