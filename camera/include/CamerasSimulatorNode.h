@@ -10,7 +10,7 @@
 
 #include "ImageData.h"
 #include "ImageDataRaw.h"
-#include "node.h"
+#include "Pusher.h"
 
 class CamerasSimulatorNode : public Pusher<ImageData> {
    public:

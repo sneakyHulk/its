@@ -3,81 +3,141 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
-#include <thread>
 #include <utility>
+
+#include "common_output.h"
 
 using namespace std::chrono_literals;
 
+/**
+ * @brief Updates the image to display.
+ *
+ * This method filters the image data using the mask filter before updating the current image data for display.
+ * It runs synchronously with the image providing node.
+ *
+ * @param data The image data to update.
+ */
 void ImageVisualizationNode::run(ImageData const &data) {
-	// common::println(
-	//     "Time taken = ", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count() -
-	//     data.timestamp)));
-
+	// Check if the given image data passes the filter
 	if (!_image_mask(data)) return;
-	if (!window) {
-		dispatcher.emit();
-		return;
-	}
 
-	std::atomic_store(&image, std::make_shared<ImageData>(data));
-
-	// image = Gdk::Pixbuf::create_from_data(data.image.data, Gdk::Colorspace::RGB, false, 8, data.image.rows, data.image.cols, data.image.step);
-
-	window->queue_draw();
-	// frezzes because of other thread:
-	// cv::imshow(display_name, data.image);
-	// cv::waitKey(100);
+	// Store the provided image data atomically for use in the GUI thread.
+	std::atomic_store(&user_data->current_image_data, std::make_shared<ImageData>(data));
 }
-ImageVisualizationNode::ImageVisualizationNode(Glib::RefPtr<Gtk::Application> app, std::function<bool(const ImageData &)> image_mask, std::source_location const location) : _image_mask(std::move(image_mask)) {
+
+/**
+ * @brief Constructs an ImageVisualizationNode instance.
+ *
+ * Sets up the image mask function and schedules GUI updates for the visualization.
+ *
+ * @param image_mask A function to filter image data.
+ * @param location The source location for debugging purposes.
+ */
+[[maybe_unused]] ImageVisualizationNode::ImageVisualizationNode(std::function<bool(const ImageData &)> image_mask, std::source_location const location) : _image_mask(std::move(image_mask)) {
 	display_name = common::stringprint("ImageVisualization of ", std::filesystem::path(location.file_name()).stem().string(), '(', location.line(), ':', location.column(), ")");
 
-	dispatcher.connect(sigc::mem_fun(*this, &ImageVisualizationNode::on_dispatcher_signal));
-	dispatcher2.connect(sigc::mem_fun(*this, &ImageVisualizationNode::on_dispatcher_signal));
-
-	app->signal_startup().connect(sigc::mem_fun(*this, &ImageVisualizationNode::on_create_window));
+	// Schedule an update for the image visualization in the GUI thread
+	gdk_threads_add_idle(G_SOURCE_FUNC(update_image_create_window_idle), user_data);
 }
-void ImageVisualizationNode::on_draw(Cairo::RefPtr<Cairo::Context> const &cr, int width, int height) {
-	static std::shared_ptr<ImageData> current_image = nullptr;
-	static Glib::RefPtr<Gdk::Pixbuf> image_buffer = nullptr;
 
-	if (!image) return;
-	if (auto old = std::exchange(current_image, std::atomic_load(&image)); current_image == old) return;
-
-	cv::cvtColor(current_image->image, current_image->image, cv::COLOR_BGR2RGB);
-
-	cv::putText(current_image->image,
-	    std::string("Source: ") + current_image->source +
-	        ", Time since Timestamp: " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - std::chrono::nanoseconds(current_image->timestamp)).count()) + "mus",
-	    cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
-
-	image_buffer = Gdk::Pixbuf::create_from_data(current_image->image.data, Gdk::Colorspace::RGB, false, 8, current_image->image.cols, current_image->image.rows, current_image->image.step);
-	Gdk::Cairo::set_source_pixbuf(cr, image_buffer, (width - image_buffer->get_width()) / 2, (height - image_buffer->get_height()) / 2);
-	cr->paint();
+/**
+ * @brief Handles the destruction of the GTK window.
+ *
+ * Hints to the GUI thread that the visualization window is destroyed.
+ *
+ * @param window The GTK window to destroy.
+ * @param user_data The data relevant to the GUI.
+ * @return Always returns false to allow other handlers from being invoked for the event.
+ */
+gboolean ImageVisualizationNode::destroy([[maybe_unused]] GtkWindow *window, ImageVisualizationNode::UserData *user_data) {
+	user_data->destroyed.clear();
+	return false;
 }
-void ImageVisualizationNode::run_once(ImageData const &data) {
-	width = data.image.cols;
-	height = data.image.rows;
-	return run(data);
-}
-void ImageVisualizationNode::on_dispatcher_signal() {
-	if (!window) return;
-	window = std::make_shared<ImageVisualization>(display_name, height, width);
-	window->set_draw_func(sigc::mem_fun(*this, &ImageVisualizationNode::on_draw));
-	app->add_window(*window);
 
-	// window.set_title(display_name);
-	// window.set_child(area);
-	// window.set_hide_on_close(false);
+/**
+ * @brief Draws the image onto the GTK drawing area widget.
+ *
+ * This method draws the image centered in the allocated widget area.
+ *
+ * @param widget The GTK widget to draw on.
+ * @param cr The Cairo context for drawing.
+ * @param user_data The data relevant to the GUI.
+ * @return Always returns false to allow other handlers from being invoked for the event.
+ */
+gboolean ImageVisualizationNode::on_draw(GtkWidget *widget, cairo_t *cr, ImageVisualizationNode::UserData *user_data) {
+	if (GDK_IS_PIXBUF(user_data->pixbuf)) {
+		gdk_cairo_set_source_pixbuf(
+		    cr, user_data->pixbuf, (gtk_widget_get_allocated_width(widget) - gdk_pixbuf_get_width(user_data->pixbuf)) / 2.0, (gtk_widget_get_allocated_height(widget) - gdk_pixbuf_get_height(user_data->pixbuf)) / 2.0);
+		cairo_paint(cr);
+	}
 
-	// std::this_thread::sleep_for(30ms);
-	window->set_visible(true);
-	// std::this_thread::sleep_for(30ms);
-	window->present();
+	return false;
 }
-void ImageVisualizationNode::on_dispatcher2_signal() {}
-void ImageVisualizationNode::on_create_window() {
-	window = std::make_shared<ImageVisualization>(display_name, height, width);
-	window->set_draw_func(sigc::mem_fun(*this, &ImageVisualizationNode::on_draw));
-	window->show();
-	app->add_window(*window);
+
+/**
+ * @brief Updates the image and creates a GUI window if needed.
+ *
+ * This method updates the displayed image with the latest image data and adds an overlay with image source and timestamp information.
+ * When the window was closed before it creates a new one.
+ *
+ * @param user_data The data relevant to the GUI.
+ * @return Returns G_SOURCE_CONTINUE to keep the idle function active in the GUI thread.
+ */
+gboolean ImageVisualizationNode::update_image_create_window_idle(ImageVisualizationNode::UserData *user_data) {
+	static std::shared_ptr<ImageData> image_data = nullptr;
+
+	// Check if new image data was transferred to the node
+	if (auto image_data_test = atomic_load(&user_data->current_image_data); image_data != image_data_test) {
+		image_data = image_data_test;
+
+		// Convert the image color space from BGR to RGB
+		cv::cvtColor(image_data->image, image_data->image, cv::COLOR_BGR2RGB);
+
+		// Add text overlay with image source and timestamp information
+		cv::putText(image_data->image,
+		    std::string("Source: ") + image_data->source +
+		        ", Time since Timestamp: " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - std::chrono::nanoseconds(image_data->timestamp)).count()) + "mus",
+		    cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
+
+		if (GDK_IS_PIXBUF(user_data->pixbuf)) g_object_unref(user_data->pixbuf);
+
+		// Create a new pixbuf from the updated image data
+		user_data->pixbuf = gdk_pixbuf_new_from_data(image_data->image.data, GDK_COLORSPACE_RGB, false, 8, image_data->image.cols, image_data->image.rows, static_cast<int>(image_data->image.step), nullptr, nullptr);
+
+		if (!user_data->destroyed.test_and_set()) {
+			// Create the GUI window and widgets
+			user_data->drawing_area = gtk_drawing_area_new();
+			user_data->window = gtk_window_new(GtkWindowType::GTK_WINDOW_TOPLEVEL);
+			gtk_window_set_title(GTK_WINDOW(user_data->window), "RGB Image Viewer");
+			gtk_window_set_default_size(GTK_WINDOW(user_data->window), image_data->image.cols, image_data->image.rows);
+
+			g_signal_connect(user_data->window, "destroy", G_CALLBACK(destroy), user_data);
+			g_signal_connect(user_data->drawing_area, "draw", G_CALLBACK(on_draw), user_data);
+
+			gtk_container_add(GTK_CONTAINER(user_data->window), user_data->drawing_area);
+			gtk_widget_show_all(user_data->window);
+		} else {
+			// Request redraw of the window
+			gtk_widget_queue_draw(user_data->window);
+		}
+	}
+
+	return G_SOURCE_CONTINUE;
+}
+/**
+ * @brief Destructor for the ImageVisualizationNode class.
+ *
+ * Frees the user data resource.
+ */
+ImageVisualizationNode::~ImageVisualizationNode() { delete user_data; }
+
+/**
+ * @brief Destructor for the UserData structure.
+ *
+ * Frees GTK and GDK resources when the user data is destroyed.
+ */
+ImageVisualizationNode::UserData::~UserData() {
+	if (GTK_IS_WIDGET(drawing_area)) gtk_widget_destroy(drawing_area);
+	if (GTK_IS_WIDGET(window)) gtk_widget_destroy(window);
+	if (GDK_IS_PIXBUF(pixbuf)) g_object_unref(pixbuf);
 }

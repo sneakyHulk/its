@@ -1,51 +1,42 @@
 #pragma once
 
-#include <gtkmm.h>
-#include <tbb/concurrent_queue.h>
+#include <gtk/gtk.h>
 
 #include <functional>
 #include <source_location>
 
 #include "ImageData.h"
-#include "node.h"
+#include "RunnerSynchronous.h"
 
+/**
+ * @class ImageVisualizationNode
+ * @brief A node for visualizing image data in a GTK window.
+ *
+ * This class processes and visualizes image data in a GUI.
+ * It can be used with a filtering function to determine whether the image data should be displayed, and handles updates to the GUI, including drawing images and displaying overlays with metadata.
+ *
+ * @attention This class have to have a g_main_loop_run or a loop with g_main_context_iteration to be run to function properly. Also g_main_loop_run or g_main_context_iteration must run in the same thread where this class was created.
+ */
 class ImageVisualizationNode : public RunnerSynchronous<ImageData> {
 	std::function<bool(ImageData const&)> _image_mask;
 	std::string display_name;
-	int height;
-	int width;
 
-	std::shared_ptr<ImageData> image;
-	Glib::Dispatcher dispatcher;
-	Glib::Dispatcher dispatcher2;
-	Glib::RefPtr<Gtk::Application> app;
-	bool registered = false;
+	struct UserData {
+		GtkWidget* drawing_area = nullptr;
+		GtkWidget* window = nullptr;
+		GdkPixbuf* pixbuf = nullptr;
+		std::atomic_flag destroyed = ATOMIC_FLAG_INIT;
+		std::shared_ptr<ImageData> current_image_data = nullptr;
+		~UserData();
+	}* user_data = new UserData;
 
-	class ImageVisualization : public Gtk::Window {
-		Gtk::DrawingArea area;
-
-	   public:
-		ImageVisualization(std::string display_name, int width, int height) {
-			set_title(display_name);
-			set_default_size(1920, 1200);
-			set_hide_on_close(false);
-			set_child(area);
-		}
-
-		void set_draw_func(sigc::slot<void(const Cairo::RefPtr<Cairo::Context>&, int, int)> const& slot) { return area.set_draw_func(slot); }
-	};
-
-	std::shared_ptr<ImageVisualization> window = nullptr;
+	static gboolean destroy([[maybe_unused]] [[maybe_unused]] GtkWindow* window, UserData* user_data);
+	static gboolean on_draw(GtkWidget* widget, cairo_t* cr, UserData* user_data);
+	static gboolean update_image_create_window_idle(UserData* user_data);
 
    public:
-	explicit ImageVisualizationNode(Glib::RefPtr<Gtk::Application> app, std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }, std::source_location const location = std::source_location::current());
+	[[maybe_unused]] explicit ImageVisualizationNode(std::function<bool(ImageData const&)> image_mask = [](ImageData const&) { return true; }, std::source_location const location = std::source_location::current());
+	~ImageVisualizationNode();
 
-	void run_once(ImageData const& data) final;
 	void run(ImageData const& data) final;
-
-   private:
-	void on_draw(Cairo::RefPtr<Cairo::Context> const& cr, int width, int height);
-	void on_dispatcher_signal();
-	void on_dispatcher2_signal();
-	void on_create_window();
 };
