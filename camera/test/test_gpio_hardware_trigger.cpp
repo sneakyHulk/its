@@ -132,18 +132,5 @@ int main(int argc, char **argv) {
 		throw;
 	}
 
-	/* Blink 20 times */
-	// val = 0;
-	// for (i = 20; i > 0; i--) {
-	//	ret = gpiod_line_set_value(line, val);
-	//	if (ret < 0) {
-	//		perror("Set line output failed\n");
-	//		goto release_line;
-	//	}
-	//	printf("Output %u on line #%u\n", val, line_num);
-	//	sleep(1);
-	//	val = !val;
-	// }
-
 	return 0;
 }

@@ -15,7 +15,7 @@
  * This class processes and visualizes image data in a GUI.
  * It can be used with a filtering function to determine whether the image data should be displayed, and handles updates to the GUI, including drawing images and displaying overlays with metadata.
  *
- * @attention This class have to have a g_main_loop_run or a loop with g_main_context_iteration to be run to function properly. Also g_main_loop_run or g_main_context_iteration must run in the same thread where this class was created.
+ * @attention This class have to have a g_main_loop_run or a loop with g_main_context_iteration to be run to function properly. Also, g_main_loop_run or g_main_context_iteration must run in the same thread where this class was created.
  */
 class ImageVisualizationNode : public RunnerSynchronous<ImageData> {
 	std::function<bool(ImageData const&)> _image_mask;

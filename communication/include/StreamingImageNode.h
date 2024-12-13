@@ -19,30 +19,42 @@
 
 using namespace std::chrono_literals;
 
-static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("timestamp-frame/x-stream");
-
+/**
+ * @class StreamingImageNode
+ * @brief Implements a node that provides an RTSP server for broadcasting images and timestamps.
+ *
+ * @attention This class have to have a g_main_loop_run or a loop with g_main_context_iteration to be run to function properly. Also, g_main_loop_run or g_main_context_iteration must run in the same thread where this class was created.
+ */
 class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
+	inline static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("timestamp-frame/x-stream");
 	inline static GstRTSPServer *server = nullptr;
 	GstRTSPMediaFactory *factory = nullptr;
 
+	/**
+	 * @struct UserData
+	 * @brief Holds shared data for the GStreamer pipeline.
+	 */
 	struct UserData {
 		GstElement *source = nullptr;
 		GstElement *payloader = nullptr;
 		GstElement *header_extension_timestamp_frame = nullptr;
 		GstBus *bus = nullptr;
 		std::atomic_bool playing = false;
-		int width = 320;
-		int height = 240;
+		int width;
+		int height;
 	} *user_data = new UserData;
 
    public:
+	/**
+	 * @brief Constructor that sets up the RTSP server and media factory.
+	 */
 	StreamingImageNode() {
-		// Create an RTSP server only once
+		// Create an RTSP server only once.
 		if (static bool first = true; std::exchange(first, false)) {
 			server = gst_rtsp_server_new();
 			gst_rtsp_server_set_service(server, "8554");
 
-			/* attach the server to the default maincontext */
+			// Attach the server to the default main context.
 			if (!gst_rtsp_server_attach(server, NULL)) {
 				common::println_critical_loc("Failed to attach the RTSP server");
 			}
@@ -50,6 +62,7 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 
 		// Create a factory for the media stream
 		factory = gst_rtsp_media_factory_new();
+
 		// The pipeline description using appsrc (rtp payloader has to be named pay0)
 		gst_rtsp_media_factory_set_launch(factory, "( appsrc name=bgrsrc ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
 		gst_rtsp_media_factory_set_shared(factory, true);
@@ -60,7 +73,10 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		common::println_loc("RTSP server is running at rtsp://127.0.0.1:8554/test");
 		g_object_unref(mounts);
 	}
-	~StreamingImageNode() {
+	/**
+	 * @brief Destructor that cleans up allocated gstreamer pipeline resources.
+	 */
+	~StreamingImageNode() override {
 		if (user_data->payloader) gst_object_unref(user_data->payloader);
 		if (user_data->source) gst_object_unref(user_data->source);
 		if (user_data->header_extension_timestamp_frame) gst_object_unref(user_data->header_extension_timestamp_frame);
@@ -72,12 +88,20 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 	}
 
    private:
-	static void media_configure(GstRTSPMediaFactory *, GstRTSPMedia *media, UserData *user_data) {
+	/**
+	 * @brief Initializes and configures the pipeline when a new media/stream is created.
+	 * @param factory The media factory.
+	 * @param media The RTSP media object.
+	 * @param user_data Pointer to user data.
+	 */
+	static void media_configure([[maybe_unused]] GstRTSPMediaFactory *factory, GstRTSPMedia *media, UserData *user_data) {
 		if (user_data->playing.exchange(false)) {
 			common::println_warn_loc("Stream should have ended before configuring a new media -> exchanged to end the stream.");  // because factory is shared
 		}
 
-		common::println_loc("configure media for streaming!");
+		common::println_debug_loc("configure media for streaming!");
+
+		// Retrieve the pipeline and elements
 		GstElement *pipeline = gst_rtsp_media_get_element(media);
 		GstElement *source = gst_bin_get_by_name_recurse_up(GST_BIN(pipeline), "bgrsrc");
 		GstElement *payloader = gst_bin_get_by_name_recurse_up(GST_BIN(pipeline), "pay0");
@@ -107,12 +131,17 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 
 		user_data->playing.store(true);
 
+		// Clean up old elements
 		if (payloader) gst_object_unref(payloader);
 		if (source) gst_object_unref(source);
 		if (header_extension_timestamp_frame) gst_object_unref(header_extension_timestamp_frame);
 		if (bus) gst_object_unref(bus);
 	}
 
+	/**
+	 * @brief Processes a single frame of image data to configure the width and height of the stream.
+	 * @param data The input image data.
+	 */
 	void run_once(ImageData const &data) final {
 		user_data->width = data.image.cols;
 		user_data->height = data.image.rows;
@@ -123,13 +152,19 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		run(data);
 	}
 
+	/**
+	 * @brief Put the provided image data into the stream and look out for error and stream messages.
+	 * @param data The input image data.
+	 */
 	void run(ImageData const &data) final {
 		static std::uint64_t framenumber = 0;
 
 		if (!user_data->playing.load()) return;
 
-		// Create a new buffer for each frame
+		// Create a new buffer for each frame (buffer does not need to be called unref on because it gets passed)
 		GstBuffer *buffer = gst_buffer_new_allocate(NULL, data.image.total() * data.image.elemSize(), NULL);
+
+		// add timestamp metadata to the stream
 		gst_buffer_add_timestamp_frame_meta(buffer, gst_static_caps_get(&recording_timestamp_caps), data.timestamp, framenumber++);
 
 		// Fill the buffer with data
@@ -141,9 +176,10 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 			common::println_warn_loc("gst_buffer_map failed!");
 		}
 
-		// Push buffer to appsrc
+		// Push buffer to the stream
 		GstFlowReturn ret = gst_app_src_push_buffer(GST_APP_SRC(user_data->source), buffer);
 
+		// Process messages from the GStreamer
 		for (GstMessage *msg = gst_bus_pop(user_data->bus); msg;) {
 			switch (GST_MESSAGE_TYPE(msg)) {
 				case GST_MESSAGE_UNKNOWN: common::println_loc("GST_MESSAGE_UNKNOWN: An undefined message."); break;
@@ -231,6 +267,8 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 			case GST_FLOW_OK: break;
 			case GST_FLOW_FLUSHING:
 				common::println_warn_loc("GST_FLOW_FLUSHING: Couldn't push buffer to appsrc. Stream ended?");
+
+				// Stop pushing images to the stream because no one is watching anymore.
 				user_data->playing.store(false);
 				break;
 			case GST_FLOW_CUSTOM_SUCCESS_2:
