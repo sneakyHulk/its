@@ -10,7 +10,7 @@
 #include "ImageData.h"
 #include "Pusher.h"
 #include "StreamingNodeBase.h"
-#include "gst_rtp_header_extension_timestamp_frame_stream.h"
+#include "common_output.h"
 #include "timestamp_frame_meta.h"
 
 using namespace std::chrono_literals;

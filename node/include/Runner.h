@@ -6,15 +6,14 @@
 #include <iostream>
 #include <memory>
 #include <thread>
-#include <vector>
 
 #include "Node.h"
 
 /**
  * @class Runner
- * @brief Template class for pipeline nodes that present input data or do stuff outside of the pipeline.
+ * @brief Template class for pipeline nodes that present input data or do stuff outside the pipeline.
  *
- * This class can receive input data from Pusher nodes and other Processor nodes and present the input data i.e. make data available outside of the pipeline.
+ * This class can receive input data from Pusher nodes and other Processor nodes and present the input data i.e. make data available outside the pipeline.
  * This can be done synchronously or asynchronously and requires a prior connection.
  * In asynchronous procedures the input node fills a concurrent queue.
  * This queue is read from by the operating thread created by this class and the input data can be presented.
@@ -62,6 +61,8 @@ class Runner : public Node {
 			}
 		});
 	}
+
+	~Runner() override = default;
 
    private:
 	/**

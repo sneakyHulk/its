@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "ImageData.h"
-#include "node.h"
+#include "Processor.h"
 
 class ImageUndistortionNode : public Processor<ImageData, ImageData> {
    public:

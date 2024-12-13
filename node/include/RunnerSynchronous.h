@@ -6,9 +6,9 @@
 
 /**
  * @class RunnerSynchronous
- * @brief Template class for pipeline nodes that present input data or do stuff outside of the pipeline.
+ * @brief Template class for pipeline nodes that present input data or do stuff outside the pipeline.
  *
- * This class can receive input data from Pusher nodes and other Processor nodes and present the input data i.e. make data available outside of the pipeline.
+ * This class can receive input data from Pusher nodes and other Processor nodes and present the input data i.e. make data available outside the pipeline.
  * This can be done synchronously and requires a prior connection.
  * In this synchronous procedures the thread of the input node performs the presenting.
  *
@@ -22,6 +22,9 @@ class RunnerSynchronous : public Node {
 	friend class Pusher;
 	template <typename T1, typename T2>
 	friend class Processor;
+
+   public:
+	~RunnerSynchronous() override = default;
 
    private:
 	/**

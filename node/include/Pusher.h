@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Node.h"
-#include "Processor.h"
 #include "Runner.h"
 #include "RunnerSynchronous.h"
 
@@ -121,6 +120,8 @@ class Pusher : public Node {
 
 		return node;
 	}
+
+	~Pusher() override = default;
 
    private:
 	/**

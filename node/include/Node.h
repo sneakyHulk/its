@@ -8,4 +8,5 @@
 class Node {
    public:
 	virtual void name();
+	virtual ~Node() = default;
 };

@@ -1,6 +1,6 @@
-#include "PreprocessingNode.h"
+#include "ImagePreprocessingNode.h"
 
-ImageData PreprocessingNode::process(const ImageDataRaw& data) {
+ImageData ImagePreprocessingNode::process(const ImageDataRaw& data) {
 	// const cast is allowed here because vector is not changed
 	cv::Mat const bayer_image(config.at(data.source).height, config.at(data.source).width, CV_8UC1, const_cast<std::uint8_t*>(data.image_raw.data()));
 

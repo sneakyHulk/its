@@ -3,12 +3,12 @@
 #include <opencv2/opencv.hpp>
 
 #include "ImageData.h"
-#include "node.h"
+#include "Processor.h"
 
 template <int height, int width>
-class DownscalingNode : public Processor<ImageData, ImageData> {
+class ImageDownscalingNode : public Processor<ImageData, ImageData> {
    public:
-	DownscalingNode() = default;
+	ImageDownscalingNode() = default;
 
 	ImageData process(ImageData const& data) final {
 		ImageData ret;

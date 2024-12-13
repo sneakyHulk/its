@@ -8,9 +8,9 @@
 
 #include "ImageData.h"
 #include "ImageDataRaw.h"
-#include "node.h"
+#include "Processor.h"
 
-class PreprocessingNode : public Processor<ImageDataRaw, ImageData> {
+class ImagePreprocessingNode : public Processor<ImageDataRaw, ImageData> {
    public:
 	struct HeightWidthConfig {
 		int height;
@@ -28,7 +28,7 @@ class PreprocessingNode : public Processor<ImageDataRaw, ImageData> {
 
    public:
 
-	explicit PreprocessingNode(std::remove_const<decltype(config)>::type&& config) : config(std::move(config)) {}
+	explicit ImagePreprocessingNode(std::remove_const<decltype(config)>::type&& config) : config(std::move(config)) {}
 
    private:
 	ImageData process(ImageDataRaw const& data) final;

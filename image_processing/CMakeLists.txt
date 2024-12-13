@@ -1,6 +1,6 @@
 project(image_processing_nodes)
 
-add_library(${PROJECT_NAME} SHARED src/DownscalingNode.cpp src/PreprocessingNode.cpp src/ImageUndistortionNode.cpp src/SavingNode.cpp)
+add_library(${PROJECT_NAME} SHARED src/ImageDownscalingNode.cpp src/ImagePreprocessingNode.cpp src/ImageUndistortionNode.cpp src/ImageSavingNode.cpp src/RawImageSavingNode.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})

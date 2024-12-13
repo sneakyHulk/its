@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "Node.h"
-#include "Pusher.h"
 #include "Runner.h"
 #include "RunnerSynchronous.h"
 
@@ -133,7 +132,11 @@ class Processor : public Node {
 	template <typename dummy>
 	[[maybe_unused]] Processor<Output, dummy>& asynchronously_connect(Processor<Output, dummy>& node) {
 		asynchronous_functions.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.asynchronous_call(std::forward<decltype(data)>(data)); });
+
+		return node;
 	}
+
+	~Processor() override = default;
 
    private:
 	/**

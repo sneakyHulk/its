@@ -12,7 +12,7 @@
 #include "BaslerCameraBase.h"
 #include "ImageDataRaw.h"
 #include "common_exception.h"
-#include "node.h"
+#include "Pusher.h"
 
 class BaslerCameraNode : public Pusher<ImageDataRaw>, public BaslerCameraBase {
 	Pylon::CBaslerUniversalInstantCamera _camera;

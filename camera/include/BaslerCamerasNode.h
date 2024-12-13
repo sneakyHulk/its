@@ -9,14 +9,14 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
+#include <chrono>
 #include <csignal>
 #include <vector>
-#include <chrono>
 
 #include "BaslerCameraBase.h"
 #include "ImageDataRaw.h"
+#include "Pusher.h"
 #include "common_exception.h"
-#include "node.h"
 
 class BaslerCamerasNode : public Pusher<ImageDataRaw>, public BaslerCameraBase {
    public:

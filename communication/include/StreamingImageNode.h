@@ -8,14 +8,13 @@
 #include <bitset>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <string>
 #include <thread>
 
 #include "ImageData.h"
+#include "Runner.h"
 #include "StreamingNodeBase.h"
 #include "common_exception.h"
 #include "common_output.h"
-#include "node.h"
 #include "timestamp_frame_meta.h"
 
 using namespace std::chrono_literals;
@@ -85,14 +84,14 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		GstElement *header_extension_timestamp_frame = gst_element_factory_make("rtp_header_extension_timestamp_frame_stream", "timestamp_frame_stream");
 		GstBus *bus = gst_element_get_bus(pipeline);
 
-		//gst_util_set_object_arg(G_OBJECT(source), "format", "time");
+		// gst_util_set_object_arg(G_OBJECT(source), "format", "time");
 		gst_rtp_header_extension_set_id(GST_RTP_HEADER_EXTENSION(header_extension_timestamp_frame), 1);
 		g_signal_emit_by_name(payloader, "add-extension", header_extension_timestamp_frame);
 
 		GstCaps *caps = gst_caps_new_simple("video/x-raw", "format", G_TYPE_STRING, "BGR", "width", G_TYPE_INT, user_data->width, "height", G_TYPE_INT, user_data->height, "framerate", GST_TYPE_FRACTION, 30, 1, NULL);
 		gst_app_src_set_caps(GST_APP_SRC(source), caps);
 		gst_caps_unref(caps);
-		//g_object_set(G_OBJECT(source), "format", GST_FORMAT_BUFFERS, "leaky-type", GST_APP_LEAKY_TYPE_DOWNSTREAM, "stream-type", GST_APP_STREAM_TYPE_STREAM, NULL);
+		// g_object_set(G_OBJECT(source), "format", GST_FORMAT_BUFFERS, "leaky-type", GST_APP_LEAKY_TYPE_DOWNSTREAM, "stream-type", GST_APP_STREAM_TYPE_STREAM, NULL);
 
 		gst_element_set_state(pipeline, GST_STATE_PLAYING);
 		gst_object_unref(pipeline);

@@ -3,7 +3,7 @@
 
 #include "BaslerCamerasNode.h"
 #include "CamerasSimulatorNode.h"
-#include "PreprocessingNode.h"
+#include "ImagePreprocessingNode.h"
 #include "ReceivingImageNode.h"
 #include "StreamingImageNode.h"
 
@@ -11,7 +11,7 @@
 int main(int argc, char **argv) {
 	gst_init(&argc, &argv);
 
-	CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images_distorted"}});
+	CamerasSimulatorNode cameras = make_cameras_simulator_node_arrived1({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams" / "s110_n_cam_8" / "s110_n_cam_8_images"}});
 	StreamingImageNode transmitter;
 	cameras.asynchronously_connect(transmitter);
 
