@@ -3,8 +3,8 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
-#include "ImageData.h"
-#include "video_node.h"
+#include "../../msg/include/ImageData.h"
+#include "../../visualization/include/video_node.h"
 
 class RAW2ImageData : public InputNode<ImageData> {
 	cv::Mat image;

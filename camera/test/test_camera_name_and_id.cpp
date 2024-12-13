@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
 			std::string time(std::to_string(ptrGrabResult->GetTimeStamp()));
 
-			if (cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / std::filesystem::path(std::string("result/img_") + std::to_string(i) + ".png"), image)) {
+			if (cv::imwrite(std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / (std::string("img_") + std::to_string(i) + ".png"), image)) {
 			} else {
 				common::println("Problem with imwrite!");
 			}

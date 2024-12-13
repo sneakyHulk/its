@@ -1,7 +1,7 @@
 #include <csignal>
 
+#include "../../thirdparty/common/include/common_output.h"
 #include "camera_node.h"
-#include "common_output.h"
 
 int main() {
 	BaslerCameras cams;
