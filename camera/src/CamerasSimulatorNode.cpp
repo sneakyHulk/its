@@ -4,6 +4,14 @@
 
 using namespace std::chrono_literals;
 
+/**
+ * Sets up a queue that sorts the images by the time they arrived when they were taken.
+ * The queue then pops the image filename and its additional information one at a time, waiting for the same amount of time that elapsed between the arrival of the images.
+ * After waiting, it reads the image into the return value.
+ * When the queue is empty, the process is restarted.
+ *
+ * @return Image data in the form of ImageData i.e. in BGR form.
+ */
 ImageData CamerasSimulatorNode::push() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());
@@ -31,3 +39,10 @@ ImageData CamerasSimulatorNode::push() {
 
 	return data;
 }
+
+/**
+ * @brief Initializes a vector containing the image filenames and their additional information coming from a factory method.
+ *
+ * @param files The vector of image filenames and their additional information.
+ */
+CamerasSimulatorNode::CamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}

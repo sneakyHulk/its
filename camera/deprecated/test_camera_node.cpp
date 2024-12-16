@@ -1,8 +1,8 @@
 #include <boost/circular_buffer.hpp>
 #include <filesystem>
 
+#include "VideoVisualizationNode.h"
 #include "camera_node.h"
-#include "video_node.h"
 
 class PylonRAII {
    public:

@@ -1,5 +1,6 @@
 #include <thread>
 
+#include "BirdEyeVisualizationNode.h"
 #include "Config.h"
 #include "camera_simulator_node.h"
 #include "data_communication_node.h"
@@ -8,7 +9,6 @@
 #include "tracking_visualization_node.h"
 #include "transformation_node.h"
 #include "undistort_node.h"
-#include "visualization_node.h"
 #include "yolo_node.h"
 
 #define undistort_enable 1

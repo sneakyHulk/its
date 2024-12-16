@@ -11,6 +11,13 @@
 #include "ImageDataRaw.h"
 #include "Pusher.h"
 
+/**
+ * @class RawDataCamerasSimulatorNode
+ * @brief Simulates multiple cameras to push raw images to the pipeline.
+ *
+ * This class is set up with raw image files, their source camera and timestamps.
+ * The class then pushes out the raw image data as it was obtained when the data was recorded.
+ */
 class RawDataCamerasSimulatorNode : public Pusher<ImageDataRaw> {
    public:
 	struct FilepathArrivedRecordedSourceConfig {
@@ -20,7 +27,7 @@ class RawDataCamerasSimulatorNode : public Pusher<ImageDataRaw> {
 		std::string source;
 	};
 
-	explicit RawDataCamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}
+	explicit RawDataCamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files);
 
    private:
 	ImageDataRaw push() final;
@@ -35,6 +42,13 @@ class RawDataCamerasSimulatorNode : public Pusher<ImageDataRaw> {
 	std::priority_queue<FilepathArrivedRecordedSourceConfig, std::vector<FilepathArrivedRecordedSourceConfig>, sorting_function> _queue;
 };
 
+/**
+ * @brief Factory method that takes a camera name and a folder containing recoded raw images for each camera to simulate.
+ *
+ * @attention Expects the files to be in the format <timestamp of image arrival in ns>_<timestamp of image recording in ns>.
+ *
+ * @return The RawDataCamerasSimulatorNode class which simulates the defined cameras.
+ */
 RawDataCamerasSimulatorNode make_raw_data_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<RawDataCamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 

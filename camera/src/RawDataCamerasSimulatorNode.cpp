@@ -2,6 +2,14 @@
 
 using namespace std::chrono_literals;
 
+/**
+ * Sets up a queue that sorts the raw images by the time they arrived when they were taken.
+ * The queue then pops the image filename and its additional information one at a time, waiting for the same amount of time that elapsed between the arrival of the raw images.
+ * After waiting, it reads the raw image into the return value.
+ * When the queue is empty, the process is restarted.
+ *
+ * @return Image data in the form of ImageDataRaw i.e. in BayerRG8 form.
+ */
 ImageDataRaw RawDataCamerasSimulatorNode::push() {
 	if (_queue.empty()) {
 		_queue = decltype(_queue)(_files.begin(), _files.end());
@@ -30,3 +38,10 @@ ImageDataRaw RawDataCamerasSimulatorNode::push() {
 
 	return data;
 }
+
+/**
+ * @brief Initializes a vector containing the image filenames and their additional information coming from a factory method.
+ *
+ * @param files The vector of image filenames and their additional information.
+ */
+RawDataCamerasSimulatorNode::RawDataCamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}

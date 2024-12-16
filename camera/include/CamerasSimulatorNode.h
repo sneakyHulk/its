@@ -12,6 +12,13 @@
 #include "ImageDataRaw.h"
 #include "Pusher.h"
 
+/**
+ * @class CamerasSimulatorNode
+ * @brief Simulates multiple cameras to push images to the pipeline.
+ *
+ * This class is set up with image files, their source camera and timestamps.
+ * The class then pushes out the image data as it was obtained when the data was recorded.
+ */
 class CamerasSimulatorNode : public Pusher<ImageData> {
    public:
 	struct FilepathArrivedRecordedSourceConfig {
@@ -21,7 +28,7 @@ class CamerasSimulatorNode : public Pusher<ImageData> {
 		std::string source;
 	};
 
-	explicit CamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files) : _files(std::forward<decltype(files)>(files)) {}
+	explicit CamerasSimulatorNode(std::vector<FilepathArrivedRecordedSourceConfig>&& files);
 
    private:
 	ImageData push() final;
@@ -36,6 +43,13 @@ class CamerasSimulatorNode : public Pusher<ImageData> {
 	std::priority_queue<FilepathArrivedRecordedSourceConfig, std::vector<FilepathArrivedRecordedSourceConfig>, sorting_function> _queue;
 };
 
+/**
+ * @brief Factory method that takes a camera name and a folder containing recoded images for each camera to simulate.
+ *
+ * @attention Expects the files to be in the format <timestamp of image arrival in ns>_<timestamp of image recording in ns>.
+ *
+ * @return The CamerasSimulatorNode class which simulates the defined cameras.
+ */
 CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 
@@ -53,6 +67,13 @@ CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std:
 	return CamerasSimulatorNode{std::move(ret)};
 }
 
+/**
+ * @brief Factory method that takes a camera name and a folder containing recoded images for each camera to simulate.
+ *
+ * @attention Expects the files to be in the format <timestamp of image arrival in ns>(.png|.jpeg|...).
+ *
+ * @return The CamerasSimulatorNode class which simulates the defined cameras.
+ */
 CamerasSimulatorNode make_cameras_simulator_node_arrived1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 

@@ -9,17 +9,13 @@
 #include <thread>
 #include <vector>
 
+#include "BirdEyeVisualizationNode.h"
 #include "ImageData.h"
 #include "camera_simulator_node.h"
 #include "common_exception.h"
 #include "mqtt/client.h"
-#include "visualization_node.h"
 
 using namespace std::chrono_literals;
-
-
-
-
 
 class [[maybe_unused]] ImageStreamMQTT : public Runner<ImageData> {
 	std::string const cam_name;

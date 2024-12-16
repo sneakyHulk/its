@@ -4,7 +4,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../../msg/include/ImageData.h"
-#include "../../visualization/include/video_node.h"
+#include "../../visualization/include/VideoVisualizationNode.h"
 
 class RAW2ImageData : public InputNode<ImageData> {
 	cv::Mat image;

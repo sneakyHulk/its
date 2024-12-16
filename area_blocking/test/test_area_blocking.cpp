@@ -1,5 +1,6 @@
 #include <EigenUtils.h>
 
+#include "BirdEyeVisualizationNode.h"
 #include "BlockedArea.h"
 #include "Config.h"
 #include "DrawingUtils.h"
@@ -7,7 +8,6 @@
 #include "camera_simulator_node.h"
 #include "transformation_node.h"
 #include "undistort_node.h"
-#include "visualization_node.h"
 #include "yolo_node.h"
 
 class SimpleAreaBlocking : public InputOutputNode<Detections2D, BlockedAreas> {
