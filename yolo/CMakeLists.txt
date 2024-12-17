@@ -1,6 +1,6 @@
 project(yolo_nodes)
 
-add_library(${PROJECT_NAME} STATIC src/yolo_node.cpp src/yolo_function.cpp) # must be static because of c++ version mismatch (yolo only allows c++17 standard instead of projects c++23 standard)
+add_library(${PROJECT_NAME} STATIC src/YoloNode.cpp) # must be static because of c++ version mismatch (yolo only allows c++17 standard instead of projects c++23 standard)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${TORCH_INCLUDE_DIRS})
@@ -12,11 +12,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${TORCH_CXX_FLAGS})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-
-project(test_yolo_with_distortion)
-
-add_executable(${PROJECT_NAME} test/test_yolo_with_distortion.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC yolo_nodes)
-target_link_libraries(${PROJECT_NAME} PUBLIC common)
-target_link_libraries(${PROJECT_NAME} PUBLIC tracking_nodes)
-target_link_libraries(${PROJECT_NAME} PUBLIC transformation)

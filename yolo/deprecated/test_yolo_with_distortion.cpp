@@ -1,14 +1,14 @@
+#include <../../thirdparty/json/include/nlohmann/json.hpp>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
-#include <nlohmann/json.hpp>
 #include <tuple>
 #include <vector>
 
-#include "Config.h"
-#include "association_functions.h"
-#include "common_output.h"
+#include "../../thirdparty/common/include/common_output.h"
+#include "../../tracking/include/association_functions.h"
+#include "../../transformation/include/Config.h"
 #include "yolo_function.h"
 
 int main(int argc, char* argv[]) {
