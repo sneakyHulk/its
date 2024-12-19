@@ -113,6 +113,14 @@ add_subdirectory(image_processing)
 
 
 ########## add main executable #########################################################################################
+
+add_library(config INTERFACE config.h)
+target_include_directories(config INTERFACE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(config INTERFACE ${OpenCV_LIBS})
+target_link_libraries(config INTERFACE eigen_utils)
+target_compile_features(config INTERFACE cxx_std_23)
+
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC yolo_nodes)

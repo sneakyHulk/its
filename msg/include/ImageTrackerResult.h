@@ -7,7 +7,7 @@
 
 #include "Detection2D.h"
 
-struct ImageTrackerResult {
+struct ImageTrackerResult2 {
 	BoundingBoxXYXY bbox;
 	std::array<double, 2> position;
 	std::array<double, 2> velocity;
@@ -16,8 +16,8 @@ struct ImageTrackerResult {
 	bool matched;
 };
 
-struct ImageTrackerResults {
+struct ImageTrackerResults2 {
 	std::uint64_t timestamp;                  // UTC timestamp since epoch in ns
 	std::string source;                       // sensor source of detections
-	std::vector<ImageTrackerResult> objects;  // vector of tracks
+	std::vector<ImageTrackerResult2> objects;  // vector of tracks
 };

@@ -11,6 +11,7 @@
 #include "Node.h"
 #include "Runner.h"
 #include "RunnerSynchronous.h"
+#include "RunnerSynchronousPair.h"
 
 /**
  * @class Processor
@@ -32,10 +33,14 @@ template <typename Input, typename Output>
 class Processor : public Node {
 	template <typename T>
 	friend class Pusher;
+	template <typename T1, typename T2>
+	friend class Processor;
 	template <typename T>
 	friend class Runner;
 	template <typename T>
 	friend class RunnerSynchronous;
+	template <typename T1, typename T2>
+	friend class RunnerSynchronousPair;
 
 	/**
 	 * @brief Thread used for running the Processor node asynchronously.
@@ -77,7 +82,7 @@ class Processor : public Node {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);
 
-				synchronous_call(item);
+				synchronous_call(*item);
 			}
 		});
 	}
@@ -97,6 +102,27 @@ class Processor : public Node {
 	[[maybe_unused]] void synchronously_connect(RunnerSynchronous<Output>& node) {
 		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
 		synchronous_functions_once.push_back([&node](Output const& data) -> void { node.synchronous_call_once(std::forward<decltype(data)>(data)); });
+	}
+	/**
+	 * @brief Connects this Processor to a RunnerSynchronousPair node for synchronous execution.
+	 * @param node The RunnerSynchronousPair node to connect.
+	 *
+	 * @tparam dummy A dummy parameter that represents the other input template parameter of the connecting RunnerSynchronousPair node.
+	 */
+	template <typename dummy>
+	[[maybe_unused]] void synchronously_connect(RunnerSynchronousPair<Output, dummy>& node) {
+		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
+	}
+
+	/**
+	 * @brief Connects this Processor to a RunnerSynchronousPair node for synchronous execution.
+	 * @param node The RunnerSynchronousPair node to connect.
+	 *
+	 * @tparam dummy A dummy parameter that represents the other input template parameter of the connecting RunnerSynchronousPair node.
+	 */
+	template <typename dummy>
+	[[maybe_unused]] void synchronously_connect(RunnerSynchronousPair<dummy, Output>& node) {
+		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
 	}
 	/**
 	 * @brief Connects this Processor to another Processor node for synchronous execution.

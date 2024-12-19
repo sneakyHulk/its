@@ -41,8 +41,13 @@ class KalmanFilter {
 	      x_last_update(x),
 	      P_last_update(P) {}
 
-	void adapt_prediction_matrix(double dt) { ((F(std::get<0>(velocity_components), std::get<1>(velocity_components)) = dt), ...); }
-	void predict(double dt) {
+	void adapt_prediction_matrix(double const dt) { ((F(std::get<0>(velocity_components), std::get<1>(velocity_components)) = dt), ...); }
+	decltype(F) get_adapt_prediction_matrix(double const dt) const {
+		decltype(F) F_between = F;
+		((F_between(std::get<0>(velocity_components), std::get<1>(velocity_components)) = dt), ...);
+		return F_between;
+	}
+	void predict(double const dt) {
 		adapt_prediction_matrix(dt);
 
 		x = F * x_last_update;

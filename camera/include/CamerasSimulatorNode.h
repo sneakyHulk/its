@@ -11,6 +11,7 @@
 #include "ImageData.h"
 #include "ImageDataRaw.h"
 #include "Pusher.h"
+#include "common_output.h"
 
 /**
  * @class CamerasSimulatorNode
@@ -50,7 +51,7 @@ class CamerasSimulatorNode : public Pusher<ImageData> {
  *
  * @return The CamerasSimulatorNode class which simulates the defined cameras.
  */
-CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
+inline CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 
 	for (auto const& [source, folder] : folders) {
@@ -64,6 +65,8 @@ CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std:
 		}
 	}
 
+	if (ret.empty()) common::println_critical_loc("No image files found!");
+
 	return CamerasSimulatorNode{std::move(ret)};
 }
 
@@ -74,7 +77,7 @@ CamerasSimulatorNode make_cameras_simulator_node_arrived_recorded1(std::map<std:
  *
  * @return The CamerasSimulatorNode class which simulates the defined cameras.
  */
-CamerasSimulatorNode make_cameras_simulator_node_arrived1(std::map<std::string, std::filesystem::path>&& folders) {
+inline CamerasSimulatorNode make_cameras_simulator_node_arrived1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<CamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 
 	for (auto const& [source, folder] : folders) {
@@ -83,6 +86,8 @@ CamerasSimulatorNode make_cameras_simulator_node_arrived1(std::map<std::string, 
 			    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(std::stoull(file.path().stem()))).count(), source);
 		}
 	}
+
+	if (ret.empty()) common::println_critical_loc("No image files found!");
 
 	return CamerasSimulatorNode{std::forward<decltype(ret)>(ret)};
 }

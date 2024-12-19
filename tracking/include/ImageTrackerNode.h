@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <chrono>
 
-#include "ImageTrackerResult.h"
 #include "KalmanBoxSourceTrack.h"
 #include "association_functions.h"
 #include "linear_assignment.h"
@@ -11,20 +10,20 @@
 
 using namespace std::chrono_literals;
 
-struct ImageTrackerResults2 {
+struct ImageTrackerResults {
 	std::uint64_t timestamp;                    // UTC timestamp since epoch in ns
 	std::string source;                         // sensor source of detections
 	std::vector<KalmanBoxSourceTrack> objects;  // vector of tracks
 };
 
 template <std::uint64_t max_age = std::chrono::duration_cast<std::chrono::nanoseconds>(700ms).count()>
-class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults2> {
+class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults> {
 	std::map<std::string, std::vector<KalmanBoxSourceTrack>> multiple_cameras_tracks;
 
    public:
 	ImageTrackerNode() = default;
 
-	ImageTrackerResults2 function(Detections2D const& data) {
+	ImageTrackerResults process(Detections2D const& data) override {
 		auto& tracks = multiple_cameras_tracks[data.source];
 
 		for (auto track = tracks.begin(); track != tracks.end(); ++track) {
@@ -40,8 +39,7 @@ class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults2> {
 				auto state = tracks[i].state();
 				auto value = iou(state, data.objects[j].bbox);
 				if (std::isnan(value)) {
-					common::println("shit");
-					throw false;
+					common::println_critical_loc("iou is nan!");
 				}
 				association_matrix(i, j) -= std::isnan(value) ? 0. : value;
 			}
@@ -59,7 +57,7 @@ class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults2> {
 			tracks[tracker_index].update(data.objects[detection_index]);
 		}
 
-		ImageTrackerResults2 ret;
+		ImageTrackerResults ret;
 		ret.source = data.source;
 		ret.timestamp = data.timestamp;
 		ret.objects = tracks;

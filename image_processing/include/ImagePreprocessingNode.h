@@ -12,11 +12,6 @@
 
 class ImagePreprocessingNode : public Processor<ImageDataRaw, ImageData> {
    public:
-	struct HeightWidthConfig {
-		int height;
-		int width;
-	};
-
 	struct HeightWidthConversionConfig {
 		int height;
 		int width;
@@ -24,11 +19,10 @@ class ImagePreprocessingNode : public Processor<ImageDataRaw, ImageData> {
 	};
 
    private:
-	std::map<std::string, HeightWidthConversionConfig> const config;
+	std::map<std::string, HeightWidthConversionConfig> height_width_conversion_config;
 
    public:
-
-	explicit ImagePreprocessingNode(std::remove_const<decltype(config)>::type&& config) : config(std::move(config)) {}
+	explicit ImagePreprocessingNode(std::map<std::string, HeightWidthConversionConfig>&& height_width_conversion) : height_width_conversion_config(height_width_conversion) {}
 
    private:
 	ImageData process(ImageDataRaw const& data) final;

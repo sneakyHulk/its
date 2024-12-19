@@ -8,13 +8,6 @@
 class ImageUndistortionNode : public Processor<ImageData, ImageData> {
    public:
 	struct UndistortionConfig {
-		std::vector<double> camera_matrix;
-		std::vector<double> distortion_values;
-		int height;
-		int width;
-	};
-
-	struct UndistortionConfigInternal {
 		cv::Mat camera_matrix;
 		cv::Mat distortion_values;
 		cv::Mat new_camera_matrix;
@@ -22,10 +15,12 @@ class ImageUndistortionNode : public Processor<ImageData, ImageData> {
 		cv::Mat undistortion_map2;
 	};
 
-	explicit ImageUndistortionNode(std::map<std::string, UndistortionConfig>&& config);
+   private:
+	std::map<std::string, UndistortionConfig> camera_matrix_distortion_values_new_camera_matrix_undistortion_maps_config;
+
+   public:
+	explicit ImageUndistortionNode(std::map<std::string, UndistortionConfig>&& camera_matrix_distortion_values_new_camera_matrix_undistortion_maps);
 
    private:
 	ImageData process(ImageData const& data) final;
-
-	std::map<std::string, UndistortionConfigInternal> _undistortion_config;
 };

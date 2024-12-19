@@ -1,5 +1,7 @@
 #pragma once
 
+#include <common_output.h>
+
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -49,7 +51,7 @@ class RawDataCamerasSimulatorNode : public Pusher<ImageDataRaw> {
  *
  * @return The RawDataCamerasSimulatorNode class which simulates the defined cameras.
  */
-RawDataCamerasSimulatorNode make_raw_data_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
+inline RawDataCamerasSimulatorNode make_raw_data_cameras_simulator_node_arrived_recorded1(std::map<std::string, std::filesystem::path>&& folders) {
 	std::vector<RawDataCamerasSimulatorNode::FilepathArrivedRecordedSourceConfig> ret;
 
 	for (auto const& [source, folder] : folders) {
@@ -62,6 +64,8 @@ RawDataCamerasSimulatorNode make_raw_data_cameras_simulator_node_arrived_recorde
 			ret.emplace_back(file.path(), std::stoull(m[1].str()), std::stoull(m[2].str()), source);
 		}
 	}
+
+	if (ret.empty()) common::println_critical_loc("No image files found!");
 
 	return RawDataCamerasSimulatorNode{std::forward<decltype(ret)>(ret)};
 }

@@ -15,27 +15,38 @@ class KalmanBoxSourceTrack : private KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}> 
 	Detection2D _last_detection;
 
    public:
-	bool error = false;
-
-   public:
-	KalmanBoxSourceTrack(Detection2D const& detection, std::uint64_t timestamp)
+	KalmanBoxSourceTrack(Detection2D const& detection, std::uint64_t const timestamp)
 	    : KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}>(make_constant_box_velocity_model_kalman_filter(detection.bbox)), _last_update_time(timestamp), _last_detection(detection) {}
 
 	bool predict(std::uint64_t const time) {
 		_last_predict_time = time;
-		auto const dt = std::chrono::duration<double>(std::chrono::nanoseconds(time) - std::chrono::nanoseconds(_last_update_time)).count();
+		auto const dt = std::chrono::duration<double>(std::chrono::nanoseconds(time) - std::chrono::nanoseconds(_last_predict_time)).count();
 
 		if (dt * x(6) + x(2) <= 0) x(2) *= 0.;  // area must be >= 0;
 
 		KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}>::predict(dt);
 
-		// if (dt * x(6) + x(2) <= 0) x(2) *= 0.;
-
 		if (x(2) < 0.) {
-			common::println("Area is smaller than zero!");
+			common::println_warn_loc("Area is smaller than zero!");
 			return false;
 		}
 		return true;
+	}
+
+	[[nodiscard]] std::tuple<bool, std::array<double, 2>, std::array<double, 2>> predict_between(std::uint64_t const time) const {
+		auto const dt = std::chrono::duration<double>(std::chrono::nanoseconds(time) - std::chrono::nanoseconds(_last_predict_time)).count();
+
+		decltype(x) x_between = x;
+		if (dt * x_between(6) + x_between(2) <= 0) x_between(2) *= 0.;  // area must be >= 0;
+
+		x_between = KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}>::get_adapt_prediction_matrix(dt) * x_between;
+
+		if (x_between(2) < 0.) {
+			common::println_warn_loc("Area is smaller than zero!");
+			return {false, {x_between(0), x_between(1)}, {x_between(4), x_between(5)}};
+		}
+
+		return {true, {x_between(0), x_between(1)}, {x_between(4), x_between(5)}};
 	}
 
 	void update(Detection2D const& detection) {

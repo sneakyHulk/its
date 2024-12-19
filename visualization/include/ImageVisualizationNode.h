@@ -3,6 +3,8 @@
 #include <gtk/gtk.h>
 
 #include <functional>
+#include <mutex>
+#include <semaphore>
 #include <source_location>
 
 #include "ImageData.h"
@@ -26,7 +28,8 @@ class ImageVisualizationNode : public RunnerSynchronous<ImageData> {
 		GtkWidget* window = nullptr;
 		GdkPixbuf* pixbuf = nullptr;
 		std::atomic_flag destroyed = ATOMIC_FLAG_INIT;
-		std::shared_ptr<ImageData> current_image_data = nullptr;
+		std::shared_ptr<ImageData const> current_image_data = nullptr;
+		std::shared_ptr<ImageData const> displayed_image_data = nullptr;
 		~UserData();
 	}* user_data = new UserData;
 

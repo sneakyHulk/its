@@ -21,8 +21,10 @@ void ImageVisualizationNode::run(ImageData const &data) {
 	// Check if the given image data passes the filter
 	if (!_image_mask(data)) return;
 
+	ImageData const new_data{data.image.clone(), data.timestamp, data.source};
+
 	// Store the provided image data atomically for use in the GUI thread.
-	std::atomic_store(&user_data->current_image_data, std::make_shared<ImageData>(data));
+	std::atomic_store(&user_data->current_image_data, std::make_shared<ImageData const>(new_data));
 }
 
 /**
@@ -84,32 +86,31 @@ gboolean ImageVisualizationNode::on_draw(GtkWidget *widget, cairo_t *cr, ImageVi
  * @return Returns G_SOURCE_CONTINUE to keep the idle function active in the GUI thread.
  */
 gboolean ImageVisualizationNode::update_image_create_window_idle(ImageVisualizationNode::UserData *user_data) {
-	static std::shared_ptr<ImageData> image_data = nullptr;
-
 	// Check if new image data was transferred to the node
-	if (auto image_data_test = atomic_load(&user_data->current_image_data); image_data != image_data_test) {
-		image_data = image_data_test;
+	if (auto image_data = std::atomic_load(&user_data->current_image_data); image_data != user_data->displayed_image_data) {
+		user_data->displayed_image_data = image_data;
 
-		// Convert the image color space from BGR to RGB
-		cv::cvtColor(image_data->image, image_data->image, cv::COLOR_BGR2RGB);
+		// Convert the image color space from BGR to RGB ... const does not make any sense here because the image is changed.
+		cv::cvtColor(user_data->displayed_image_data->image, user_data->displayed_image_data->image, cv::COLOR_BGR2RGB);
 
 		// Add text overlay with image source and timestamp information
-		cv::putText(image_data->image,
-		    std::string("Source: ") + image_data->source +
-		        ", Time since Timestamp: " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - std::chrono::nanoseconds(image_data->timestamp)).count()) + "mus",
+		cv::putText(user_data->displayed_image_data->image,
+		    std::string("Source: ") + user_data->displayed_image_data->source + ", Time since Timestamp: " +
+		        std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - std::chrono::nanoseconds(user_data->displayed_image_data->timestamp)).count()) + "mus",
 		    cv::Point2d(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar_<int>(0, 0, 0), 1);
 
 		if (GDK_IS_PIXBUF(user_data->pixbuf)) g_object_unref(user_data->pixbuf);
 
 		// Create a new pixbuf from the updated image data
-		user_data->pixbuf = gdk_pixbuf_new_from_data(image_data->image.data, GDK_COLORSPACE_RGB, false, 8, image_data->image.cols, image_data->image.rows, static_cast<int>(image_data->image.step), nullptr, nullptr);
+		user_data->pixbuf = gdk_pixbuf_new_from_data(user_data->displayed_image_data->image.data, GDK_COLORSPACE_RGB, false, 8, user_data->displayed_image_data->image.cols, user_data->displayed_image_data->image.rows,
+		    static_cast<int>(user_data->displayed_image_data->image.step), nullptr, nullptr);
 
 		if (!user_data->destroyed.test_and_set()) {
 			// Create the GUI window and widgets
 			user_data->drawing_area = gtk_drawing_area_new();
 			user_data->window = gtk_window_new(GtkWindowType::GTK_WINDOW_TOPLEVEL);
 			gtk_window_set_title(GTK_WINDOW(user_data->window), "RGB Image Viewer");
-			gtk_window_set_default_size(GTK_WINDOW(user_data->window), image_data->image.cols, image_data->image.rows);
+			gtk_window_set_default_size(GTK_WINDOW(user_data->window), user_data->displayed_image_data->image.cols, user_data->displayed_image_data->image.rows);
 
 			g_signal_connect(user_data->window, "destroy", G_CALLBACK(destroy), user_data);
 			g_signal_connect(user_data->drawing_area, "draw", G_CALLBACK(on_draw), user_data);

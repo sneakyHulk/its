@@ -12,3 +12,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${TORCH_CXX_FLAGS})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+add_executable(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC ${PROJECT_NAME})
+target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
