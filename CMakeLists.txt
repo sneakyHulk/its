@@ -106,7 +106,6 @@ add_subdirectory(camera)
 add_subdirectory(visualization)
 add_subdirectory(tracking)
 add_subdirectory(communication)
-add_subdirectory(area_blocking)
 #add_subdirectory(dgon)
 add_subdirectory(image_processing)
 
