@@ -23,9 +23,6 @@ class RunnerSynchronous : public Node {
 	template <typename T1, typename T2>
 	friend class Processor;
 
-   public:
-	~RunnerSynchronous() override = default;
-
    private:
 	/**
 	 * @brief Does one iteration of this RunnerSynchronous node.

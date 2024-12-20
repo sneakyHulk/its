@@ -43,11 +43,6 @@ class Processor : public Node {
 	friend class RunnerSynchronousPair;
 
 	/**
-	 * @brief Thread used for running the Processor node asynchronously.
-	 */
-	std::thread thread;
-
-	/**
 	 * @brief Functions of other pipeline nodes that are executed synchronously after the execution of this Processor node.
 	 *
 	 * Functions run in the same thread, so there is no need for shared memory i.e. can use stack.
@@ -68,17 +63,20 @@ class Processor : public Node {
    public:
 	/**
 	 * @brief Starts the Processor node's processing loop in a separate thread.
+	 * @attention All synchronous clients must be constructed before this function is called. If not, this is undefined behavior because the synchronous client has already been destroyed, and this thread could still call the functions of
+	 * that destroyed synchronous client.
+	 * @return The thread used for running the Processor node asynchronously.
 	 */
-	[[maybe_unused]] void operator()() {
-		thread = std::thread([this] [[noreturn]] () {
-			{
+	[[nodiscard("The thread would stop immediately!")]] [[maybe_unused]] std::jthread operator()() {
+		return std::jthread([this](std::stop_token const& stop_token) {
+			if (!stop_token.stop_requested()) {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);
 
 				synchronous_call_once(*item);
 			}
 
-			while (true) {
+			while (!stop_token.stop_requested()) {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);
 
@@ -161,8 +159,6 @@ class Processor : public Node {
 
 		return node;
 	}
-
-	~Processor() override = default;
 
    private:
 	/**

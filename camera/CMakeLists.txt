@@ -39,14 +39,18 @@ target_compile_definitions(test_${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE
 
 project(test_gpio_hardware_trigger)
 
-add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
-target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC common)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC PkgConfig::gpiod)
-target_link_libraries(${PROJECT_NAME} PUBLIC pylon::pylon)
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+if ((NOT "${gpiod_FOUND}" STREQUAL "") AND (${gpiod_FOUND}))
+    add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PUBLIC common)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
+    target_link_libraries(${PROJECT_NAME} PUBLIC PkgConfig::gpiod)
+    target_link_libraries(${PROJECT_NAME} PUBLIC pylon::pylon)
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+else ((NOT "${gpiod_FOUND}" STREQUAL "") AND (${gpiod_FOUND}))
+    message(WARNING "Cannot set up project ${PROJECT_NAME}, libgpiod not found.")
+endif ((NOT "${gpiod_FOUND}" STREQUAL "") AND (${gpiod_FOUND}))
 
 project(test_camera_name_and_id)
 

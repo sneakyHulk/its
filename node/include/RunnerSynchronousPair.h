@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <atomic>
+#include <memory>
 
 #include "Node.h"
 
@@ -15,7 +15,8 @@
  *
  * @attention This node has to be synchronously connected by calling synchronously_connect, to other pipeline nodes to receive input data.
  *
- * @tparam Input The input type.
+ * @tparam Input1 The first input type.
+ * @tparam Input2 The second input type.
  */
 template <typename Input1, typename Input2>
 class RunnerSynchronousPair : public Node {
@@ -24,18 +25,21 @@ class RunnerSynchronousPair : public Node {
 	template <typename T1, typename T2>
 	friend class Processor;
 
-	std::shared_ptr<Input1 const> first = nullptr;
-	std::shared_ptr<Input2 const> second = nullptr;
+	std::atomic<std::shared_ptr<Input1 const>> first = nullptr;
+	std::atomic<std::shared_ptr<Input2 const>> second = nullptr;
 
-public:
-	~RunnerSynchronousPair() override = default;
-
-private:
+   private:
 	/**
 	 * @brief Does one iteration of this RunnerSynchronous node.
 	 */
-	void synchronous_call(Input1 const& input) {  if(auto second_ptr = std::atomic_load(&second); second_ptr) run(input, *second_ptr); std::atomic_store(&first, std::make_shared<Input1 const>(input)); }
-	void synchronous_call(Input2 const& input) {   if(auto first_ptr = std::atomic_load(&second); first_ptr) run(*first_ptr, input); std::atomic_store(&second, std::make_shared<Input2 const>(input));}
+	void synchronous_call(Input1 const& input) {
+		if (auto second_ptr = std::atomic_load(&second); second_ptr) run(input, *second_ptr);
+		std::atomic_store(&first, std::make_shared<Input1 const>(input));
+	}
+	void synchronous_call(Input2 const& input) {
+		if (auto first_ptr = std::atomic_load(&second); first_ptr) run(*first_ptr, input);
+		std::atomic_store(&second, std::make_shared<Input2 const>(input));
+	}
 
 	/**
 	 * @brief Abstract method for presenting input data.

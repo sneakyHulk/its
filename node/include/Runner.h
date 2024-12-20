@@ -32,10 +32,6 @@ class Runner : public Node {
 	friend class Processor;
 
 	/**
-	 * @brief Thread used for running the Runner node asynchronously.
-	 */
-	std::thread thread;
-	/**
 	 * @brief Concurrent queue in which other pipeline nodes can input data asynchronously
 	 */
 	tbb::concurrent_bounded_queue<std::shared_ptr<Input const>> asynchronous_queue;
@@ -43,17 +39,20 @@ class Runner : public Node {
    public:
 	/**
 	 * @brief Starts the Runner node's processing loop in a separate thread.
+	 * @attention All synchronous clients must be constructed before this function is called. If not, this is undefined behavior because the synchronous client has already been destroyed, and this thread could still call the functions of
+	 * that destroyed synchronous client.
+	 * @return The thread used for running the Runner node asynchronously.
 	 */
-	[[maybe_unused]] void operator()() {
-		thread = std::thread([this] [[noreturn]] () {
-			{
+	[[nodiscard("The thread would stop immediately!")]] [[maybe_unused]] std::jthread operator()() {
+		return std::jthread([this](std::stop_token const& stop_token) {
+			if (!stop_token.stop_requested()) {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);
 
 				synchronous_call_once(*item);
 			}
 
-			while (true) {
+			while (!stop_token.stop_requested()) {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);
 
@@ -61,8 +60,6 @@ class Runner : public Node {
 			}
 		});
 	}
-
-	~Runner() override = default;
 
    private:
 	/**

@@ -39,11 +39,6 @@ class Pusher : public Node {
 	friend class RunnerSynchronousPair;
 
 	/**
-	 * @brief Thread used for running the Pusher node asynchronously.
-	 */
-	std::thread thread;
-
-	/**
 	 * @brief Functions of other pipeline nodes that are executed synchronously after the execution of this Pusher node.
 	 *
 	 * Functions run in the same thread, so there is no need for shared memory i.e. can use stack.
@@ -59,12 +54,17 @@ class Pusher : public Node {
    public:
 	/**
 	 * @brief Starts the Pusher node's processing loop in a separate thread.
+	 * @attention All synchronous clients must be constructed before this function is called. If not, this is undefined behavior because the synchronous client has already been destroyed, and this thread could still call the functions of
+	 * that destroyed synchronous client.
+	 * @return The thread used for running the Pusher node asynchronously.
 	 */
-	void operator()() {
-		thread = std::thread([this] [[noreturn]] () {
-			synchronous_call_once();
+	[[nodiscard("The thread would stop immediately!")]] std::jthread operator()() {
+		return std::jthread([this](std::stop_token const& stop_token) {
+			if (!stop_token.stop_requested()) {
+				synchronous_call_once();
+			}
 
-			while (true) {
+			while (!stop_token.stop_requested()) {
 				synchronous_call();
 			}
 		});
@@ -144,8 +144,6 @@ class Pusher : public Node {
 
 		return node;
 	}
-
-	~Pusher() override = default;
 
    private:
 	/**

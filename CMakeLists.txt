@@ -23,7 +23,7 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 find_package(Eigen3 REQUIRED)
 
 ### Pylon
-find_package(pylon REQUIRED)
+find_package(pylon)
 
 ### eCAL
 find_package(eCAL)
@@ -46,8 +46,7 @@ pkg_search_module(gstreamer-rtp REQUIRED IMPORTED_TARGET gstreamer-rtp-1.0>=1.4)
 pkg_check_modules(gtk+-3.0 REQUIRED IMPORTED_TARGET gtk+-3.0)
 
 ### gpiod
-pkg_check_modules(gpiod REQUIRED IMPORTED_TARGET libgpiod)
-
+pkg_check_modules(gpiod IMPORTED_TARGET libgpiod)
 
 ########## add submodules #########################################################################################
 ### autodiff
