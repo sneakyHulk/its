@@ -44,19 +44,15 @@ class Run1 : public RunnerSynchronousPair<int, float> {
 };
 
 int main() {
-	{
-		Push1 push1;
-		Push2 push2;
-		Run1 run1;
+	Push1 push1;
+	Push2 push2;
+	Run1 run1;
 
-		push1.synchronously_connect(run1);
-		push2.synchronously_connect(run1);
+	push1.synchronously_connect(run1);
+	push2.synchronously_connect(run1);
 
-		auto t1 = push1();
-		auto t2 = push2();
+	auto t1 = push1();
+	auto t2 = push2();
 
-		std::this_thread::sleep_for(100ms);
-	}
-
-	std::this_thread::sleep_for(1000ms);
+	std::this_thread::sleep_for(100ms);
 }
