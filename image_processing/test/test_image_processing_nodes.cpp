@@ -28,8 +28,8 @@ int main(int argc, char** argv) {
 	pre.synchronously_connect(down);
 	undist.synchronously_connect(down).synchronously_connect(down_img);
 
-	raw_cams();
-	pre();
+	auto raw_cams_thread = raw_cams();
+	auto pre_thread = pre();
 
 	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp;) g_main_context_iteration(NULL, true);
 }

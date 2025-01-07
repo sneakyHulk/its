@@ -24,6 +24,8 @@ class RunnerSynchronousPair : public Node {
 	friend class Pusher;
 	template <typename T1, typename T2>
 	friend class Processor;
+	template <typename T1, typename T2, typename T3>
+	friend class ProcessorSynchronousPair;
 
 	std::atomic<std::shared_ptr<Input1 const>> first = nullptr;
 	std::atomic<std::shared_ptr<Input2 const>> second = nullptr;
@@ -37,7 +39,7 @@ class RunnerSynchronousPair : public Node {
 		std::atomic_store(&first, std::make_shared<Input1 const>(input));
 	}
 	void synchronous_call(Input2 const& input) {
-		if (auto first_ptr = std::atomic_load(&second); first_ptr) run(*first_ptr, input);
+		if (auto first_ptr = std::atomic_load(&first); first_ptr) run(*first_ptr, input);
 		std::atomic_store(&second, std::make_shared<Input2 const>(input));
 	}
 

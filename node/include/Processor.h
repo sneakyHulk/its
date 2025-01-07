@@ -9,9 +9,13 @@
 #include <vector>
 
 #include "Node.h"
+#include "ProcessorSynchronousPair.h"
 #include "Runner.h"
 #include "RunnerSynchronous.h"
 #include "RunnerSynchronousPair.h"
+
+template <typename Input1, typename Input2, typename Output>
+class ProcessorSynchronousPair;
 
 /**
  * @class Processor
@@ -35,6 +39,8 @@ class Processor : public Node {
 	friend class Pusher;
 	template <typename T1, typename T2>
 	friend class Processor;
+	template <typename T1, typename T2, typename T3>
+	friend class ProcessorSynchronousPair;
 	template <typename T>
 	friend class Runner;
 	template <typename T>
@@ -158,6 +164,29 @@ class Processor : public Node {
 		asynchronous_functions.push_back([&node](std::shared_ptr<Output const>&& data) -> void { node.asynchronous_call(std::forward<decltype(data)>(data)); });
 
 		return node;
+	}
+
+	/**
+	 * @brief Connects this Processor to a ProcessorSynchronousPair node for synchronous execution.
+	 * @param node The ProcessorSynchronousPair node to connect.
+	 *
+	 * @tparam dummy1 A dummy parameter that represents the output template parameter of the connecting ProcessorSynchronousPair node.
+	 * @tparam dummy2 A dummy parameter that represents the output template parameter of the connecting ProcessorSynchronousPair node.
+	 */
+	template <typename dummy1, typename dummy2>
+	[[maybe_unused]] void synchronously_connect(ProcessorSynchronousPair<Output, dummy1, dummy2>& node) {
+		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
+	}
+	/**
+	 * @brief Connects this Processor to a ProcessorSynchronousPair node for synchronous execution.
+	 * @param node The ProcessorSynchronousPair node to connect.
+	 *
+	 * @tparam dummy1 A dummy parameter that represents the output template parameter of the connecting ProcessorSynchronousPair node.
+	 * @tparam dummy2 A dummy parameter that represents the output template parameter of the connecting ProcessorSynchronousPair node.
+	 */
+	template <typename dummy1, typename dummy2>
+	[[maybe_unused]] void synchronously_connect(ProcessorSynchronousPair<dummy1, Output, dummy2>& node) {
+		synchronous_functions.push_back([&node](Output const& data) -> void { node.synchronous_call(std::forward<decltype(data)>(data)); });
 	}
 
    private:

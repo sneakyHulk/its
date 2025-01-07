@@ -11,8 +11,8 @@ int main(int argc, char* argv[]) {
 
 	cameras.asynchronously_connect(vid);
 
-	cameras();
-	vid();
+	auto cameras_thread = cameras();
+	auto video_thread = vid();
 
 	std::this_thread::sleep_for(100s);
 }

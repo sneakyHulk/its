@@ -22,25 +22,25 @@ class Push1 : public Pusher<int> {
 	}
 };
 
-class Push2 : public Pusher<float> {
+class Push2 : public Pusher<std::tuple<float, float>> {
 	float f = 0;
 
    public:
 	Push2() { std::cout << "push2()" << std::endl; }
-	float push() final {
-		std::cout << ++f << " push2.push()" << std::endl;
-		return f;
+	std::tuple<float, float> push() final {
+		std::cout << (f -= 0.1f) << " push2.push()" << std::endl;
+		return {f, f};
 	}
-	float push_once() final {
-		std::cout << ++f << " push2.push_once()" << std::endl;
-		return f;
+	std::tuple<float, float> push_once() final {
+		std::cout << (f -= 0.1f) << " push2.push_once()" << std::endl;
+		return {f, f};
 	}
 };
 
-class Run1 : public RunnerSynchronousPair<int, float> {
+class Run1 : public RunnerSynchronousPair<int, std::tuple<float, float>> {
    public:
 	Run1() { std::cout << "run1()" << std::endl; }
-	void run(int const& data1, float const& data2) final { std::cout << "run1.run(" << data1 << ", " << data2 << ")" << std::endl; }
+	void run(int const& data1, std::tuple<float, float> const& data2) final { std::cout << "run1.run(" << data1 << ", " << std::get<0>(data2) << ")" << std::endl; }
 };
 
 int main() {

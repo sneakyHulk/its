@@ -22,13 +22,14 @@
 class ImageVisualizationNode : public RunnerSynchronous<ImageData> {
 	std::function<bool(ImageData const&)> _image_mask;
 	std::string display_name;
+	guint source_id;
 
 	struct UserData {
 		GtkWidget* drawing_area = nullptr;
 		GtkWidget* window = nullptr;
 		GdkPixbuf* pixbuf = nullptr;
 		std::atomic_flag destroyed = ATOMIC_FLAG_INIT;
-		std::shared_ptr<ImageData const> current_image_data = nullptr;
+		std::atomic<std::shared_ptr<ImageData const>> current_image_data = nullptr;
 		std::shared_ptr<ImageData const> displayed_image_data = nullptr;
 		~UserData();
 	}* user_data = new UserData;

@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 	cameras.synchronously_connect(vis);
 	cameras.synchronously_connect(vis2);
 
-	cameras();
+	auto cameras_thread = cameras();
 
-	for (;; std::this_thread::yield()) g_main_context_iteration(NULL, true);
+	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, true);
 }

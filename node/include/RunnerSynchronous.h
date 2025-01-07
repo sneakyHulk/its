@@ -22,6 +22,8 @@ class RunnerSynchronous : public Node {
 	friend class Pusher;
 	template <typename T1, typename T2>
 	friend class Processor;
+	template <typename T1, typename T2, typename T3>
+	friend class ProcessorSynchronousPair;
 
    private:
 	/**

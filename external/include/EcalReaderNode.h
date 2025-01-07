@@ -6,8 +6,8 @@
 #include <opencv2/opencv.hpp>
 
 #include "ImageData.h"
+#include "Pusher.h"
 #include "common_output.h"
-#include "node.h"
 #include "streaming_message.pb.h"
 
 class EcalReaderNode : public Pusher<ImageData> {
@@ -44,7 +44,7 @@ class EcalReaderNode : public Pusher<ImageData> {
 			ImageData ret;
 			ret.source = index->first;
 			ret.timestamp = timestamp;
-			ret.image = cv::Mat(1200, 1920, CV_8UC3, (void *)msg.mutable_image()->data().c_str(), cv::Mat::AUTO_STEP).clone();
+			ret.image = cv::Mat(1200, 1920, CV_8UC3, (void*)msg.mutable_image()->data().c_str(), cv::Mat::AUTO_STEP).clone();
 
 			return ret;
 		}

@@ -50,9 +50,9 @@ int main(int argc, char* argv[]) {
 		cameras.asynchronously_connect(pre);
 		pre.asynchronously_connect(save);
 
-		cameras();
-		pre();
-		save();
+		auto cameras_thread = cameras();
+		auto pre_thread = pre();
+		auto save_thread = save();
 
 		std::this_thread::sleep_for(20s);
 

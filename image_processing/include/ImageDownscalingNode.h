@@ -10,6 +10,15 @@ class ImageDownscalingNode : public Processor<ImageData, ImageData> {
    public:
 	ImageDownscalingNode() = default;
 
+	/**
+	 * @brief Scales the image to the input size of the yolo model.
+	 *
+	 * Scales the image in such a way that the aspect ratio of the image is maintained.
+	 * Fills in the other parts with cv::BORDER_CONSTANT.
+	 *
+	 * @param data The image to be scaled.
+	 * @return The scaled image.
+	 */
 	ImageData process(ImageData const& data) final {
 		ImageData ret;
 		ret.source = data.source;

@@ -9,18 +9,18 @@
 #include "linear_assignment.h"
 #include "node.h"
 
-struct ImageTrackerResults2 {
+struct ImageTrackerResults24444444444444 {
 	std::uint64_t timestamp;                    // UTC timestamp since epoch in ns
 	std::string source;                         // sensor source of detections
 	std::vector<KalmanBoxSourceTrack> objects;  // vector of tracks
 };
 
 template <std::uint64_t max_age = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(700)).count()>
-class ImageTrackerNode : public InputOutputNode<Detections2D, ImageTrackerResults2> {
+class ImageTrackerNode3 : public InputOutputNode<Detections2D, ImageTrackerResults2> {
 	std::map<std::string, std::vector<KalmanBoxSourceTrack>> multiple_cameras_tracks;
 
    public:
-	ImageTrackerNode() = default;
+	ImageTrackerNode3() = default;
 
 	ImageTrackerResults2 function(Detections2D const& data) {
 		AfterReturnTimeMeasure after(data.timestamp);

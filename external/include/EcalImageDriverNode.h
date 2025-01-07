@@ -12,8 +12,8 @@
 #include <opencv2/opencv.hpp>
 
 #include "ImageDataRaw.h"
+#include "Runner.h"
 #include "common_output.h"
-#include "node.h"
 #include "streaming_message.pb.h"
 
 // Yeah, the following code doesn't make much sense, but it is there for legacy reason and nobody wanted to change this except me and I didn't want to build upon this mess. Therefore, this class exists.

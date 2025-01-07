@@ -1,4 +1,4 @@
-project(tracking_nodes)
+project(image_tracking_nodes)
 
 add_library(${PROJECT_NAME} SHARED src/KalmanFilter.cpp src/KalmanBoxSourceTrack.cpp src/ImageTrackerNode.cpp src/TrackToTrackFusion.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -12,6 +12,9 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 
 add_executable(test_${PROJECT_NAME} test/test_${PROJECT_NAME}.cpp)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC ${PROJECT_NAME})
+target_link_libraries(test_${PROJECT_NAME} PUBLIC image_visualization_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC image_processing_nodes)
+target_link_libraries(test_${PROJECT_NAME} PUBLIC cameras_simulator_nodes)
 target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
 
 

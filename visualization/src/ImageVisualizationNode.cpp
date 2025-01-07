@@ -24,7 +24,7 @@ void ImageVisualizationNode::run(ImageData const &data) {
 	ImageData const new_data{data.image.clone(), data.timestamp, data.source};
 
 	// Store the provided image data atomically for use in the GUI thread.
-	std::atomic_store(&user_data->current_image_data, std::make_shared<ImageData const>(new_data));
+	user_data->current_image_data.store(std::make_shared<ImageData const>(new_data));
 }
 
 /**
@@ -39,7 +39,7 @@ void ImageVisualizationNode::run(ImageData const &data) {
 	display_name = common::stringprint("ImageVisualization of ", std::filesystem::path(location.file_name()).stem().string(), '(', location.line(), ':', location.column(), ")");
 
 	// Schedule an update for the image visualization in the GUI thread
-	gdk_threads_add_idle(G_SOURCE_FUNC(update_image_create_window_idle), user_data);
+	source_id = gdk_threads_add_idle(G_SOURCE_FUNC(update_image_create_window_idle), user_data);
 }
 
 /**
@@ -87,7 +87,7 @@ gboolean ImageVisualizationNode::on_draw(GtkWidget *widget, cairo_t *cr, ImageVi
  */
 gboolean ImageVisualizationNode::update_image_create_window_idle(ImageVisualizationNode::UserData *user_data) {
 	// Check if new image data was transferred to the node
-	if (auto image_data = std::atomic_load(&user_data->current_image_data); image_data != user_data->displayed_image_data) {
+	if (auto image_data = user_data->current_image_data.load(); image_data != user_data->displayed_image_data) {
 		user_data->displayed_image_data = image_data;
 
 		// Convert the image color space from BGR to RGB ... const does not make any sense here because the image is changed.
@@ -128,9 +128,12 @@ gboolean ImageVisualizationNode::update_image_create_window_idle(ImageVisualizat
 /**
  * @brief Destructor for the ImageVisualizationNode class.
  *
- * Frees the user data resource.
+ * Frees the user data resource and removes the GUI function.
  */
-ImageVisualizationNode::~ImageVisualizationNode() { delete user_data; }
+ImageVisualizationNode::~ImageVisualizationNode() {
+	g_source_remove(source_id);
+	delete user_data;
+}
 
 /**
  * @brief Destructor for the UserData structure.

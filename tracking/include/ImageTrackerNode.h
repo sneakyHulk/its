@@ -29,8 +29,15 @@ class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults> {
 		for (auto track = tracks.begin(); track != tracks.end(); ++track) {
 			if (data.timestamp - track->last_update() > max_age)
 				track = --tracks.erase(track);
-			else if (!track->predict(data.timestamp))
+		}
+
+		for (auto track = tracks.begin(); track != tracks.end(); ++track) {
+			try {
+				track->predict(data.timestamp);
+			} catch (common::Exception const& e) {
 				track = --tracks.erase(track);
+				common::println_warn_loc(e.what());
+			}
 		}
 
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(tracks.size(), data.objects.size());

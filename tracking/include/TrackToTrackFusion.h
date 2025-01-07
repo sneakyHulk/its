@@ -72,20 +72,24 @@ class TrackToTrackFusionNode : public Processor<ImageTrackerResults, CompactObje
 
 		CompactObjects ret;
 		ret.timestamp = data.timestamp;
-		for (auto const& [cam_name, results] : multiple_tracker_results) {
+		for (auto& [cam_name, results] : multiple_tracker_results) {
 			if (cam_name != data.source) {
-				for (auto const& object : results) {
-					if (auto const [predicted, position, velocity] = object.predict_between(data.timestamp); predicted) {
-						Eigen::Matrix<double, 4, 1> coords = map_image_to_world_coordinate(cam_name, position);
-						Eigen::Matrix<double, 4, 1> utm_coords = _config.at(data.source).affine_transformation_base_to_utm * coords;
-
-						ret.objects.emplace_back(object.id(), 0_u8, std::array{utm_coords[0], utm_coords[1], 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.});
+				for (auto& object : results) {
+					try {
+						object.predict(data.timestamp);
+					} catch (common::Exception const& e) {
+						common::println_warn_loc(e.what());
 					}
+
+					Eigen::Matrix<double, 4, 1> coords = map_image_to_world_coordinate(cam_name, object.position());
+					Eigen::Matrix<double, 4, 1> utm_coords = _config.at(cam_name).affine_transformation_base_to_utm * coords;
+
+					ret.objects.emplace_back(object.id(), 0_u8, std::array{utm_coords[0], utm_coords[1], 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.});
 				}
 			} else {
 				for (auto const& object : results) {
-					Eigen::Matrix<double, 4, 1> coords = map_image_to_world_coordinate(data.source, object.position());
-					Eigen::Matrix<double, 4, 1> utm_coords = _config.at(data.source).affine_transformation_base_to_utm * coords;
+					Eigen::Matrix<double, 4, 1> coords = map_image_to_world_coordinate(cam_name, object.position());
+					Eigen::Matrix<double, 4, 1> utm_coords = _config.at(cam_name).affine_transformation_base_to_utm * coords;
 
 					ret.objects.emplace_back(object.id(), 0_u8, std::array{utm_coords[0], utm_coords[1], 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.}, std::array{0., 0., 0.});
 				}
