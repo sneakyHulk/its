@@ -50,3 +50,6 @@ ImageData BirdEyeVisualizationNode<GlobalTrackerResults>::process(GlobalTrackerR
 
 	return ImageData{tmp, data.timestamp, "bird"};
 }
+
+template class BirdEyeVisualizationNode<GlobalTrackerResults>;
+template class BirdEyeVisualizationNode<CompactObjects>;

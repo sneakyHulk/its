@@ -32,21 +32,6 @@ class KalmanBoxSourceTrack : private KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}> 
 		_last_predict_time = time;
 	}
 
-	//[[nodiscard]] decltype(x) predict_between(std::uint64_t const time) const {
-	//	auto const dt = std::chrono::duration<double>(std::chrono::nanoseconds(time) - std::chrono::nanoseconds(_last_predict_time)).count();
-	//
-	//	decltype(x) x_between = x;
-	//	if (dt * x_between(6) + x_between(2) <= 0) x_between(2) *= 0.;  // area must be >= 0;
-	//
-	//	x_between = KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}>::get_adapt_prediction_matrix(dt) * x_between;
-	//
-	//	if (x_between(2) < 0.) {
-	//		throw common::Exception("Area is smaller than zero!");
-	//	}
-	//
-	//	return x_between
-	//}
-
 	void update(Detection2D const& detection) {
 		_last_update_time = _last_predict_time;
 		_last_detection = detection;

@@ -41,6 +41,11 @@ class ProcessorSynchronousPair : public Node {
 
 	std::vector<std::function<void(Output const&)>> synchronous_functions;
 
+	std::function<bool(Input1 const&, Input2 const&)> gate;
+
+   protected:
+	ProcessorSynchronousPair(std::function<bool(Input1 const&, Input2 const&)>&& gate) : gate(std::forward<decltype(gate)>(gate)) {}
+
    public:
 	/**
 	 * @brief Connects this ProcessorSynchronousPair to a Runner node for synchronous execution.
@@ -120,17 +125,22 @@ class ProcessorSynchronousPair : public Node {
 	void synchronous_call(Input1 const& input) {
 		std::atomic_store(&first, std::make_shared<Input1 const>(input));
 		if (auto second_ptr = std::atomic_load(&second); second_ptr) {
-			Output const output = process(input, *second_ptr);
+			if (gate(input, *second_ptr)) {
+				Output const output = process(input, *second_ptr);
 
-			for (auto& connection : synchronous_functions) connection(output);
+				for (auto& connection : synchronous_functions) connection(output);
+			}
 		}
 	}
 	void synchronous_call(Input2 const& input) {
 		std::atomic_store(&second, std::make_shared<Input2 const>(input));
 		if (auto first_ptr = std::atomic_load(&first); first_ptr) {
-			Output const output = process(*first_ptr, input);
+			if (gate(*first_ptr, input)) {
+				Output const output = process(*first_ptr, input);
 
-			for (auto& connection : synchronous_functions) connection(output);
+				for (auto& connection : synchronous_functions) connection(output);
+#
+			}
 		}
 	}
 

@@ -48,7 +48,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE OpenDrive)
 target_link_libraries(${PROJECT_NAME} PUBLIC eigen_utils)
 target_link_libraries(${PROJECT_NAME} PRIVATE autodiff::autodiff) # needs C++17
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
-target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 project(bird_eye_visualization_nodes)
@@ -58,9 +58,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 target_link_libraries(${PROJECT_NAME} PUBLIC common)
 target_link_libraries(${PROJECT_NAME} PUBLIC node)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
-target_link_libraries(${PROJECT_NAME} PRIVATE bird_eye_visualization) ## is actually a c++17 lib, must be private in this context
+target_link_libraries(${PROJECT_NAME} PUBLIC bird_eye_visualization) ## is actually a c++17 lib, must be private in this context
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 project(create_video)
 add_executable(${PROJECT_NAME} test/${PROJECT_NAME}.cpp)
@@ -70,4 +70,4 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${NLOHMANN_JSON_TARGET_NAME})
 target_link_libraries(${PROJECT_NAME} PUBLIC eigen_json_utils)
 target_link_libraries(${PROJECT_NAME} PUBLIC config)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

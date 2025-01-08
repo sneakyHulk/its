@@ -11,12 +11,15 @@ using namespace std::chrono_literals;
 
 class Detection2DVisualization : public ProcessorSynchronousPair<ImageData, Detections2D, ImageData> {
    public:
-	Detection2DVisualization() = default;
+	Detection2DVisualization()
+	    : ProcessorSynchronousPair<ImageData, Detections2D, ImageData>([](ImageData const& data1, Detections2D const& data2) {
+		      if (data1.source != data2.source) return false;
+		      if (data1.timestamp != data2.timestamp) return false;
+
+		      return true;
+	      }) {}
 
 	ImageData process(ImageData const& data1, Detections2D const& data2) final {
-		if (data1.source != data2.source) return data1;
-		if (data1.timestamp != data2.timestamp) return data1;
-
 		for (auto const object : data2.objects) {
 			cv::rectangle(data1.image, cv::Point2d(object.bbox.left, object.bbox.top), cv::Point2d(object.bbox.right, object.bbox.bottom), cv::Scalar_<int>(0, 0, 255), 5);
 		}
