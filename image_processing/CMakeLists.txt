@@ -16,3 +16,5 @@ target_link_libraries(test_${PROJECT_NAME} PUBLIC image_visualization_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC config)
 target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+add_test(NAME ctest_${PROJECT_NAME} COMMAND test_${PROJECT_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

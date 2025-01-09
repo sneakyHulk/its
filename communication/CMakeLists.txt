@@ -57,6 +57,8 @@ target_link_libraries(test_${PROJECT_NAME} PUBLIC common)
 target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+add_test(NAME ctest_${PROJECT_NAME} COMMAND test_${PROJECT_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 project(image_communication_nodes)
 
 add_library(${PROJECT_NAME} SHARED src/StreamingImageNode.cpp src/StreamingNodeBase.cpp src/ReceivingImageNode.cpp)
@@ -94,6 +96,10 @@ target_link_libraries(test_${PROJECT_NAME}_receive PUBLIC image_visualization_no
 target_link_libraries(test_${PROJECT_NAME}_receive PUBLIC cameras_simulator_nodes)
 target_compile_features(test_${PROJECT_NAME}_receive PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_receive PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+add_test(NAME ctest_${PROJECT_NAME}
+        COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME}_receive & ${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME} & wait"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(test_custom_media_factory test/test_custom_media_factory.cpp)
 target_link_libraries(test_custom_media_factory PUBLIC PkgConfig::gstreamer)

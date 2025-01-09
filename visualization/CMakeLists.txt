@@ -17,6 +17,8 @@ target_link_libraries(test_${PROJECT_NAME} PUBLIC ${PROJECT_NAME})
 target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME} PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
+add_test(NAME ctest_${PROJECT_NAME} COMMAND test_${PROJECT_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 project(video_visualization_nodes)
 
 add_library(${PROJECT_NAME} SHARED src/VideoVisualizationNode.cpp)

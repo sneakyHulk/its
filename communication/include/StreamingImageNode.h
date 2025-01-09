@@ -76,7 +76,7 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 	/**
 	 * @brief Destructor that cleans up allocated gstreamer pipeline resources.
 	 */
-	~StreamingImageNode() override {
+	~StreamingImageNode() {
 		if (user_data->payloader) gst_object_unref(user_data->payloader);
 		if (user_data->source) gst_object_unref(user_data->source);
 		if (user_data->header_extension_timestamp_frame) gst_object_unref(user_data->header_extension_timestamp_frame);

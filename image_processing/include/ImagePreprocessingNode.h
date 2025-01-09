@@ -10,6 +10,10 @@
 #include "ImageDataRaw.h"
 #include "Processor.h"
 
+/**
+ * @class ImagePreprocessingNode
+ * @brief This class converts raw image data.
+ */
 class ImagePreprocessingNode : public Processor<ImageDataRaw, ImageData> {
    public:
 	struct HeightWidthConversionConfig {
@@ -22,7 +26,7 @@ class ImagePreprocessingNode : public Processor<ImageDataRaw, ImageData> {
 	std::map<std::string, HeightWidthConversionConfig> height_width_conversion_config;
 
    public:
-	explicit ImagePreprocessingNode(std::map<std::string, HeightWidthConversionConfig>&& height_width_conversion) : height_width_conversion_config(height_width_conversion) {}
+	explicit ImagePreprocessingNode(std::map<std::string, HeightWidthConversionConfig>&& height_width_conversion);
 
    private:
 	ImageData process(ImageDataRaw const& data) final;

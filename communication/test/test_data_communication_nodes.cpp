@@ -34,8 +34,8 @@ int main(int argc, char** argv) {
 
 	data_input.synchronously_connect(print);
 
-	generate();
-	data_input();
+	auto generate_thread = generate();
+	auto data_input_thread = data_input();
 
-	std::this_thread::sleep_for(60s);
+	std::this_thread::sleep_for(10s);
 }

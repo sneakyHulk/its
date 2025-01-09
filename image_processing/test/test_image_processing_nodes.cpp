@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
 	ImagePreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
 	    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
 	ImageUndistortionNode undist(
-	    {{"s110_n_cam_8", {config::intrinsic_matrix_s110_n_cam_8, config::undistortion_map1_s110_n_cam_8, config::optimal_camera_matrix_s110_n_cam_8, config::undistortion_map1_s110_n_cam_8, config::undistortion_map2_s110_n_cam_8}}});
+	    {{"s110_n_cam_8", {config::intrinsic_matrix_s110_n_cam_8, config::distortion_values_s110_n_cam_8, config::optimal_camera_matrix_s110_n_cam_8, config::undistortion_map1_s110_n_cam_8, config::undistortion_map2_s110_n_cam_8}}});
 	ImageDownscalingNode<640, 640> down;
 
 	ImageVisualizationNode raw_img([](ImageData const& data) { return data.source == "s110_n_cam_8"; });
@@ -31,5 +31,5 @@ int main(int argc, char** argv) {
 	auto raw_cams_thread = raw_cams();
 	auto pre_thread = pre();
 
-	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp;) g_main_context_iteration(NULL, true);
+	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, true);
 }

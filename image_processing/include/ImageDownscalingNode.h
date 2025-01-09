@@ -5,13 +5,19 @@
 #include "ImageData.h"
 #include "Processor.h"
 
+/**
+ * @class ImageDownscalingNode
+ * @brief This class performs downscaling.
+ * @tparam height The height the image is downscaled to.
+ * @tparam width The width the image is downscaled to.
+ */
 template <int height, int width>
 class ImageDownscalingNode : public Processor<ImageData, ImageData> {
    public:
 	ImageDownscalingNode() = default;
 
 	/**
-	 * @brief Scales the image to the input size of the yolo model.
+	 * @brief Downscales the image in letterbox style.
 	 *
 	 * Scales the image in such a way that the aspect ratio of the image is maintained.
 	 * Fills in the other parts with cv::BORDER_CONSTANT.

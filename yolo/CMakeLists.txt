@@ -32,3 +32,5 @@ target_link_libraries(test_${PROJECT_NAME} PUBLIC image_visualization_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC image_processing_nodes)
 target_link_libraries(test_${PROJECT_NAME} PUBLIC cameras_simulator_nodes)
 target_compile_features(test_${PROJECT_NAME} PRIVATE cxx_std_23)
+
+add_test(NAME ctest_${PROJECT_NAME} COMMAND test_${PROJECT_NAME} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

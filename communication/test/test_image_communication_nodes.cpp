@@ -1,13 +1,10 @@
 #include <csignal>
 #include <thread>
 
-#include "BaslerCamerasNode.h"
 #include "CamerasSimulatorNode.h"
-#include "ImagePreprocessingNode.h"
 #include "ReceivingImageNode.h"
 #include "StreamingImageNode.h"
 
-// gst-launch-1.0 rtspsrc location=rtsp://80.155.138.138:2346/s60_n_cam_16_k latency=100 ! queue ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! autovideosink
 int main(int argc, char **argv) {
 	gst_init(&argc, &argv);
 
@@ -15,8 +12,8 @@ int main(int argc, char **argv) {
 	StreamingImageNode transmitter;
 	cameras.asynchronously_connect(transmitter);
 
-	cameras();
-	transmitter();
+	auto cameras_thread = cameras();
+	auto transmitter_thread = transmitter();
 
-	for (;; std::this_thread::yield()) g_main_context_iteration(NULL, true);
+	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, false);
 }

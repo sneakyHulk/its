@@ -5,10 +5,14 @@
 #include "ImageData.h"
 #include "Processor.h"
 
+/**
+ * @class ImageUndistortionNode
+ * @brief This class undistorts an image.
+ */
 class ImageUndistortionNode : public Processor<ImageData, ImageData> {
    public:
 	struct UndistortionConfig {
-		cv::Mat camera_matrix;
+		cv::Mat camera_matrix; // aka intrinsic matrix
 		cv::Mat distortion_values;
 		cv::Mat new_camera_matrix;
 		cv::Mat undistortion_map1;

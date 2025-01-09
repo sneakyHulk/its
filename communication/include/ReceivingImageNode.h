@@ -31,8 +31,10 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	GstElement *sink;
 	GstBus *bus;
 
+	std::jthread const *const thread;
+
    public:
-	ReceivingImageNode() {
+	ReceivingImageNode(std::jthread const *const thread) : thread(thread) {
 		// Create pipeline and elements
 		pipeline = gst_pipeline_new("receiver-pipeline");
 
@@ -183,7 +185,12 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 								case GST_RESOURCE_ERROR_WRITE:
 								case GST_RESOURCE_ERROR_OPEN_READ:
 								case GST_RESOURCE_ERROR_OPEN_WRITE:
-								case GST_RESOURCE_ERROR_OPEN_READ_WRITE: reconnect(); break;
+								case GST_RESOURCE_ERROR_OPEN_READ_WRITE:
+									if (thread->get_stop_token().stop_requested()) {
+										return ImageData{};
+									}
+									reconnect();
+									break;
 								case GST_RESOURCE_ERROR_FAILED:
 								case GST_RESOURCE_ERROR_TOO_LAZY:
 								case GST_RESOURCE_ERROR_NOT_FOUND:
