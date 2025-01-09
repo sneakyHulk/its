@@ -4,9 +4,9 @@
 #include <chrono>
 
 #include "KalmanBoxSourceTrack.h"
+#include "Processor.h"
 #include "association_functions.h"
 #include "linear_assignment.h"
-#include "Processor.h"
 
 using namespace std::chrono_literals;
 
@@ -16,6 +16,11 @@ struct ImageTrackerResults {
 	std::vector<KalmanBoxSourceTrack> objects;  // vector of tracks
 };
 
+/**
+ * @class ImageTrackerNode
+ * @brief This class is responsible for tracking detected objects in images.
+ * @tparam max_age The maximum age of tracks before they are removed.
+ */
 template <std::uint64_t max_age = std::chrono::duration_cast<std::chrono::nanoseconds>(700ms).count()>
 class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults> {
 	std::map<std::string, std::vector<KalmanBoxSourceTrack>> multiple_cameras_tracks;
@@ -23,14 +28,18 @@ class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults> {
    public:
 	ImageTrackerNode() = default;
 
+	/**
+	 * @brief Does one iteration of the sort tracking algorithm.
+	 */
 	ImageTrackerResults process(Detections2D const& data) override {
 		auto& tracks = multiple_cameras_tracks[data.source];
 
+		// Deletes tracks which were updated > max age ago.
 		for (auto track = tracks.begin(); track != tracks.end(); ++track) {
-			if (data.timestamp - track->last_update() > max_age)
-				track = --tracks.erase(track);
+			if (data.timestamp - track->last_update() > max_age) track = --tracks.erase(track);
 		}
 
+		// Deletes tracks whose bounding box area is < 0
 		for (auto track = tracks.begin(); track != tracks.end(); ++track) {
 			try {
 				track->predict(data.timestamp);
@@ -40,6 +49,7 @@ class ImageTrackerNode : public Processor<Detections2D, ImageTrackerResults> {
 			}
 		}
 
+		// Produces the association matrix for every detected object.
 		Eigen::MatrixXd association_matrix = Eigen::MatrixXd::Ones(tracks.size(), data.objects.size());
 		for (auto i = 0; i < tracks.size(); ++i) {
 			for (auto j = 0; j < data.objects.size(); ++j) {

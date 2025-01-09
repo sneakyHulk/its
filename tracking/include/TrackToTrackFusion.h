@@ -9,6 +9,12 @@
 #include "Processor.h"
 #include "common_literals.h"
 
+/**
+ * @class TrackToTrackFusionNode
+ * @brief This class combines the detection from multiple cameras.
+ *
+ * @attention not a true track-to-track fusion algorithm, as it does not map the tracks of the different cameras.
+ */
 class TrackToTrackFusionNode : public Processor<ImageTrackerResults, CompactObjects> {
 	struct TransformationConfig {
 		Eigen::Matrix<double, 3, 4> projection_matrix;
@@ -67,6 +73,12 @@ class TrackToTrackFusionNode : public Processor<ImageTrackerResults, CompactObje
 		}
 	}
 
+	/**
+	 * @brief Predicts the states of the unupdated tracks for the current time and converts the positions of both the unupdated and updated tracks to the UTM coordinate system.
+	 *
+	 * @param data The result of an image tracker.
+	 * @return Returns a list of the positions of the tracked objects.
+	 */
 	CompactObjects process(ImageTrackerResults const& data) final {
 		multiple_tracker_results[data.source] = data.objects;
 

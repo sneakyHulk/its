@@ -5,6 +5,12 @@
 
 using namespace std::chrono_literals;
 
+/**
+ * @brief Displays the different road user in the bird's eye view image.
+ *
+ * @param data The positions of the road users.
+ * @return The bird's eye view image with the displayed road user.
+ */
 template <>
 ImageData BirdEyeVisualizationNode<CompactObjects>::process(CompactObjects const &data) {
 	auto tmp = map.clone();
@@ -28,6 +34,12 @@ ImageData BirdEyeVisualizationNode<CompactObjects>::process(CompactObjects const
 	return ImageData{tmp, data.timestamp, "bird"};
 }
 
+/**
+ * @brief Displays the different road user in the bird's eye view image.
+ *
+ * @param data The positions of the road users.
+ * @return The bird's eye view image with the displayed road user.
+ */
 template <>
 ImageData BirdEyeVisualizationNode<GlobalTrackerResults>::process(GlobalTrackerResults const &data) {
 	auto tmp = map.clone();
@@ -51,5 +63,11 @@ ImageData BirdEyeVisualizationNode<GlobalTrackerResults>::process(GlobalTrackerR
 	return ImageData{tmp, data.timestamp, "bird"};
 }
 
+/**
+ * @brief Defines the BirdEyeVisualizationNode class for GlobalTrackerResults structure.
+ */
 template class BirdEyeVisualizationNode<GlobalTrackerResults>;
+/**
+ * @brief Defines the BirdEyeVisualizationNode class for CompactObjects structure.
+ */
 template class BirdEyeVisualizationNode<CompactObjects>;

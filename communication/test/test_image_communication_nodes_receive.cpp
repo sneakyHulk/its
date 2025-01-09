@@ -19,8 +19,5 @@ int main(int argc, char **argv) {
 
 	auto receiver_thread = receiver();
 
-	for (auto timestamp = std::chrono::system_clock::now() + 10s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) {
-		common::println_loc("lol");
-		g_main_context_iteration(NULL, false);
-	}
+	for (auto timestamp = std::chrono::system_clock::now() + 40s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, false);
 }

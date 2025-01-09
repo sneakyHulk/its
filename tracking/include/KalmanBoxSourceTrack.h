@@ -7,6 +7,10 @@
 #include "KalmanFilter.h"
 #include "common_output.h"
 
+/**
+ * @class KalmanBoxSourceTrack
+ * @brief Helper class for dealing with tracks.
+ */
 class KalmanBoxSourceTrack : private KalmanFilter<7, 4, {0, 4}, {1, 5}, {2, 6}> {
 	static unsigned int _id_max;
 	unsigned int _id = ++_id_max;

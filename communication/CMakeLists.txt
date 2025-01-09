@@ -98,7 +98,7 @@ target_compile_features(test_${PROJECT_NAME}_receive PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_receive PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 add_test(NAME ctest_${PROJECT_NAME}
-        COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME}_receive & ${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME} & wait"
+        COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME} & ${CMAKE_CURRENT_BINARY_DIR}/test_${PROJECT_NAME}_receive & wait"
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(test_custom_media_factory test/test_custom_media_factory.cpp)

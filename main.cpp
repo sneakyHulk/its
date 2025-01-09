@@ -1,126 +1,57 @@
-#include <thread>
+#include <chrono>
 
 #include "BirdEyeVisualizationNode.h"
-#include "Config.h"
-#include "camera_simulator_node.h"
-#include "data_communication_node.h"
-#include "image_communication_node.h"
-#include "tracking_node.h"
-#include "tracking_visualization_node.h"
-#include "transformation_node.h"
-#include "undistort_node.h"
-#include "yolo_node.h"
+#include "DrawingUtils.h"
+#include "ImageDownscalingNode.h"
+#include "ImagePreprocessingNode.h"
+#include "ImageTrackerNode.h"
+#include "ImageVisualizationNode.h"
+#include "ProcessorSynchronousPair.h"
+#include "RawDataCamerasSimulatorNode.h"
+#include "StreamingImageNode.h"
+#include "TrackToTrackFusion.h"
+#include "YoloNode.h"
+#include "config.h"
 
-#define undistort_enable 1
-#define track_vis_enable 0
-#define stream_data_enable 0
-#define stream_video_enable 1
-#define stream_vis_enable 1
+using namespace std::chrono_literals;
 
-int main() {
-	Config config = make_config();
+int main(int argc, char** argv) {
+	auto const [map, utm_to_image] = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "visualization" / "2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr", 1200, 1920, 5., config::affine_transformation_utm_to_s110_base_north,
+	    {{"s110_n_cam_8", {config::projection_matrix_s110_base_north_into_s110_n_cam_8, config::height_s110_n_cam_8, config::width_s110_n_cam_8}},
+	        {"s110_o_cam_8", {config::projection_matrix_s110_base_north_into_s110_o_cam_8, config::height_s110_o_cam_8, config::width_s110_o_cam_8}},
+	        {"s110_s_cam_8", {config::projection_matrix_s110_base_north_into_s110_s_cam_8, config::height_s110_s_cam_8, config::width_s110_s_cam_8}},
+	        {"s110_w_cam_8", {config::projection_matrix_s110_base_north_into_s110_w_cam_8, config::height_s110_w_cam_8, config::width_s110_w_cam_8}}});
 
-	CameraSimulator cam_n("s110_n_cam_8");
-	CameraSimulator cam_o("s110_o_cam_8");
-	CameraSimulator cam_s("s110_s_cam_8");
-	CameraSimulator cam_w("s110_w_cam_8");
-#if stream_video_enable == 1
-	ImageStreamRTSP video_stream_w;
-	ImageStreamRTSP video_stream_n;
-	ImageStreamRTSP video_stream_o;
-	ImageStreamRTSP video_stream_s;
-#endif
-	int gpu_id = 0;
-	if (std::getenv("LIVE")) gpu_id = 1;
+	gtk_init(&argc, &argv);
 
-	common::println("Using GPU with id '", gpu_id, "'.");
-	Yolo yolo(gpu_id);
-#if undistort_enable == 1
-	UndistortDetections undistort(config);
-#endif
-	GlobalImageTracking track(config);
-#if track_vis_enable == 1
-	ImageTrackingVisualization2 track_vis;
-#endif
-#if stream_data_enable == 1
-	DataStreamMQTT data_stream;
-#endif
-	BirdEyeVisualization vis(config);
-#if stream_vis_enable == 1
-	ImageStreamRTSP video_stream_bird;
-#else
-	ImageVisualization bird_image_vis;
-#endif
+	{
+		RawDataCamerasSimulatorNode raw_cams = make_raw_data_cameras_simulator_node_arrived_recorded1({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams_raw" / "s110_s_cam_8"}});
+		ImagePreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
+		    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+		ImageDownscalingNode<480, 640> down;
+		YoloNode<480, 640> yolo({{"s110_n_cam_8", {1200, 1920}}, {"s110_s_cam_8", {1200, 1920}}, {"s110_o_cam_8", {1200, 1920}}, {"s110_w_cam_8", {1200, 1920}}});
+		ImageTrackerNode track;
+		TrackToTrackFusionNode fusion({{"s110_n_cam_8", {config::projection_matrix_s110_base_north_into_s110_n_cam_8, config::affine_transformation_utm_to_s110_base_north}},
+		    {"s110_o_cam_8", {config::projection_matrix_s110_base_north_into_s110_o_cam_8, config::affine_transformation_utm_to_s110_base_north}},
+		    {"s110_s_cam_8", {config::projection_matrix_s110_base_north_into_s110_s_cam_8, config::affine_transformation_utm_to_s110_base_north}},
+		    {"s110_w_cam_8", {config::projection_matrix_s110_base_north_into_s110_w_cam_8, config::affine_transformation_utm_to_s110_base_north}}});
 
-#if stream_video_enable == 1
-	cam_w += video_stream_w;
-	cam_n += video_stream_n;
-	cam_o += video_stream_o;
-	cam_s += video_stream_s;
-#endif
+		BirdEyeVisualizationNode<CompactObjects> vis(map, utm_to_image);
+		ImageVisualizationNode img([](ImageData const& data) { return data.source == "bird"; });
 
-	cam_n += yolo;
-	cam_o += yolo;
-	cam_s += yolo;
-	cam_w += yolo;
+		raw_cams.asynchronously_connect(pre);
+		pre.synchronously_connect(down).asynchronously_connect(yolo);
+		yolo.asynchronously_connect(track);
+		track.synchronously_connect(fusion);
+		fusion.asynchronously_connect(vis);
+		vis.synchronously_connect(img);
 
-#if undistort_enable == 1
-	yolo += undistort;
-	undistort += track;
-#else
-	yolo += track;
-#endif
+		auto raw_cams_thread = raw_cams();
+		auto pre_thread = pre();
+		auto yolo_thread = yolo();
+		auto track_thread = track();
+		auto vis_thread = vis();
 
-#if track_vis_enable == 1
-	cam_w += track_vis;
-	track += track_vis;
-#endif
-
-	track += vis;
-
-#if stream_data_enable == 1
-	trans += data_stream;
-#endif
-
-#if stream_vis_enable == 1
-	vis += video_stream_bird;
-#else
-	vis += bird_image_vis;
-#endif
-
-	std::thread cam_n_thread(&CameraSimulator::operator(), &cam_n);
-	std::thread cam_o_thread(&CameraSimulator::operator(), &cam_o);
-	std::thread cam_s_thread(&CameraSimulator::operator(), &cam_s);
-	std::thread cam_w_thread(&CameraSimulator::operator(), &cam_w);
-
-	std::thread yolo_thread(&Yolo::operator(), &yolo);
-#if undistort_enable == 1
-	std::thread undistort_thread(&UndistortDetections::operator(), &undistort);
-#endif
-	std::thread track_thread(&GlobalImageTracking::operator(), &track);
-#if track_vis_enable == 1
-	std::thread track_vis_thread = std::thread(&ImageTrackingVisualization2::operator(), &track_vis);
-#endif
-
-#if stream_data_enable == 1
-	std::thread data_stream_thread(&DataStreamMQTT::operator(), &data_stream);
-#endif
-
-	std::thread vis_thread(&BirdEyeVisualization::operator(), &vis);
-#if stream_vis_enable == 1
-	std::thread video_stream_bird_thread(&ImageStreamRTSP::operator(), &video_stream_bird);
-#else
-	std::thread bird_image_vis_thread(&ImageVisualization::operator(), &bird_image_vis);
-#endif
-
-#if stream_video_enable == 1
-	std::thread video_stream_w_thread(&ImageStreamRTSP::operator(), &video_stream_w);
-	std::thread video_stream_n_thread(&ImageStreamRTSP::operator(), &video_stream_n);
-	std::thread video_stream_o_thread(&ImageStreamRTSP::operator(), &video_stream_o);
-	std::thread video_stream_s_thread(&ImageStreamRTSP::operator(), &video_stream_s);
-
-	ImageStreamRTSP::run_loop();
-#else
-	std::this_thread::sleep_for(378432000s);
-#endif
+		for (auto timestamp = std::chrono::system_clock::now() + 40s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, true);
+	}
 }

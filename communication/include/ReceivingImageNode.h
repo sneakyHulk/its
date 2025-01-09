@@ -16,6 +16,14 @@
 using namespace std::chrono_literals;
 
 // gst-launch-1.0 --gst-debug=2 rtspsrc location=rtsp://127.0.0.1:8554/test latency=20 udp-reconnect=true ! rtph264depay ! h264parse ! avdec_h264 ! video/x-raw,format=I420 ! videoconvert ! autovideosink sync=false
+
+/**
+ * @class ReceivingImageNode
+ * @brief This class is responsible for receiving an image stream.
+ *
+ * @attention Before instantiating, gst_init(...) must be called.
+ * @attention This class must have a g_main_context_iteration to be executed repeatedly or g_main_loop_run to be running to function properly.
+ */
 class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	inline static GstStaticCaps timestamp_frame_stream_caps = GST_STATIC_CAPS("timestamp-frame/x-stream");
 
@@ -32,7 +40,10 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	GstBus *bus;
 
    public:
-	ReceivingImageNode() {
+	/**
+	 * @brief Sets up the gstreamer pipeline to receive the image stream.
+	 */
+	explicit ReceivingImageNode(std::string &&stream_location = "rtsp://127.0.0.1:8554/test") {
 		// Create pipeline and elements
 		pipeline = gst_pipeline_new("receiver-pipeline");
 
@@ -51,7 +62,7 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			common::println_critical_loc("Failed to create elements.");
 		}
 
-		g_object_set(source, "location", "rtsp://127.0.0.1:8554/test", "latency", 20, "buffer-mode", 0, NULL);
+		g_object_set(source, "location", stream_location.c_str(), "latency", 20, "buffer-mode", 0, NULL);
 
 		gst_rtp_header_extension_set_id(GST_RTP_HEADER_EXTENSION(header_extension_timestamp_frame), 1);
 		g_signal_emit_by_name(depayloader, "add-extension", header_extension_timestamp_frame);
@@ -94,12 +105,15 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 		if (GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING); ret == GST_STATE_CHANGE_FAILURE) {
 			common::println_critical_loc("Failed to set pipeline to PLAYING state.\n");
 		}
-
+		// Confirm pipeline state
 		if (GstState state; gst_element_get_state(source, &state, nullptr, GST_CLOCK_TIME_NONE) != GST_STATE_CHANGE_SUCCESS || state != GST_STATE_PLAYING) {
 			common::println_critical_loc("Pipeline is not in PLAYING state");
 		}
 	}
 
+	/**
+	 * @brief Cleans up GStreamer resources.
+	 */
 	~ReceivingImageNode() {
 		gst_object_unref(bus);
 		gst_element_set_state(pipeline, GST_STATE_NULL);
@@ -108,8 +122,9 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	}
 
    private:
-	ImageData push_once() final { return push(); }
-
+	/**
+	 * @brief Tries to reconnect to the stream when connection was lost.
+	 */
 	void reconnect() {
 		// Start the pipeline
 		if (GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_NULL); ret == GST_STATE_CHANGE_FAILURE) {
@@ -137,12 +152,15 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			common::println_critical_loc("Pipeline is not in PLAYING state");
 		}
 	}
-
+	/**
+	 * @brief Tries to reconnect to the stream when connection was lost.
+	 */
 	ImageData push() final {
 		for (;;) {
 			// Exit on EOS
 			if (gst_app_sink_is_eos(GST_APP_SINK(sink))) common::println_critical_loc("Stream ended! (EOS)");
 
+			// checks the message bus for errors or the end of the stream
 			for (GstMessage *msg = gst_bus_pop(bus); msg;) {
 				switch (GST_MESSAGE_TYPE(msg)) {
 					case GST_MESSAGE_UNKNOWN: common::println_loc("GST_MESSAGE_UNKNOWN: An undefined message."); break;
@@ -310,6 +328,7 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			GstSample *sample = gst_app_sink_try_pull_sample(GST_APP_SINK(sink), 10000);
 			if (!sample) continue;
 
+			// Get height and width out of the stream.
 			GstCaps *caps = gst_sample_get_caps(sample);
 			auto structure = gst_caps_get_structure(GST_CAPS(caps), 0);
 			int width, height;
@@ -326,15 +345,16 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			}
 
 			common::println_loc("Received frame of size: ", map.size, " bytes");
-			// if (map.size != (height + height / 2) * width) {
 			if (map.size != height * width * 3) {
 				common::println_error_loc("Not enough data received! Buffer size '", map.size, "' != '", (height + height / 2) * width, "' the expected size.");
 				continue;
 			}
 
+			// Copy the image data from the stream.
 			ImageData ret{cv::Mat(height, width, CV_8UC3), 0, "test"};
 			std::memcpy(ret.image.data, map.data, map.size);
 
+			// Get the metadata out of the stream.
 			GstTimestampFrameMeta *meta;
 			meta = gst_buffer_get_timestamp_frame_meta(buffer, gst_static_caps_get(&timestamp_frame_stream_caps));
 			if (!meta) {

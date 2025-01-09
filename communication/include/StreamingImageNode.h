@@ -48,7 +48,7 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 	/**
 	 * @brief Constructor that sets up the RTSP server and media factory.
 	 */
-	StreamingImageNode() {
+	explicit StreamingImageNode(std::string &&stream_endpoint = "test") {
 		// Create an RTSP server only once.
 		if (static bool first = true; std::exchange(first, false)) {
 			server = gst_rtsp_server_new();
@@ -67,10 +67,10 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 		gst_rtsp_media_factory_set_launch(factory, "( appsrc name=bgrsrc ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast tune=zerolatency ! rtph264pay name=pay0 pt=96 )");
 		gst_rtsp_media_factory_set_shared(factory, true);
 
-		// Attach the factory to the /test endpoint
+		// Attach the factory to the endpoint
 		GstRTSPMountPoints *mounts = gst_rtsp_server_get_mount_points(server);
-		gst_rtsp_mount_points_add_factory(mounts, "/test", factory);
-		common::println_loc("RTSP server is running at rtsp://127.0.0.1:8554/test");
+		gst_rtsp_mount_points_add_factory(mounts, common::stringprint('/', stream_endpoint).c_str(), factory);
+		common::println_loc("RTSP server is running at rtsp://127.0.0.1:8554/", stream_endpoint);
 		g_object_unref(mounts);
 	}
 	/**

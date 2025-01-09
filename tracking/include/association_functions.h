@@ -3,6 +3,12 @@
 
 #include "Detection2D.h"
 
+/**
+ * @brief Computes the iou of two bounding boxes.
+ *
+ * @param bbox1 The first bounding box.
+ * @param bbox2 The second bounding box.
+ */
 constexpr auto iou = [](BoundingBoxXYXY const& bbox1, BoundingBoxXYXY const& bbox2) {
 	auto const xx1 = std::max(bbox1.left, bbox2.left);
 	auto const yy1 = std::max(bbox1.top, bbox2.top);
@@ -19,7 +25,12 @@ constexpr auto iou = [](BoundingBoxXYXY const& bbox1, BoundingBoxXYXY const& bbo
 	auto const iou = wh / (A1 + A2 - wh);
 	return iou;
 };
-
+/**
+ * @brief Computes the diou of two bounding boxes.
+ *
+ * @param bbox1 The first bounding box.
+ * @param bbox2 The second bounding box.
+ */
 constexpr auto diou = [](BoundingBoxXYXY const& bbox1, BoundingBoxXYXY const& bbox2) {
 	auto const iou_ = iou(bbox1, bbox2);
 

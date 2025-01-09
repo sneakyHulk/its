@@ -32,7 +32,7 @@ template <typename scalar, int... other>
 	return image_coordinates;
 }
 
-cv::Mat& draw_camera_fov(cv::Mat& view, std::string const& camera_name, int const image_width, int const image_height, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center, Eigen::Matrix<double, 3, 3> const& KR_inv,
+cv::Mat& draw_camera_fov(cv::Mat& view, std::string const& camera_name, int const image_height, int const image_width, Eigen::Matrix<double, 4, 4> const& affine_transformation_base_to_image_center, Eigen::Matrix<double, 3, 3> const& KR_inv,
     Eigen::Matrix<double, 3, 1> const& translation_camera) {
 	Eigen::Matrix<double, 4, 1> const left_bottom = affine_transformation_base_to_image_center * map_image_to_world_coordinate<double>({0., static_cast<double>(image_height)}, KR_inv, translation_camera);
 	Eigen::Matrix<double, 4, 1> const right_bottom = affine_transformation_base_to_image_center * map_image_to_world_coordinate<double>({static_cast<double>(image_width), static_cast<double>(image_height)}, KR_inv, translation_camera);
@@ -99,7 +99,7 @@ cv::Mat& draw_camera_fov(cv::Mat& view, std::string const& camera_name, int cons
 }
 
 // base is point where image center should be located
-auto draw_map(std::filesystem::path&& odr_map, int const display_width, int const display_height, double const scaling, Eigen::Matrix<double, 4, 4> const& utm_to_base,
+auto draw_map(std::filesystem::path&& odr_map, int const display_height, int const display_width, double const scaling, Eigen::Matrix<double, 4, 4> const& utm_to_base,
     std::map<std::string, ProjectionMatrixWidthHeightConfig>&& camera_name_projection_matrix_width_height_map) -> std::tuple<cv::Mat, Eigen::Matrix<double, 4, 4>> {
 	// Eigen::Matrix<double, 4, 4> const affine_transformation_rotate_90 = make_matrix<4, 4>(0., -1., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);
 	Eigen::Matrix<double, 4, 4> const affine_transformation_reflect = make_matrix<4, 4>(-1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.);

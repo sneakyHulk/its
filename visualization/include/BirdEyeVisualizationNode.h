@@ -7,6 +7,11 @@
 #include "ImageData.h"
 #include "Processor.h"
 
+/**
+ * @class BirdEyeVisualizationNode
+ * @brief Draws, i.e. updates the bird's eye view image with the positions of the road users.
+ * @tparam Input The structure in which the current positions of the road users are transferred.
+ */
 template <typename Input>
 class BirdEyeVisualizationNode : public Processor<Input, ImageData> {
 	cv::Mat map;
