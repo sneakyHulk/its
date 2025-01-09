@@ -149,7 +149,7 @@ auto draw_map(std::filesystem::path&& odr_map, int const display_width, int cons
 		Eigen::Matrix<double, 3, 1> C = config.projection_matrix(Eigen::all, Eigen::last);
 		Eigen::Matrix<double, 3, 1> translation_camera = -KR_inv * C;
 
-		draw_camera_fov(view, camera_name, config.width, config.height, affine_transformation_base_to_image_center, KR_inv, translation_camera);
+		draw_camera_fov(view, camera_name, config.height, config.width, affine_transformation_base_to_image_center, KR_inv, translation_camera);
 	}
 
 	return {view.clone(), affine_transformation_utm_to_image_center};

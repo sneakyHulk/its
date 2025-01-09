@@ -8,6 +8,13 @@
 #include "Detection2D.h"
 #include "Processor.h"
 
+/**
+ * @class UndistortDetectionsNode
+ * @brief This class removes distortion from detected bounding box points.
+ *
+ * Rather than removing distortion of the entire image i.e. all image points, it only does it to the bounding box of the detected objects.
+ * This has a similar outcome i.e. the accuracy is comparable.
+ */
 class UndistortDetectionsNode : public Processor<Detections2D, Detections2D> {
    public:
 	struct UndistortionConfig {
@@ -20,26 +27,8 @@ class UndistortDetectionsNode : public Processor<Detections2D, Detections2D> {
 	std::map<std::string, UndistortionConfig> camera_matrix_distortion_values_new_camera_matrix_config;
 
    public:
-	explicit UndistortDetectionsNode(std::map<std::string, UndistortionConfig>&& camera_matrix_distortion_values_new_camera_matrix)
-	    : camera_matrix_distortion_values_new_camera_matrix_config(std::forward<decltype(camera_matrix_distortion_values_new_camera_matrix)>(camera_matrix_distortion_values_new_camera_matrix)) {}
+	explicit UndistortDetectionsNode(std::map<std::string, UndistortionConfig>&& camera_matrix_distortion_values_new_camera_matrix);
 
    private:
-	Detections2D process(Detections2D const& data) final {
-		auto ret = data;
-
-		for (auto& object : ret.objects) {
-			std::vector<cv::Point2d> out(2);
-			std::vector<cv::Point2d> distorted_points = {{object.bbox.left, object.bbox.top}, {object.bbox.right, object.bbox.bottom}};
-
-			cv::undistortPoints(distorted_points, out, camera_matrix_distortion_values_new_camera_matrix_config.at(data.source).camera_matrix, camera_matrix_distortion_values_new_camera_matrix_config.at(data.source).distortion_values,
-			    cv::Mat_<double>::eye(3, 3), camera_matrix_distortion_values_new_camera_matrix_config.at(data.source).new_camera_matrix);
-
-			object.bbox.left = out[0].x;
-			object.bbox.top = out[0].y;
-			object.bbox.right = out[1].x;
-			object.bbox.bottom = out[1].y;
-		}
-
-		return ret;
-	}
+	Detections2D process(Detections2D const& data) final;
 };

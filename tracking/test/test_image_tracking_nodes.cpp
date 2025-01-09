@@ -35,11 +35,11 @@ class ImageTrackerResultsVisualization : public ProcessorSynchronousPair<ImageDa
 };
 
 int main(int argc, char** argv) {
-	auto const [map, utm_to_image] = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "visualization" / "2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr", 1920, 1200, 5., config::affine_transformation_utm_to_s110_base_north,
-	    {{"s110_n_cam_8", {config::projection_matrix_s110_base_north_into_s110_n_cam_8, config::width_s110_n_cam_8, config::height_s110_n_cam_8}},
-	        {"s110_o_cam_8", {config::projection_matrix_s110_base_north_into_s110_o_cam_8, config::width_s110_o_cam_8, config::height_s110_o_cam_8}},
-	        {"s110_s_cam_8", {config::projection_matrix_s110_base_north_into_s110_s_cam_8, config::width_s110_s_cam_8, config::height_s110_s_cam_8}},
-	        {"s110_w_cam_8", {config::projection_matrix_s110_base_north_into_s110_w_cam_8, config::width_s110_w_cam_8, config::height_s110_w_cam_8}}});
+	auto const [map, utm_to_image] = draw_map(std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "visualization" / "2021-07-07_1490_Providentia_Plus_Plus_1_6.xodr", 1200, 1920, 5., config::affine_transformation_utm_to_s110_base_north,
+	    {{"s110_n_cam_8", {config::projection_matrix_s110_base_north_into_s110_n_cam_8, config::height_s110_n_cam_8, config::width_s110_n_cam_8}},
+	        {"s110_o_cam_8", {config::projection_matrix_s110_base_north_into_s110_o_cam_8, config::height_s110_o_cam_8, config::width_s110_o_cam_8}},
+	        {"s110_s_cam_8", {config::projection_matrix_s110_base_north_into_s110_s_cam_8, config::height_s110_s_cam_8, config::width_s110_s_cam_8}},
+	        {"s110_w_cam_8", {config::projection_matrix_s110_base_north_into_s110_w_cam_8, config::height_s110_w_cam_8, config::width_s110_w_cam_8}}});
 
 	gtk_init(&argc, &argv);
 
