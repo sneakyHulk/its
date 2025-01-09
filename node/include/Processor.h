@@ -66,6 +66,9 @@ class Processor : public Node {
 	 */
 	tbb::concurrent_bounded_queue<std::shared_ptr<Input const>> asynchronous_queue;
 
+   protected:
+	std::stop_token stop_token;
+
    public:
 	/**
 	 * @brief Starts the Processor node's processing loop in a separate thread.
@@ -74,7 +77,9 @@ class Processor : public Node {
 	 * @return The thread used for running the Processor node asynchronously.
 	 */
 	[[nodiscard("The thread would stop immediately!")]] [[maybe_unused]] std::jthread operator()() {
-		return std::jthread([this](std::stop_token const& stop_token) {
+		return std::jthread([this](std::stop_token const& _stop_token) {
+			stop_token = _stop_token;
+
 			if (!stop_token.stop_requested()) {
 				std::shared_ptr<Input const> item;
 				asynchronous_queue.pop(item);

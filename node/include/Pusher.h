@@ -56,6 +56,9 @@ class Pusher : public Node {
 	 */
 	std::vector<std::function<void(std::shared_ptr<Output const>)>> asynchronous_functions;
 
+   protected:
+	std::stop_token stop_token;
+
    public:
 	/**
 	 * @brief Starts the Pusher node's processing loop in a separate thread.
@@ -64,7 +67,9 @@ class Pusher : public Node {
 	 * @return The thread used for running the Pusher node asynchronously.
 	 */
 	[[nodiscard("The thread would stop immediately!")]] std::jthread operator()() {
-		return std::jthread([this](std::stop_token const& stop_token) {
+		return std::jthread([this](std::stop_token const& _stop_token) {
+			stop_token = _stop_token;
+
 			if (!stop_token.stop_requested()) {
 				synchronous_call_once();
 			}

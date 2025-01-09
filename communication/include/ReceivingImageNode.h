@@ -31,10 +31,8 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 	GstElement *sink;
 	GstBus *bus;
 
-	std::jthread const *const thread;
-
    public:
-	ReceivingImageNode(std::jthread const *const thread) : thread(thread) {
+	ReceivingImageNode() {
 		// Create pipeline and elements
 		pipeline = gst_pipeline_new("receiver-pipeline");
 
@@ -102,7 +100,12 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 		}
 	}
 
-	~ReceivingImageNode() { gst_object_unref(pipeline); }
+	~ReceivingImageNode() {
+		gst_object_unref(bus);
+		gst_element_set_state(pipeline, GST_STATE_NULL);
+		gst_object_unref(header_extension_timestamp_frame);
+		gst_object_unref(pipeline);
+	}
 
    private:
 	ImageData push_once() final { return push(); }
@@ -186,7 +189,11 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 								case GST_RESOURCE_ERROR_OPEN_READ:
 								case GST_RESOURCE_ERROR_OPEN_WRITE:
 								case GST_RESOURCE_ERROR_OPEN_READ_WRITE:
-									if (thread->get_stop_token().stop_requested()) {
+									if (stop_token.stop_requested()) {
+										g_clear_error(&err);
+										g_free(err_info);
+										gst_message_unref(msg);
+
 										return ImageData{};
 									}
 									reconnect();
@@ -328,9 +335,6 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			ImageData ret{cv::Mat(height, width, CV_8UC3), 0, "test"};
 			std::memcpy(ret.image.data, map.data, map.size);
 
-			// cv::Mat yuv_img(height + height / 2, width, CV_8UC1, map.data);
-			// cv::cvtColor(yuv_img, ret.image, cv::COLOR_YUV2BGR_I420);
-
 			GstTimestampFrameMeta *meta;
 			meta = gst_buffer_get_timestamp_frame_meta(buffer, gst_static_caps_get(&timestamp_frame_stream_caps));
 			if (!meta) {
@@ -347,7 +351,6 @@ class ReceivingImageNode : public Pusher<ImageData>, StreamingNodeBase {
 			return ret;
 		}
 
-		// Pull the sample (synchronous, wait)
 		// GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(sink));
 		// if (!sample) common::println_critical_loc("Stream has no sample!");
 
