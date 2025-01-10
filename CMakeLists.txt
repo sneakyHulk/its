@@ -23,7 +23,7 @@ find_package(Torch REQUIRED PATHS ~/src/libtorch)
 find_package(Eigen3 REQUIRED)
 
 ### Pylon
-find_package(pylon)
+find_package(pylon REQUIRED)
 
 ### eCAL
 find_package(eCAL)
@@ -47,6 +47,9 @@ pkg_check_modules(gtk+-3.0 REQUIRED IMPORTED_TARGET gtk+-3.0)
 
 ### gpiod
 pkg_check_modules(gpiod IMPORTED_TARGET libgpiod)
+
+### mosquitto
+pkg_check_modules(Mosquitto IMPORTED_TARGET libmosquitto REQUIRED)
 
 ########## add submodules #########################################################################################
 ### autodiff
@@ -77,13 +80,6 @@ add_library(common INTERFACE)
 target_include_directories(common INTERFACE thirdparty/common/include)
 target_link_libraries(common INTERFACE)
 target_compile_features(common INTERFACE cxx_std_20)
-
-### mqtt
-# git submodule add https://github.com/eclipse/paho.mqtt.cpp.git thirdparty/mqtt
-set(PAHO_WITH_MQTT_C ON CACHE INTERNAL "")
-set(PAHO_WITH_SSL OFF CACHE INTERNAL "")
-set(PAHO_HIGH_PERFORMANCE ON CACHE INTERNAL "")
-add_subdirectory(thirdparty/mqtt)
 
 ### yas
 add_library(yas INTERFACE)
@@ -132,5 +128,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC transformation_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC bird_eye_visualization_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC image_tracking_nodes)
 target_link_libraries(${PROJECT_NAME} PUBLIC image_communication_nodes)
+target_link_libraries(${PROJECT_NAME} PUBLIC data_communication_nodes)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

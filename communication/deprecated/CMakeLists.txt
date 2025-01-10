@@ -117,3 +117,12 @@ target_link_libraries(test_${PROJECT_NAME}_rtmp PUBLIC ${RTMP_LIB})
 target_link_libraries(test_${PROJECT_NAME}_rtmp PUBLIC ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${AVDEVICE_LIBRARY} ${AVFILTER_LIBRARY} ${SWSCALE_LIBRARY})
 target_compile_features(test_${PROJECT_NAME}_rtmp PRIVATE cxx_std_23)
 target_compile_definitions(test_${PROJECT_NAME}_rtmp PUBLIC CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+### mqtt
+# git submodule add https://github.com/eclipse/paho.mqtt.cpp.git thirdparty/mqtt
+set(PAHO_WITH_MQTT_C ON CACHE INTERNAL "")
+set(PAHO_WITH_SSL OFF CACHE INTERNAL "")
+set(PAHO_HIGH_PERFORMANCE ON CACHE INTERNAL "")
+add_subdirectory(thirdparty/mqtt)
+target_link_libraries(${PROJECT_NAME} PUBLIC paho-mqttpp3)
+target_compile_definitions(${PROJECT_NAME} PRIVATE PAHO_MQTTPP_IMPORTS)

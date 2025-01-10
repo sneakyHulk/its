@@ -1,7 +1,7 @@
 # src: cpu, cuda, rocm
 ARG src=cpu
 
-FROM --platform=$BUILDPLATFORM ubuntu:jammy AS cpu-base
+FROM --platform=$BUILDPLATFORM ubuntu:noble AS cpu-base
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM"
 RUN apt-get update \
@@ -39,8 +39,8 @@ RUN if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
 
 ENV PATH=/opt/conda/bin:$PATH
 
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS cuda-base
-FROM rocm/dev-ubuntu-22.04:6.2-complete AS rocm-base
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS cuda-base
+FROM rocm/dev-ubuntu-24.04:6.2.4-complete AS rocm-base
 
 FROM --platform=$BUILDPLATFORM ${src}-base AS image
 
@@ -71,8 +71,8 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive \
        apt-get -y --quiet --no-install-recommends install \
        build-essential \
-       gcc-12 \
-       g++-12 \
+       gcc-14 \
+       g++-14 \
        pkg-config \
        python3 \
        python3-pip \
@@ -88,6 +88,10 @@ RUN apt-get update \
        libtbb-dev \
        libmosquitto-dev \
        libssl-dev \
+       net-tools \
+       telnet \
+       iputils-ping \
+       iproute2 \
        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-dev \
     && apt-get -y autoremove \
     && apt-get clean autoclean \
@@ -101,9 +105,9 @@ RUN if [ "$src" = "cpu" ]; then \
       conda install -y pytorch-cpu \
       && conda install -y conda-forge::libtorch; \
     elif [ "$src" = "cuda" ]; then \
-      python3 -m pip install --index-url https://download.pytorch.org/whl/cu121 torch torchvision torchaudio \
+      python3 -m pip install --index-url https://download.pytorch.org/whl/cu124 torch torchvision torchaudio \
       && python3 -m pip install --index-url https://pypi.python.org/simple ultralytics opencv-python brotli \
-      && wget --quiet -c https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.3.1%2Bcu121.zip --output-document libtorch.zip \
+      && wget --quiet -c https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.5.1%2Bcu124.zip --output-document libtorch.zip \
       && unzip libtorch.zip -d ~/src; \
     elif [ "$src" = "rocm" ]; then \
       python3 -m pip install --index-url https://download.pytorch.org/whl/rocm6.2 torch torchvision torchaudio \
@@ -115,18 +119,14 @@ RUN if [ "$src" = "cpu" ]; then \
 ARG BUILDPLATFORM
 # Install arm version: https://downloads-ctf.baslerweb.com/dg51pdwahxgw/3WTEu607sfl0dKNg69cNws/88cf3da4418aee38f2179e757ed9e2c7/pylon-8.0.1-16188_linux-aarch64_debs.tar.gz
 # Install Pylon pylon 8.0.1: https://downloads-ctf.baslerweb.com/dg51pdwahxgw/2xjc1trdu02JMUFlzz8fR6/1a2fa4d4c54fdc1230ace817a6f2f37a/pylon-8.0.1-16188_linux-x86_64_debs.tar.gz
-RUN if [ -z "$LIVE" ]; then \
-      if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
-        wget --quiet https://www2.baslerweb.com/media/downloads/software/pylon_software/pylon-7.5.0.15658-linux-x86_64_debs.tar.gz -O pylon.tar.gz \
+RUN if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
+        wget --quiet https://downloads-ctf.baslerweb.com/dg51pdwahxgw/2xjc1trdu02JMUFlzz8fR6/1a2fa4d4c54fdc1230ace817a6f2f37a/pylon-8.0.1-16188_linux-x86_64_debs.tar.gz -O pylon.tar.gz \
         && tar -xzf pylon.tar.gz \
         && dpkg -i pylon*.deb \
         && apt-get update \
         && DEBIAN_FRONTEND=noninteractive \
            apt-get -y --quiet --no-install-recommends install \
-           net-tools \
-           telnet \
-           iputils-ping \
-           iproute2 \
+
            build-essential \
            cmake \
            gcc-12 \
@@ -134,8 +134,10 @@ RUN if [ -z "$LIVE" ]; then \
         && apt-get -y autoremove \
         && apt-get clean autoclean \
         && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*; \
-      fi; \
+     elif [ "$BUILDPLATFORM" = "linux/arm64" ]; then \
+         wget --quiet https://downloads-ctf.baslerweb.com/dg51pdwahxgw/3WTEu607sfl0dKNg69cNws/88cf3da4418aee38f2179e757ed9e2c7/pylon-8.0.1-16188_linux-aarch64_debs.tar.gz -O pylon.tar.gz \
     fi
+
 
 # Install eCAL
 RUN if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \

@@ -163,9 +163,6 @@
 [submodule "thirdparty/boost/functional"]
 	path = thirdparty/boost/functional
 	url = https://github.com/boostorg/functional.git
-[submodule "thirdparty/mqtt"]
-	path = thirdparty/mqtt
-	url = https://github.com/eclipse/paho.mqtt.cpp.git
 [submodule "thirdparty/boost/circular_buffer"]
 	path = thirdparty/boost/circular_buffer
 	url = https://github.com/boostorg/circular_buffer.git
@@ -232,6 +229,3 @@
 [submodule "thirdparty/boost/multi_index"]
 	path = thirdparty/boost/multi_index
 	url = https://github.com/boostorg/multi_index.git
-[submodule "thirdparty/g3log"]
-	path = thirdparty/g3log
-	url = https://github.com/KjellKod/g3log

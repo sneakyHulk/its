@@ -37,5 +37,5 @@ int main(int argc, char** argv) {
 	auto generate_thread = generate();
 	auto data_input_thread = data_input();
 
-	std::this_thread::sleep_for(10s);
+	std::this_thread::sleep_for(100s);
 }

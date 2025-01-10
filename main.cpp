@@ -8,6 +8,7 @@
 #include "ImageVisualizationNode.h"
 #include "ProcessorSynchronousPair.h"
 #include "RawDataCamerasSimulatorNode.h"
+#include "StreamingDataNode.h"
 #include "StreamingImageNode.h"
 #include "TrackToTrackFusion.h"
 #include "YoloNode.h"
@@ -23,6 +24,7 @@ int main(int argc, char** argv) {
 	        {"s110_w_cam_8", {config::projection_matrix_s110_base_north_into_s110_w_cam_8, config::height_s110_w_cam_8, config::width_s110_w_cam_8}}});
 
 	gtk_init(&argc, &argv);
+	gst_init(&argc, &argv);
 
 	{
 		RawDataCamerasSimulatorNode raw_cams = make_raw_data_cameras_simulator_node_arrived_recorded1({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams_raw" / "s110_s_cam_8"}});
@@ -38,19 +40,25 @@ int main(int argc, char** argv) {
 
 		BirdEyeVisualizationNode<CompactObjects> vis(map, utm_to_image);
 		ImageVisualizationNode img([](ImageData const& data) { return data.source == "bird"; });
+		StreamingImageNode stream("bird");
+		StreamingDataNode data_stream;
 
 		raw_cams.asynchronously_connect(pre);
 		pre.synchronously_connect(down).asynchronously_connect(yolo);
 		yolo.asynchronously_connect(track);
 		track.synchronously_connect(fusion);
+		fusion.asynchronously_connect(data_stream);
 		fusion.asynchronously_connect(vis);
 		vis.synchronously_connect(img);
+		vis.asynchronously_connect(stream);
 
 		auto raw_cams_thread = raw_cams();
 		auto pre_thread = pre();
 		auto yolo_thread = yolo();
 		auto track_thread = track();
 		auto vis_thread = vis();
+		auto stream_thread = stream();
+		auto data_stream_thread = data_stream();
 
 		for (auto timestamp = std::chrono::system_clock::now() + 40s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, true);
 	}
