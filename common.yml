@@ -1,0 +1,14 @@
+services:
+  its:
+    init: true
+    volumes:
+      - .:/src:ro
+      - ./result:/src/result
+      - /etc/timezone:/etc/timezone:ro
+    ports:
+      - "${IP}:8554:8554"
+    network_mode: host
+    ipc: host
+    pid: host
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
+    stop_signal: SIGTERM

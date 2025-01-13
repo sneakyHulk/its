@@ -3,7 +3,8 @@
 #include <boost/circular_buffer.hpp>
 #include <thread>
 
-void BaslerCameraBase::enable_ptp(Pylon::CBaslerUniversalInstantCamera const& camera, std::string const& camera_name, std::chrono::nanoseconds max_time_offset) {
+template <bool v2>
+void BaslerCameraBase<v2>::enable_ptp(Pylon::CBaslerUniversalInstantCamera const& camera, std::string const& camera_name, std::chrono::nanoseconds max_time_offset) {
 start:
 	if (camera.GevIEEE1588.GetValue()) {
 		common::println_debug_loc(camera_name, " PTP already enabled!");
@@ -58,6 +59,21 @@ start:
 
 	} while (status != Basler_UniversalCameraParams::GevIEEE1588StatusLatchedEnums::GevIEEE1588StatusLatched_Slave);
 
+	// on ace2 cameras, see https://docs.baslerweb.com/precision-time-protocol#additional-parameters
+	if constexpr (v2) {
+		auto ptp_status = Basler_UniversalCameraParams::PtpServoStatusEnums::PtpServoStatus_Unknown;
+
+		do {
+			std::this_thread::yield();
+
+			camera.PtpDataSetLatch.Execute();
+
+			ptp_status = camera.PtpServoStatus.GetValue();
+		} while (ptp_status != Basler_UniversalCameraParams::PtpServoStatusEnums::PtpServoStatus_Locked);
+
+		return;
+	}
+
 	boost::circular_buffer<std::chrono::nanoseconds> clock_offsets(10, std::chrono::nanoseconds::max());
 	// Ensures that the time offset between the camera and the server acting as the PTP master is sufficiently synchronized, as specified in max_time_offset. https://docs.baslerweb.com/precision-time-protocol
 	do {
@@ -83,3 +99,6 @@ start:
 
 	} while (*std::ranges::max_element(clock_offsets) > max_time_offset);
 }
+
+template class BaslerCameraBase<true>;
+template class BaslerCameraBase<false>;

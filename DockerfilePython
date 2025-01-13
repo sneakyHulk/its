@@ -1,5 +1,0 @@
-FROM python:3.10-bookworm
-
-WORKDIR /src
-
-RUN pip install pypylon opencv-python numpy

@@ -12,7 +12,10 @@ using namespace std::chrono_literals;
  * @class BaslerCameraBase
  *
  * This class implements common functionality of Basler camera nodes, in particular the ptp configuration.
+ *
+ * @tparam True if the camera is a ACE 2 camera.
  */
+template <bool v2>
 class BaslerCameraBase {
    protected:
 	/**

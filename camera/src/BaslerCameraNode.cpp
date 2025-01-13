@@ -7,7 +7,8 @@
 
 #include "common_output.h"
 
-BaslerCameraNode::BaslerCameraNode(std::string&& camera_name, std::string&& mac_address) : _camera_name(std::forward<decltype(camera_name)>(camera_name)) {
+template <bool v2>
+BaslerCameraNode<v2>::BaslerCameraNode(std::string&& camera_name, std::string&& mac_address) : _camera_name(std::forward<decltype(camera_name)>(camera_name)) {
 	Pylon::DeviceInfoList_t device_list;
 	Pylon::CTlFactory::GetInstance().EnumerateDevices(device_list);
 
@@ -27,7 +28,7 @@ BaslerCameraNode::BaslerCameraNode(std::string&& camera_name, std::string&& mac_
 			_camera.Open();
 
 			// Enabling PTP Clock Synchronization
-			enable_ptp(_camera, _camera_name, std::chrono::milliseconds(10));
+			BaslerCameraBase<v2>::enable_ptp(_camera, _camera_name, std::chrono::milliseconds(10));
 		}
 
 		common::print_loc("Starting grabbing...");
@@ -39,7 +40,9 @@ BaslerCameraNode::BaslerCameraNode(std::string&& camera_name, std::string&& mac_
 		common::println_critical_loc(e.GetDescription());
 	}
 }
-BaslerCameraNode::BaslerCameraNode(std::string&& camera_name, std::string&& mac_address, double const fps) : BaslerCameraNode(std::forward<decltype(camera_name)>(camera_name), std::forward<decltype(mac_address)>(mac_address)) {
+
+template <bool v2>
+BaslerCameraNode<v2>::BaslerCameraNode(std::string&& camera_name, std::string&& mac_address, double const fps) : BaslerCameraNode(std::forward<decltype(camera_name)>(camera_name), std::forward<decltype(mac_address)>(mac_address)) {
 	try {
 		_camera.AcquisitionFrameRateEnable.SetValue(true);
 		_camera.AcquisitionFrameRateAbs.SetValue(fps);
@@ -47,7 +50,9 @@ BaslerCameraNode::BaslerCameraNode(std::string&& camera_name, std::string&& mac_
 		common::println_critical_loc(e.GetDescription());
 	}
 }
-ImageDataRaw BaslerCameraNode::push() {
+
+template <bool v2>
+ImageDataRaw BaslerCameraNode<v2>::push() {
 	do {
 		try {
 			Pylon::CGrabResultPtr ptrGrabResult;
@@ -80,3 +85,6 @@ ImageDataRaw BaslerCameraNode::push() {
 		}
 	} while (true);
 }
+
+template class BaslerCameraNode<true>;
+template class BaslerCameraNode<false>;

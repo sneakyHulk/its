@@ -5,7 +5,8 @@
 
 #include <boost/circular_buffer.hpp>
 
-BaslerCamerasNode::BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& camera_name_mac_address) {
+template <bool v2>
+BaslerCamerasNode<v2>::BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& camera_name_mac_address) {
 	auto index = 0;
 	for (auto const& [cam_name, mac_address] : camera_name_mac_address) {
 		_camera_name_mac_address_index_map.emplace(cam_name, mac_address.address, index++);
@@ -20,7 +21,7 @@ BaslerCamerasNode::BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& c
 	if (device_list.empty()) common::println_critical_loc("No Basler camera devices found!");
 
 	try {
-		for (auto& mac_address_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::MacAddressTag>(); auto& device : device_list) {
+		for (auto& mac_address_indexing = _camera_name_mac_address_index_map.template get<typename CameraNameMacAddressIndexConfig::MacAddressTag>(); auto& device : device_list) {
 			auto const& config = mac_address_indexing.find(device.GetMacAddress().c_str());
 
 			if (config == mac_address_indexing.end()) {
@@ -35,7 +36,7 @@ BaslerCamerasNode::BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& c
 			_cameras[config->index].Open();
 
 			// Enabling PTP Clock Synchronization
-			enable_ptp(_cameras[config->index], config->camera_name, std::chrono::milliseconds(15));
+			BaslerCameraBase<v2>::enable_ptp(_cameras[config->index], config->camera_name, std::chrono::milliseconds(15));
 
 			_cameras[config->index].AcquisitionFrameRateEnable.SetValue(true);
 			_cameras[config->index].AcquisitionFrameRateAbs.SetValue(config->fps);
@@ -50,8 +51,10 @@ BaslerCamerasNode::BaslerCamerasNode(std::map<std::string, MacAddressConfig>&& c
 		common::println_critical_loc(e.GetDescription());
 	}
 }
-ImageDataRaw BaslerCamerasNode::push() {
-	auto& index_indexing = _camera_name_mac_address_index_map.get<CameraNameMacAddressIndexConfig::IndexTag>();
+
+template <bool v2>
+ImageDataRaw BaslerCamerasNode<v2>::push() {
+	auto& index_indexing = _camera_name_mac_address_index_map.template get<typename CameraNameMacAddressIndexConfig::IndexTag>();
 	do {
 		try {
 			Pylon::CGrabResultPtr ptrGrabResult;
@@ -88,3 +91,6 @@ ImageDataRaw BaslerCamerasNode::push() {
 		}
 	} while (true);
 }
+
+template class BaslerCamerasNode<true>;
+template class BaslerCamerasNode<false>;

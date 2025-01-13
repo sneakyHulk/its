@@ -7,57 +7,51 @@
 #include "ImageSavingNode.h"
 #include "ImageVisualizationNode.h"
 
-std::function<void()> clean_up;
+void clean_up(int signal) {
+	common::println("[clean_up]: got signal '", signal, "'!");
 
-void signal_handler(int signal) {
-	common::println("[signal_handler]: got signal '", signal, "'!");
-	clean_up();
+	common::print("[clean_up]: Terminate Pylon...");
+	Pylon::PylonTerminate();
+	common::println("done!");
 }
 
 int main(int argc, char* argv[]) {
-	clean_up = []() {
-		common::print("Terminate Pylon...");
-		Pylon::PylonTerminate();
-		common::println("done!");
+	std::signal(SIGINT, [](int signal) {
+		clean_up(signal);
 
-		std::exception_ptr current_exception = std::current_exception();
-		if (current_exception)
-			std::rethrow_exception(current_exception);
-		else
-			std::_Exit(1);
-	};
+		std::_Exit(1);
+	});
+	std::signal(SIGTERM, [](int signal) {
+		clean_up(signal);
 
-	std::signal(SIGINT, signal_handler);
-	std::signal(SIGTERM, signal_handler);
-	try {
-		common::print("Initialize Pylon...");
-		Pylon::PylonInitialize();
-		common::println("done!");
+		std::_Exit(1);
+	});
 
-		// BaslerCamerasNode cameras({{"s110_s_cam_8", {"0030532A9B7F"}}, {"s110_o_cam_8", {"003053305C72"}}, {"s110_n_cam_8", {"003053305C75"}}, {"s110_w_cam_8", {"003053380639"}}});
-		// ImagePreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
-		//     {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		// ImageSavingNode img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
+	common::print("Initialize Pylon...");
+	Pylon::PylonInitialize();
+	common::println("done!");
 
-		BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
-		ImagePreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		ImageSavingNode save({{"s60_n_cam_16_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_16_k"}}, {"s60_n_cam_50_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_50_k"}}});
+	// BaslerCamerasNode cameras({{"s110_s_cam_8", {"0030532A9B7F"}}, {"s110_o_cam_8", {"003053305C72"}}, {"s110_n_cam_8", {"003053305C75"}}, {"s110_w_cam_8", {"003053380639"}}});
+	// ImagePreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
+	//     {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+	// ImageSavingNode img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
-		// BaslerCamerasNode cameras({{"car_cam_16", BaslerCamerasNode::MacAddressConfig{"0030534C1B61"}}});
-		// ImagePreprocessingNode pre({{"car_cam_16", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
-		// ImageSavingNode save({{"car_cam_16", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "car_cam_16"}}});
+	BaslerCamerasNode cameras({{"s60_n_cam_16_k", {"00305338063B"}}, {"s60_n_cam_50_k", {"0030532A9B7D"}}});
+	ImagePreprocessingNode pre({{"s60_n_cam_16_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s60_n_cam_50_k", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+	ImageSavingNode save({{"s60_n_cam_16_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_16_k"}}, {"s60_n_cam_50_k", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "s60_n_cam_50_k"}}});
 
-		cameras.asynchronously_connect(pre);
-		pre.asynchronously_connect(save);
+	// BaslerCamerasNode cameras({{"car_cam_16", BaslerCamerasNode::MacAddressConfig{"0030534C1B61"}}});
+	// ImagePreprocessingNode pre({{"car_cam_16", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+	// ImageSavingNode save({{"car_cam_16", {std::filesystem::path(CMAKE_SOURCE_DIR) / "result" / "car_cam_16"}}});
 
-		auto cameras_thread = cameras();
-		auto pre_thread = pre();
-		auto save_thread = save();
+	cameras.asynchronously_connect(pre);
+	pre.asynchronously_connect(save);
 
-		std::this_thread::sleep_for(20s);
+	auto cameras_thread = cameras();
+	auto pre_thread = pre();
+	auto save_thread = save();
 
-		clean_up();
-	} catch (...) {
-		clean_up();
-	}
+	std::this_thread::sleep_for(20s);
+
+	clean_up(0);
 }

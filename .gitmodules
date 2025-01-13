@@ -7,9 +7,6 @@
 [submodule "thirdparty/range-v3"]
 	path = thirdparty/range-v3
 	url = https://github.com/ericniebler/range-v3.git
-[submodule "thirdparty/json"]
-	path = thirdparty/json
-	url = https://github.com/nlohmann/json.git
 [submodule "thirdparty/common"]
 	path = thirdparty/common
 	url = https://github.com/sneakyHulk/common.git

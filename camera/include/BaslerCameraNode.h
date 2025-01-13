@@ -8,8 +8,11 @@
  * @class BaslerCameraNode
  * @brief Manages one Basler cameras.
  * This class handles initialization, ptp configuration, and image capture for one basler GigE cameras.
+ *
+ * @tparam True if the camera is a ACE 2 camera.
  */
-class BaslerCameraNode : public Pusher<ImageDataRaw>, public BaslerCameraBase {
+template <bool v2 = false>
+class BaslerCameraNode : public Pusher<ImageDataRaw>, public BaslerCameraBase<v2> {
 	Pylon::CBaslerUniversalInstantCamera _camera;
 
 	std::string _camera_name;

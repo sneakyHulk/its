@@ -18,8 +18,11 @@
  * @brief Manages multiple Basler cameras.
  *
  * This class handles initialization, ptp configuration, and image capture for multiple basler GigE cameras.
+ *
+ * @tparam True if the camera is a ACE 2 camera.
  */
-class BaslerCamerasNode : public Pusher<ImageDataRaw>, public BaslerCameraBase {
+template <bool v2 = false>
+class BaslerCamerasNode : public Pusher<ImageDataRaw>, public BaslerCameraBase<v2> {
    public:
 	struct MacAddressConfig {
 		std::string address;
@@ -54,11 +57,11 @@ class BaslerCamerasNode : public Pusher<ImageDataRaw>, public BaslerCameraBase {
 	/**
 	 * Container for camera indexing based on name and MAC address and index in BaslerUniversalInstantCameraArray.
 	 */
-	boost::multi_index_container<CameraNameMacAddressIndexConfig, boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::tag<BaslerCamerasNode::CameraNameMacAddressIndexConfig::CameraNameTag>,
+	boost::multi_index_container<CameraNameMacAddressIndexConfig, boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::tag<typename BaslerCamerasNode::CameraNameMacAddressIndexConfig::CameraNameTag>,
 	                                                                                                 boost::multi_index::member<CameraNameMacAddressIndexConfig, std::string, &CameraNameMacAddressIndexConfig::camera_name>>,
-	                                                                  boost::multi_index::ordered_unique<boost::multi_index::tag<BaslerCamerasNode::CameraNameMacAddressIndexConfig::MacAddressTag>,
+	                                                                  boost::multi_index::ordered_unique<boost::multi_index::tag<typename BaslerCamerasNode::CameraNameMacAddressIndexConfig::MacAddressTag>,
 	                                                                      boost::multi_index::member<CameraNameMacAddressIndexConfig, std::string, &CameraNameMacAddressIndexConfig::mac_address>>,
-	                                                                  boost::multi_index::ordered_unique<boost::multi_index::tag<BaslerCamerasNode::CameraNameMacAddressIndexConfig::IndexTag>,
+	                                                                  boost::multi_index::ordered_unique<boost::multi_index::tag<typename BaslerCamerasNode::CameraNameMacAddressIndexConfig::IndexTag>,
 	                                                                      boost::multi_index::member<CameraNameMacAddressIndexConfig, int, &CameraNameMacAddressIndexConfig::index>>>>
 	    _camera_name_mac_address_index_map;
 

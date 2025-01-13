@@ -15,6 +15,8 @@ void signal_handler(int signal) {
 	common::print("Finalize eCAL...");
 	eCAL::Finalize();
 	common::println("done!");
+
+	std::_Exit(signal);
 }
 
 int main(int argc, char* argv[]) {

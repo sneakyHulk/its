@@ -1,7 +1,9 @@
 services:
   ##### run cpu ########################################################################################################
   its-cpu:
-    init: true
+    extends:
+      file: common.yml
+      service: its
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,46 +11,38 @@ services:
       args:
         src: cpu
     container_name: its-cpu
-    volumes:
-      - .:/src:ro
-      - ./result:/src/result
-      - /etc/timezone:/etc/timezone:ro
-    ports:
-      - "${IP}:8554:8554"
-    network_mode: host
-    ipc: host
-    pid: host
-    environment:
-      - LIVE=${LIVE}
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
-    stop_signal: SIGTERM
     profiles: [ "its-cpu" ]
+  its-cpu-test:
+    extends:
+      file: common.yml
+      service: its
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: image
+      args:
+        src: cpu
+    container_name: its-cpu-test
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target all -j 8 && ctest"
+    profiles: [ "its-cpu-test" ]
   ##### run cuda #######################################################################################################
   its-cuda:
-    init: true
+    extends:
+      file: common.yml
+      service: its
     build:
       context: .
       dockerfile: Dockerfile
       target: image
       args:
         src: cuda
-    volumes:
-      - .:/src:ro
-      - ./result:/src/result
-      - /etc/timezone:/etc/timezone:ro
-    ports:
-      - "${IP}:8554:8554"
-    network_mode: host
-    ipc: host
-    pid: host
-    environment:
-      - LIVE=${LIVE}
     command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
-    stop_signal: SIGTERM
-    profiles: [ "its-cuda", "live" ]
+    profiles: [ "its-cuda" ]
   ##### run rocm #######################################################################################################
   its-rocm:
-    init: true
+    extends:
+      file: common.yml
+      service: its
     build:
       context: .
       dockerfile: Dockerfile
@@ -56,10 +50,6 @@ services:
       args:
         src: rocm
     container_name: its-rocm
-    volumes:
-      - .:/src:ro
-      - ./result:/src/result
-      - /etc/timezone:/etc/timezone:ro
     devices:
       - /dev/kfd
       - /dev/dri
@@ -67,15 +57,6 @@ services:
       - seccomp:unconfined
     group_add:
       - video
-    ports:
-      - "${IP}:8554:8554"
-    network_mode: host
-    ipc: host
-    pid: host
-    environment:
-      - LIVE=${LIVE}
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
-    stop_signal: SIGTERM
     profiles: [ "its-rocm" ]
   ##### MQTT ###########################################################################################################
   mqtt:

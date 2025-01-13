@@ -1,3 +1,0 @@
-pypylon
-opencv-python
-numpy

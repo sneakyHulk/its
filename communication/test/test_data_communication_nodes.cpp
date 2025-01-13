@@ -24,6 +24,12 @@ class PrintCompactObjects : public Runner<CompactObjects> {
 };
 
 int main(int argc, char** argv) {
+	class AfterReturn {
+	   public:
+		AfterReturn() { mosquitto_lib_init(); }
+		~AfterReturn() { mosquitto_lib_cleanup(); }
+	} after_return;
+
 	StreamingDataNode data_stream;
 	GenerateCompactObjects generate;
 
@@ -37,5 +43,5 @@ int main(int argc, char** argv) {
 	auto generate_thread = generate();
 	auto data_input_thread = data_input();
 
-	std::this_thread::sleep_for(100s);
+	std::this_thread::sleep_for(10s);
 }

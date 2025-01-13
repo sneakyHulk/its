@@ -33,6 +33,11 @@ class StreamingDataNode : public Runner<CompactObjects> {
 		common::println("OK");
 	}
 
+	~StreamingDataNode() {
+		mosquitto_disconnect(mosq);
+		mosquitto_destroy(mosq);
+	}
+
 	void run(CompactObjects const &data) final {
 		yas::mem_ostream os;
 		yas::binary_oarchive<yas::mem_ostream> oa(os);
