@@ -71,7 +71,7 @@ set_property(TARGET OpenDrive PROPERTY POSITION_INDEPENDENT_CODE ON)
 ### Range v3
 add_subdirectory(thirdparty/range-v3)
 
-### Boost 1.85.0
+### Boost 1.87.0
 add_subdirectory(thirdparty/boost)
 
 ### bytetrack
