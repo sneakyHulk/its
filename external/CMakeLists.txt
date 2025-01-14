@@ -3,7 +3,7 @@ add_library(${PROJECT_NAME} SHARED src/EcalImageDriverNode.cpp src/EcalReaderNod
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC node)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_link_libraries(${PROJECT_NAME} PUBLIC providentia_streaming_message)
 target_link_libraries(${PROJECT_NAME} PUBLIC boost_multi_index)

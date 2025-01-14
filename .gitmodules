@@ -226,3 +226,6 @@
 [submodule "thirdparty/boost/multi_index"]
 	path = thirdparty/boost/multi_index
 	url = https://github.com/boostorg/multi_index.git
+[submodule "thirdparty/concurra"]
+	path = thirdparty/concurra
+	url = https://github.com/sneakyHulk/concurra.git

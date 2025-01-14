@@ -89,6 +89,8 @@ target_include_directories(yas INTERFACE thirdparty/yas/include)
 target_link_libraries(yas INTERFACE)
 target_compile_features(yas INTERFACE cxx_std_23)
 
+### concurra
+add_subdirectory(thirdparty/concurra)
 
 ########## add local stuff #############################################################################################
 
@@ -97,7 +99,6 @@ target_compile_features(yas INTERFACE cxx_std_23)
 enable_testing()
 
 add_subdirectory(msg)
-add_subdirectory(node)
 add_subdirectory(external)
 add_subdirectory(utils)
 add_subdirectory(yolo)

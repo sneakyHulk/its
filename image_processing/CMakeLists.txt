@@ -4,7 +4,7 @@ add_library(${PROJECT_NAME} SHARED src/ImageDownscalingNode.cpp src/ImagePreproc
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC node)
+target_link_libraries(${PROJECT_NAME} PUBLIC concurra)
 target_link_libraries(${PROJECT_NAME} PUBLIC msg)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_definitions(${PROJECT_NAME} PRIVATE CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
