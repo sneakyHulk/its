@@ -78,10 +78,7 @@ add_subdirectory(thirdparty/boost)
 add_subdirectory(thirdparty/bytetrack)
 
 ### common
-add_library(common INTERFACE)
-target_include_directories(common INTERFACE thirdparty/common/include)
-target_link_libraries(common INTERFACE)
-target_compile_features(common INTERFACE cxx_std_20)
+add_subdirectory(thirdparty/common)
 
 ### yas
 add_library(yas INTERFACE)
