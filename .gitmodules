@@ -22,9 +22,9 @@
 [submodule "thirdparty/bytetrack"]
 	path = thirdparty/bytetrack
 	url = https://github.com/Vertical-Beach/ByteTrack-cpp.git
-[submodule "thirdparty/concurra"]
-	path = thirdparty/concurra
-	url = https://github.com/sneakyHulk/concurra.gitt
 [submodule "thirdparty/boost"]
 	path = thirdparty/boost
 	url = https://github.com/boostorg/boost.git
+[submodule "thirdparty/concurra"]
+	path = thirdparty/concurra
+	url = https://github.com/sneakyHulk/concurra.git
