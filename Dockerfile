@@ -5,41 +5,6 @@ FROM --platform=$BUILDPLATFORM ubuntu:noble AS cpu-base
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM"
 
-#RUN apt-get update \
-#    && DEBIAN_FRONTEND=noninteractive \
-#       apt-get -y --quiet --no-install-recommends install \
-#       ca-certificates \
-#       wget \
-#    && apt-get -y autoremove \
-#    && apt-get clean autoclean \
-#    && rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
-#
-#RUN if [ "$BUILDPLATFORM" = "linux/amd64" ]; then \
-#      wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh -q \
-#      && mkdir -p /opt \
-#      && bash miniconda.sh -b -p /opt/conda \
-#      && rm miniconda.sh \
-#      && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
-#      && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-#      && echo "conda activate base" >> ~/.bashrc \
-#      && find /opt/conda/ -follow -type f -name '*.a' -delete \
-#      && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
-#      && /opt/conda/bin/conda clean -afy; \
-#    elif [ "$BUILDPLATFORM" = "linux/arm64" ]; then \
-#      wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh -O miniconda.sh -q \
-#      && mkdir -p /opt \
-#      && bash miniconda.sh -b -p /opt/conda \
-#      && rm miniconda.sh \
-#      && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
-#      && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
-#      && echo "conda activate base" >> ~/.bashrc \
-#      && find /opt/conda/ -follow -type f -name '*.a' -delete \
-#      && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
-#      && /opt/conda/bin/conda clean -afy; \
-#    fi
-#
-#ENV PATH=/opt/conda/bin:$PATH
-
 FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS cuda-base
 FROM rocm/dev-ubuntu-24.04:6.2.4-complete AS rocm-base
 

@@ -26,6 +26,8 @@ using namespace std::chrono_literals;
  * @attention This class have to have a g_main_loop_run or a loop with g_main_context_iteration to be run to function properly. Also, g_main_loop_run or g_main_context_iteration must run in the same thread where this class was created.
  */
 class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
+	std::function<bool(ImageData const &)> _image_mask;
+
 	inline static GstStaticCaps recording_timestamp_caps = GST_STATIC_CAPS("timestamp-frame/x-stream");
 	inline static GstRTSPServer *server = nullptr;
 	GstRTSPMediaFactory *factory = nullptr;
@@ -48,7 +50,7 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 	/**
 	 * @brief Constructor that sets up the RTSP server and media factory.
 	 */
-	explicit StreamingImageNode(std::string &&stream_endpoint = "test") {
+	explicit StreamingImageNode(std::function<bool(ImageData const &)> image_mask = [](ImageData const &) { return true; }, std::string &&stream_endpoint = "test") : _image_mask(image_mask) {
 		// Create an RTSP server only once.
 		if (static bool first = true; std::exchange(first, false)) {
 			server = gst_rtsp_server_new();
@@ -157,6 +159,7 @@ class StreamingImageNode : public Runner<ImageData>, StreamingNodeBase {
 	 * @param data The input image data.
 	 */
 	void run(ImageData const &data) final {
+		if (!_image_mask(data)) return;
 		static std::uint64_t framenumber = 0;
 
 		if (!user_data->playing.load()) return;

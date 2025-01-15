@@ -10,5 +10,4 @@ services:
     network_mode: host
     ipc: host
     pid: host
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
     stop_signal: SIGTERM

@@ -35,8 +35,7 @@ class YoloNode : public Processor<ImageData, Detections2D> {
 	 * @param camera_name_width_height A map that maps the names of the cameras connected to this node to the original sizes of these cameras.
 	 * @param model_path The path of the yolo model.
 	 */
-	explicit YoloNode(std::map<std::string, CameraHeightWidthConfig>&& camera_name_height_width,
-	    std::filesystem::path&& model_path = std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "yolo" / (std::to_string(height) + 'x' + std::to_string(width)) / "yolov9c.torchscript")
+	explicit YoloNode(std::map<std::string, CameraHeightWidthConfig>&& camera_name_height_width, std::filesystem::path&& model_path)
 	    : camera_name_height_width(std::forward<decltype(camera_name_height_width)>(camera_name_height_width)), model_path(std::forward<decltype(model_path)>(model_path)) {}
 
 	/**
@@ -49,7 +48,7 @@ class YoloNode : public Processor<ImageData, Detections2D> {
 		detections.source = data.source;
 		detections.timestamp = data.timestamp;
 
-		detections.objects = run_yolo<height, width, device_id>(data.image, camera_name_height_width.at(data.source).camera_height, camera_name_height_width.at(data.source).camera_width, model_path);
+		detections.objects = run_yolo<height, width, device_id>(data.image, model_path, camera_name_height_width.at(data.source).camera_height, camera_name_height_width.at(data.source).camera_width);
 
 		return detections;
 	}

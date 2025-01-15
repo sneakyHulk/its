@@ -11,6 +11,7 @@ services:
       args:
         src: cpu
     container_name: its-cpu
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && exec its"
     profiles: [ "its-cpu" ]
   its-cpu-test:
     extends:
@@ -36,7 +37,7 @@ services:
       target: image
       args:
         src: cuda
-    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target ${TARGET} -j 8 && exec ${TARGET_FOLDER}/${TARGET}"
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release -DCAFFE2_USE_CUDNN=True /src && cmake --build . --target its -j 8 && exec its"
     profiles: [ "its-cuda" ]
   ##### run rocm #######################################################################################################
   its-rocm:
@@ -57,6 +58,7 @@ services:
       - seccomp:unconfined
     group_add:
       - video
+    command: sh -c "mkdir -p "/build" && cd "/build" && cmake -DCMAKE_BUILD_TYPE=Release /src && cmake --build . --target its -j 8 && exec its"
     profiles: [ "its-rocm" ]
   ##### MQTT ###########################################################################################################
   mqtt:
@@ -71,8 +73,8 @@ services:
       - 9001:9001
     network_mode: host
     profiles: [ "mqtt" ]
+  ##### https streaming site ###########################################################################################
   hls-streaming-server:
-    # ffmpeg -f lavfi -re -i smptebars=size=1280x720:rate=30 -pix_fmt yuv420p -vf "settb=AVTB,setpts='trunc(PTS/1K)*1K+st(1,trunc(RTCTIME/1K))-1K*trunc(ld(1)/1K)',drawtext=text='%{localtime}.%{eif\:1M*t-1K*trunc(t*1K)\:d}'" -c:v libx265 -preset ultrafast -b:v 600k -f mpegts udp://127.0.0.1:1234?pkt_size=1316
     image: bluenviron/mediamtx:latest-ffmpeg
     container_name: hls-streaming-server
     network_mode: host
@@ -80,13 +82,8 @@ services:
       - caddy:ro
     volumes:
       - ./mediamtx.yml:/mediamtx.yml
-      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
-      #- ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.crt:/server.crt
-      #- ./caddy/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
-      # - ./caddy/data/caddy/certificates/acme-staging-v02.api.letsencrypt.org-directory/s110.heyn.dev/s110.heyn.dev.key:/server.key
       - /etc/timezone:/etc/timezone:ro
-    profiles: [ "hls-streaming", "streaming_home", "streaming_live" ]
-  ##### https streaming site ###########################################################################################
+    profiles: [ "hls-streaming" ]
   caddy: # only for DNS challenge
     init: true
     build:
@@ -107,17 +104,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     secrets:
       - CLOUDFLARE_API_TOKEN
-    profiles: [ "caddy", "streaming_home", "streaming_live" ]
-  ##### dyndns #########################################################################################################
-  dyndns:
-    init: true
-    container_name: dyndns
-    image: ghcr.io/sneakyhulk/cloudflare-dyndns:latest
-    hostname: dyndns
-    restart: unless-stopped
-    ports:
-      - 9017:80
-    profiles: [ "dyndns", "streaming_home" ]
+    profiles: [ "hls-streaming" ]
   ##### webserver ######################################################################################################
   webserver:
     init: true
@@ -125,7 +112,7 @@ services:
     container_name: webserver
     volumes:
       - ./web:/usr/local/apache2/htdocs
-    profiles: [ "webserver", "streaming_home", "streaming_live" ]
+    profiles: [ "hls-streaming" ]
   ##### pylon test #####################################################################################################
   pypylon:
     init: true

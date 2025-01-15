@@ -6,6 +6,7 @@
  * @brief write the image to the video writer which saves a video every max_frames incoming images.
  */
 void VideoVisualizationNode::run(ImageData const& data) {
+	if (!_image_mask(data)) return;
 	if (++current_frame > max_frames) {
 		current_frame = 0;
 

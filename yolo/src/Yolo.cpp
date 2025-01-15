@@ -182,7 +182,7 @@ torch::Tensor scale_boxes(torch::Tensor& boxes, int const camera_height, int con
  * @tparam device_id The device on which yolo should run.
  */
 template <int height, int width, int device_id>
-std::vector<Detection2D> run_yolo(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path) {
+std::vector<Detection2D> run_yolo(cv::Mat const& input_image, std::filesystem::path const& model_path, int const camera_height, int const camera_width) {
 	thread_local static torch::Device device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU, device_id);
 	thread_local static torch::jit::script::Module yolo_model = [&model_path] {
 		common::println(torch::cuda::is_available() ? "GPU mode inference" : "CPU mode inference");
@@ -224,14 +224,14 @@ std::vector<Detection2D> run_yolo(cv::Mat const& input_image, int const camera_h
 /**
  * @brief Defines run_yolo function for detector with size 640x640.
  */
-template std::vector<Detection2D> run_yolo<640, 640, 0>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<640, 640, 1>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<640, 640, 2>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<640, 640, 3>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
+template std::vector<Detection2D> run_yolo<640, 640, 0>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<640, 640, 1>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<640, 640, 2>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<640, 640, 3>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
 /**
  * @brief Defines run_yolo function for detector with size 480x640.
  */
-template std::vector<Detection2D> run_yolo<480, 640, 0>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<480, 640, 1>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<480, 640, 2>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
-template std::vector<Detection2D> run_yolo<480, 640, 3>(cv::Mat const& input_image, int const camera_height, int const camera_width, std::filesystem::path const& model_path);
+template std::vector<Detection2D> run_yolo<480, 640, 0>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<480, 640, 1>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<480, 640, 2>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);
+template std::vector<Detection2D> run_yolo<480, 640, 3>(cv::Mat const& input_image, std::filesystem::path const& model_path, int camera_height, int camera_width);

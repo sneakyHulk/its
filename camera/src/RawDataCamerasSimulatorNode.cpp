@@ -31,6 +31,12 @@ ImageDataRaw RawDataCamerasSimulatorNode::push() {
 	std::ifstream in(path, std::ios::binary);
 	data.image_raw = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 	data.source = source;
+
+	if (next - _images_time > 5s) {
+		_images_time = std::chrono::time_point<std::chrono::system_clock>(std::chrono::nanoseconds(arrived));
+		_current_time = std::chrono::system_clock::now() + 1s;
+	}
+
 	std::this_thread::sleep_until(_current_time + (next - _images_time));
 
 	data.timestamp = std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();

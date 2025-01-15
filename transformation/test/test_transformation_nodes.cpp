@@ -1,11 +1,11 @@
 #include <chrono>
 
+#include "CamerasSimulatorNode.h"
 #include "ImageDownscalingNode.h"
 #include "ImagePreprocessingNode.h"
 #include "ImageUndistortionNode.h"
 #include "ImageVisualizationNode.h"
 #include "ProcessorSynchronousPair.h"
-#include "RawDataCamerasSimulatorNode.h"
 #include "UndistortDetectionsNode.h"
 #include "YoloNode.h"
 #include "config.h"
@@ -34,11 +34,22 @@ class Detection2DVisualization : public ProcessorSynchronousPair<ImageData, Dete
 int main(int argc, char** argv) {
 	gtk_init(&argc, &argv);
 
-	RawDataCamerasSimulatorNode raw_cams = make_raw_data_cameras_simulator_node_arrived_recorded1({{"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "s110_cams_raw" / "s110_s_cam_8"}});
-	ImagePreprocessingNode pre({{"s110_n_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_w_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}},
-	    {"s110_s_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}, {"s110_o_cam_8", {1200, 1920, cv::ColorConversionCodes::COLOR_BayerBG2BGR}}});
+	// With this, images there is no undistortion needed but for testing purposes images are needed...
+	CamerasSimulatorNode cams = make_cameras_simulator_node_tumtraf({{"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "train" / "images" / "s110_camera_basler_north_8mm"},
+	    {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "train" / "images" / "s110_camera_basler_east_8mm"},
+	    {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "train" / "images" / "s110_camera_basler_south1_8mm"},
+	    {"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "train" / "images" / "s110_camera_basler_south2_8mm"},
+	    {"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "test" / "images" / "s110_camera_basler_north_8mm"},
+	    {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "test" / "images" / "s110_camera_basler_east_8mm"},
+	    {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "test" / "images" / "s110_camera_basler_south1_8mm"},
+	    {"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "test" / "images" / "s110_camera_basler_south2_8mm"},
+	    {"s110_n_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "val" / "images" / "s110_camera_basler_north_8mm"},
+	    {"s110_o_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "val" / "images" / "s110_camera_basler_east_8mm"},
+	    {"s110_w_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "val" / "images" / "s110_camera_basler_south1_8mm"},
+	    {"s110_s_cam_8", std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "tumtraf_v2x_cooperative_perception_dataset" / "val" / "images" / "s110_camera_basler_south2_8mm"}});
 	ImageDownscalingNode<480, 640> down;
-	YoloNode<480, 640> yolo({{"s110_n_cam_8", {1200, 1920}}, {"s110_s_cam_8", {1200, 1920}}, {"s110_o_cam_8", {1200, 1920}}, {"s110_w_cam_8", {1200, 1920}}});
+	YoloNode<480, 640> yolo(
+	    {{"s110_n_cam_8", {1200, 1920}}, {"s110_s_cam_8", {1200, 1920}}, {"s110_o_cam_8", {1200, 1920}}, {"s110_w_cam_8", {1200, 1920}}}, std::filesystem::path(CMAKE_SOURCE_DIR) / "data" / "yolo" / "480x640" / "yolo11m.torchscript");
 	UndistortDetectionsNode undistort({{"s110_n_cam_8", {config::intrinsic_matrix_s110_n_cam_8, config::distortion_values_s110_n_cam_8, config::optimal_camera_matrix_s110_n_cam_8}},
 	    {"s110_s_cam_8", {config::intrinsic_matrix_s110_s_cam_8, config::distortion_values_s110_s_cam_8, config::optimal_camera_matrix_s110_s_cam_8}},
 	    {"s110_w_cam_8", {config::intrinsic_matrix_s110_w_cam_8, config::distortion_values_s110_w_cam_8, config::optimal_camera_matrix_s110_w_cam_8}},
@@ -52,16 +63,16 @@ int main(int argc, char** argv) {
 	Detection2DVisualization detvis;
 	ImageVisualizationNode img([](ImageData const& data) { return data.source == "s110_s_cam_8"; });
 
-	raw_cams.asynchronously_connect(pre);
-	pre.synchronously_connect(down).asynchronously_connect(yolo);
+	cams.asynchronously_connect(down);
+	down.asynchronously_connect(yolo);
 
-	pre.synchronously_connect(img_undistort).synchronously_connect(detvis);
+	cams.synchronously_connect(img_undistort).synchronously_connect(detvis);
 	yolo.synchronously_connect(undistort);
 	undistort.synchronously_connect(detvis);
 	detvis.synchronously_connect(img);
 
-	auto raw_cams_thread = raw_cams();
-	auto pre_thread = pre();
+	auto cams_thread = cams();
+	auto down_thread = down();
 	auto yolo_thread = yolo();
 
 	for (auto timestamp = std::chrono::system_clock::now() + 20s; std::chrono::system_clock::now() < timestamp; std::this_thread::yield()) g_main_context_iteration(NULL, true);

@@ -21,6 +21,9 @@ class ReceivingDataNode : public Pusher<CompactObjects> {
 	CompactObjects data;
 
    public:
+	/**
+	 * @brief Configure MQTT connection and connect to the broker and subscribe to the topic.
+	 */
 	ReceivingDataNode() {
 		if (mosq = mosquitto_new("objects_sub", true, this); !mosq) {
 			common::println_critical_loc("Failed to create mosquitto instance!");
@@ -68,6 +71,11 @@ class ReceivingDataNode : public Pusher<CompactObjects> {
 		ia & node->data;
 	}
 
+	/**
+	 * @brief Consumes and deserializes the next message from the MQTT topic "objects".
+	 *
+	 * @return A CompactObjects instance reconstructed from the received payload.
+	 */
 	CompactObjects push() final {
 		for (;;) {
 			if (int ret2 = mosquitto_loop(mosq, 1000, 1); ret2 != MOSQ_ERR_SUCCESS) {

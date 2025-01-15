@@ -19,6 +19,9 @@ class StreamingDataNode : public Runner<CompactObjects> {
 	struct mosquitto *mosq;
 
    public:
+	/**
+	 * @brief Configure MQTT connection and connect to the broker
+	 */
 	explicit StreamingDataNode() {
 		if (mosq = mosquitto_new("objects_pub", true, this); !mosq) {
 			common::println_critical_loc("Failed to create mosquitto instance!");
@@ -38,6 +41,11 @@ class StreamingDataNode : public Runner<CompactObjects> {
 		mosquitto_destroy(mosq);
 	}
 
+	/**
+	 * @brief Publishes serialized compact object data to the MQTT topic "objects".
+	 *
+	 * @param data The CompactObjects instance to serialize and publish.
+	 */
 	void run(CompactObjects const &data) final {
 		yas::mem_ostream os;
 		yas::binary_oarchive<yas::mem_ostream> oa(os);
