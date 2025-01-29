@@ -1,11 +1,18 @@
 from pypylon import pylon
 import numpy as np
 import cv2
-import time, os, fnmatch, shutil
+import datetime, os, fnmatch, shutil
 
-
-t = time.localtime()
-timestamp = time.strftime('%b-%d-%Y_%H%M', t)
+camera_serial_to_name = {
+    "40580664": "front_left",
+    "40580656": "front_mid",
+    "40580658": "front_right",
+    "40580666": "mid_left",
+    "40580651": "mid_right",
+    "40580657": "rear_left",
+    "40542479": "rear_mid",
+    "40539559": "rear_right"
+}
 
 #################### Basler Camera ####################
 # Connecting to the first available camera.
@@ -23,6 +30,9 @@ converter = pylon.ImageFormatConverter()
 converter.OutputPixelFormat = pylon.PixelType_BGR8packed
 converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
 
+for camera in camera_array:
+    os.makedirs(f"/media/bmw/data0/{camera_serial_to_name[camera.GetDeviceInfo().GetSerialNumber()]}/", exist_ok=True)
+
 # Create VideoWriter object with MJPEG codec at 30 FPS and 640x480 resolution
 i = 0
 while True:
@@ -30,7 +40,9 @@ while True:
         grab_result = camera_array.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
 
         if grab_result.GrabSucceeded():
-            print(f"Camera {camera_array[grab_result.GetCameraContext()].GetDeviceInfo().GetModelName()} captured an image!")
+            camera = camera_array[grab_result.GetCameraContext()]
+            print(f"Camera {camera.GetDeviceInfo().GetModelName()} captured an image!")
+            camera_name = camera_serial_to_name[camera.GetDeviceInfo().GetSerialNumber()]
 
             image = converter.Convert(grab_result)
             img = image.GetArray()
@@ -38,7 +50,8 @@ while True:
             # Resize image to 640x480
             img2 = cv2.resize(img, (640, 480), interpolation=cv2.INTER_LINEAR)
 
-            # cv2.imwrite("/media/bmw/data0/" + timestamp + ".jpeg", img2)
+            timestamp = datetime.datetime.now().isoformat()
+            cv2.imwrite(f"/media/bmw/data0/{camera_name}/{timestamp}.jpeg", img2)
 
             # Display the image
             cv2.imshow("Basler Camera Output " + str(grab_result.GetCameraContext()), img2)
