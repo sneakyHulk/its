@@ -24,6 +24,10 @@ for camera, device in zip(camera_array, devices):
     camera.Attach(pylon.TlFactory.GetInstance().CreateDevice(device))
 
 camera_array.Open()
+
+for camera in camera_array:
+    camera.ExposureTime.SetValue(1500.0)
+
 camera_array.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
 
 converter = pylon.ImageFormatConverter()
@@ -54,7 +58,7 @@ while True:
             cv2.imwrite(f"/media/bmw/data0/{camera_name}/{timestamp}.jpeg", img2)
 
             # Display the image
-            cv2.imshow("Basler Camera Output " + str(grab_result.GetCameraContext()), img2)
+            cv2.imshow("Basler Camera Output " + camera_serial_to_name[camera.GetDeviceInfo().GetSerialNumber()], img2)
 
             i = i + 1
 
